@@ -8,3 +8,6 @@ tqdm
 filelock
 typer
 sh
+openpyxl
+boto3
+os
