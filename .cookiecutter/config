@@ -1,0 +1,5 @@
+# Change these at your peril:
+export PROJECT_OPENNESS=public
+export PROJECT_NAME=asf_core_data
+export REPO_NAME=asf_core_data
+export GITHUB_ACCOUNT=nestauk
