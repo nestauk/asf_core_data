@@ -14,7 +14,9 @@ MCS_RAW_S3_PATH = config["MCS_RAW_S3_PATH"]
 MCS_RAW_LOCAL_PATH = config["MCS_RAW_LOCAL_PATH"]
 
 
-def get_raw_mcs_data(local_path=str(PROJECT_DIR) + MCS_RAW_LOCAL_PATH, refresh=False):
+def get_raw_mcs_data(
+    local_path=str(PROJECT_DIR) + MCS_RAW_LOCAL_PATH, refresh=False, verbose=True
+):
     """Get raw MCS HP installation data (both domestic and non-domestic)
     with no processing other than renaming columns.
 
@@ -78,4 +80,29 @@ def get_raw_mcs_data(local_path=str(PROJECT_DIR) + MCS_RAW_LOCAL_PATH, refresh=F
         .convert_dtypes()
     )
 
+    if verbose:
+        print("Original # samples:", hps.shape)
+
+    hps.fillna({"address_1": "", "address_2": "", "address_3": ""}, inplace=True)
+    hps["installation_type"] = hps["installation_type"].str.strip()
+    hps.drop_duplicates(inplace=True)
+
+    print("After preprocessing # samples:", hps.shape)
+
+    if verbose:
+        print(hps["installation_type"].value_counts(dropna=False))
+
     return hps
+
+
+def main():
+    """Main function for testing."""
+
+    hps = get_raw_mcs_data()
+    print(hps["address_3"].value_counts(dropna=False))
+    print(hps.head())
+
+
+if __name__ == "__main__":
+    # Execute only if run as a script
+    main()
