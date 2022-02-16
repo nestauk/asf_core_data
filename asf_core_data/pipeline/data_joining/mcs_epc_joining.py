@@ -18,8 +18,8 @@ import recordlinkage as rl
 import time
 
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
-from asf_core_data.getters.mcs.get_mcs import get_raw_mcs_data
-from asf_core_data.getters.epc.get_epc import load_preprocessed_epc_data
+from asf_core_data.getters.mcs.mcs_data import get_raw_mcs_data
+from asf_core_data.getters.epc.epc_data import load_preprocessed_epc_data
 
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
