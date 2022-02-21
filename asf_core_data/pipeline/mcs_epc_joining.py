@@ -18,7 +18,7 @@ import recordlinkage as rl
 import time
 
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
-from asf_core_data.getters.mcs.get_mcs import get_raw_mcs_data
+from asf_core_data.pipeline.process_mcs import get_processed_mcs_data
 from asf_core_data.getters.epc.get_epc import load_preprocessed_epc_data
 
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
@@ -104,8 +104,8 @@ def extract_token_set(address, postcode):
 #### PREPROCESSING
 
 
-def prepare_dhps(dhps):
-    """Prepare Dataframe of domestic HP installations by adding
+def prepare_hps(hps):
+    """Prepare Dataframe of HP installations by adding
     standardised_postcode, standardised_address and numeric_tokens fields.
     Parameters
     ----------
@@ -116,27 +116,25 @@ def prepare_dhps(dhps):
     dhps : pandas.Dataframe
         Dataframe containing domestic HP records with added fields."""
 
-    dhps["standardised_postcode"] = (
-        dhps["postcode"].fillna("unknown").str.upper().str.strip()
+    hps["standardised_postcode"] = (
+        hps["postcode"].fillna("unknown").str.upper().str.strip()
     )
 
-    dhps["standardised_address"] = [
+    hps["standardised_address"] = [
         # Make address 1 and 2 lowercase, strip whitespace,
         # and combine into a single string separated by a space
         rm_punct(add1).lower().strip() + " " + rm_punct(add2).lower().strip()
-        for add1, add2 in zip(
-            dhps["address_1"].fillna(""), dhps["address_2"].fillna("")
-        )
+        for add1, add2 in zip(hps["address_1"].fillna(""), hps["address_2"].fillna(""))
     ]
 
-    dhps["numeric_tokens"] = [
+    hps["numeric_tokens"] = [
         extract_token_set(address, postcode)
         for address, postcode in zip(
-            dhps["standardised_address"].fillna(""), dhps["postcode"].fillna("")
+            hps["standardised_address"].fillna(""), hps["postcode"].fillna("")
         )
     ]
 
-    return dhps
+    return hps
 
 
 def prepare_epcs(epcs):
@@ -245,7 +243,7 @@ def form_matching(df1, df2):
 
 
 def join_mcs_epc_data(
-    dhps=None,
+    hps=None,
     epcs=None,
     save=True,
     all_records=False,
@@ -255,10 +253,10 @@ def join_mcs_epc_data(
     """Join MCS and EPC data.
     Parameters
     ----------
-    dhps : pandas.Dataframe
+    hps : pandas.Dataframe
         Dataframe with standardised_postcode, numeric_tokens
         and standardised_address fields.
-        If None, domestic HP data is loaded and augmented.
+        If None, HP data is loaded and augmented.
     epcs : pandas.Dataframe
         Dataframe with standardised_postcode, numeric_tokens
         and standardised_address fields.
@@ -277,21 +275,22 @@ def join_mcs_epc_data(
     merged : pandas.Dataframe
         Dataframe containing merged MCS and EPC records."""
 
-    if dhps is None:
-        print("Preparing domestic HP data...")
-        dhps = get_raw_mcs_data()
-        dhps = prepare_dhps(dhps)
+    if hps is None:
+        print("Preparing HP data...")
+        hps = get_processed_mcs_data()
+        hps = prepare_hps(hps)
 
     if epcs is None:
+        epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Preparing EPC data...")
         fields_of_interest = address_fields + characteristic_fields
         epcs = load_preprocessed_epc_data(
-            version="preprocessed", usecols=fields_of_interest, low_memory=True
+            version=epc_version, usecols=fields_of_interest, low_memory=True
         )
         epcs = prepare_epcs(epcs)
 
     print("Forming a matching...")
-    matching = form_matching(df1=dhps, df2=epcs)
+    matching = form_matching(df1=hps, df2=epcs)
 
     # First ensure that all matches are above the matching parameter
     good_matches = matching[
@@ -323,7 +322,7 @@ def join_mcs_epc_data(
 
     print("Joining the data...")
     merged = (
-        dhps.reset_index()
+        hps.reset_index()
         # Join MCS records to the index-matching df on MCS index
         .merge(top_matches, how="left", left_on="index", right_on="level_0")
         # Then join this merged df to EPC records on EPC index
@@ -364,9 +363,11 @@ def join_mcs_epc_data(
             merged.loc[merged["compressed_epc_address"].isna()].shape,
         )
 
-        merged["# records"] = merged["compressed_epc_address"].map(
-            dict(merged.groupby("compressed_epc_address").count()["date"])
-        )
+    merged["# records"] = merged["compressed_epc_address"].map(
+        dict(merged.groupby("compressed_epc_address").count()["date"])
+    )
+
+    if verbose:
 
         print(
             merged.loc[merged["compressed_epc_address"].isna()][
@@ -380,26 +381,29 @@ def join_mcs_epc_data(
             ].value_counts(dropna=False)
         )
 
+    if not all_records:
         merged = merged.sort_values("date", ascending=True).drop_duplicates(
             subset=["compressed_epc_address"], keep="first"
         )
+        if verbose:
+            print(merged.shape)
 
-        print(merged.shape)
         merged = merged[merged["compressed_epc_address"].notna()]
-        print(merged.shape)
+        if verbose:
+            print(merged.shape)
 
-        print("After removing duplicates:\n-----------------\n")
-        print(merged["installation_type"].value_counts(dropna=False))
-        print(merged.shape)
+            print("After removing duplicates:\n-----------------\n")
+            print(merged["installation_type"].value_counts(dropna=False))
+            print(merged.shape)
 
-        print(merged.loc[merged["compressed_epc_address"].isna()].shape)
+            print(merged.loc[merged["compressed_epc_address"].isna()].shape)
 
-        print(merged.shape)
+            print(merged.shape)
 
-        if save:
-            merged.to_csv(str(PROJECT_DIR) + merged_path)
+    if save:
+        merged.to_csv(str(PROJECT_DIR) + merged_path)
 
-        return merged
+    return merged
 
 
 # ---------------------------------------------------------------------------------
