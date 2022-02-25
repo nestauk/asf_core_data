@@ -27,7 +27,7 @@ IMD_ENGLAND_PATH: "/inputs/utils/IMD/England_IMD.csv"
 IMD_WALES_PATH: "/inputs/utils/IMD/Wales_IMD.csv"
 IMD_SCOTLAND_PATH: "/inputs/utils/IMD/Scotland_IMD.csv"
 
-POSTCODE_TO_COORD_PATH: "/inputs/utils/geospatioal/ukpostcodes_to_coordindates.csv"
+POSTCODE_TO_COORD_PATH: "/inputs/utils/geospatial/ukpostcodes_to_coordindates.csv"
 
 MERGED_MCS_EPC: "/inputs/MCS_data/mcs_epc.csv"
 

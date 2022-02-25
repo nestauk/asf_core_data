@@ -4,13 +4,13 @@
 # ---------------------------------------------------------------------------------
 
 import pandas as pd
-from asfasf import get_yaml_config, Path, PROJECT_DIR
+from asf_core_data import get_yaml_config, Path, PROJECT_DIR
 
 # ---------------------------------------------------------------------------------
 
 # Load config file
 data_config = get_yaml_config(
-    Path(str(PROJECT_DIR) + "/heat_pump_adoption_modelling/config/base.yaml")
+    Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml")
 )
 
 # Get paths

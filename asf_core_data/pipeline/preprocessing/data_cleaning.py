@@ -8,9 +8,7 @@ import numpy as np
 
 
 # Load config file
-config = get_yaml_config(
-    Path(str(PROJECT_DIR) + "/heat_pump_adoption_modelling/config/base.yaml")
-)
+config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
 
 def reformat_postcode(df):
