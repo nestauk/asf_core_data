@@ -10,6 +10,7 @@ from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
+BUCKET_NAME = config["BUCKET_NAME"]
 MCS_RAW_S3_PATH = config["MCS_RAW_S3_PATH"]
 MCS_RAW_LOCAL_PATH = config["MCS_RAW_LOCAL_PATH"]
 
@@ -33,7 +34,7 @@ def get_raw_mcs_data(
 
     if refresh or not os.path.exists(local_path):
         s3 = boto3.resource("s3")
-        bucket = s3.Bucket("asf-core-data")
+        bucket = s3.Bucket(BUCKET_NAME)
         bucket.download_file(MCS_RAW_S3_PATH, local_path)
 
     colnames_dict = {
@@ -54,7 +55,7 @@ def get_raw_mcs_data(
         "Flow temp/SCOP ": "flow_scop",
         "Technology Type": "tech_type",
         "Installation Type": "installation_type",
-        "End User Installation Type": "installation_type",
+        "End User Installation Type": "end_user_installation_type",
         "Installation New at Commissioning Date?": "new",
         "Renewable System Design": "design",
         "Annual Space Heating Demand": "heat_demand",
@@ -90,13 +91,13 @@ def get_raw_mcs_data(
         print("Original # samples:", hps.shape)
 
     hps.fillna({"address_1": "", "address_2": "", "address_3": ""}, inplace=True)
-    hps["installation_type"] = hps["installation_type"].str.strip()
+    # hps["installation_type"] = hps["installation_type"].str.strip()
     hps.drop_duplicates(inplace=True)
 
     print("After preprocessing # samples:", hps.shape)
 
-    if verbose:
-        print(hps["installation_type"].value_counts(dropna=False))
+    # if verbose:
+    #     print(hps["installation_type"].value_counts(dropna=False))
 
     return hps
 

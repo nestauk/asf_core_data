@@ -138,6 +138,7 @@ MCS_EPC_CHARACTERISTIC_FIELDS:
     "LOCAL_AUTHORITY_LABEL",
   ]
 
+BUCKET_NAME: "asf-core-data"
 MCS_HP_PATH: "/inputs/MCS_data/mcs_heat_pumps.xlsx"
 MCS_DOMESTIC_HP_PATH: "/outputs/mcs_domestic_hps.csv"
 MCS_PROCESSED_PATH: "/outputs/data/mcs_processed.csv"

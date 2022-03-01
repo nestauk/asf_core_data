@@ -40,32 +40,6 @@ CLUSTER_TIME_INTERVAL = config["MCS_CLUSTER_TIME_INTERVAL"]
 #     return hps
 
 
-# def filter_to_domestic(hps, max_capacity=MAX_CAPACITY):
-#     """Filter HP data to domestic records (either labelled or assumed from HP capacity).
-
-#     Args:
-#         hps (DataFrame): DataFrame with "installation_type", "address_1",
-#         "address_2", "address_3" and "version" columns.
-#         max_capacity (numeric, optional): Max allowed HP capacity.
-#         Defaults to MAX_CAPACITY.
-
-#     Returns:
-#         DataFrame: Filtered HP installation records.
-#     """
-
-#     dhps = (
-#         hps[hps["installation_type"].str.strip() == "Domestic"]
-#         .drop(columns="installation_type")
-#     )
-
-#     dhps = (
-#         dhps.loc[dhps.capacity <= max_capacity]
-#         .reset_index(drop=True)
-#     )
-
-#     return dhps
-
-
 def add_columns(hps):
     """Adds product_id, product_name, manufacturer, flow_temp, scop,
     rhi and year columns to HP installation records.
@@ -170,21 +144,3 @@ def get_processed_mcs_data(save=True):
         data.to_csv(str(PROJECT_DIR) + MCS_PROCESSED_PATH)
 
     return data
-
-
-# def get_clean_hp_data(domestic=False, save=True):
-
-#     data = get_raw_mcs_data()
-#     data = remove_old_records(data)
-#     if domestic:
-#         data = filter_to_domestic(data)
-#     data = add_columns(data)
-#     data = mask_outliers(data)
-#     data = identify_clusters(data)
-
-#     suffix = MCS_DOMESTIC_PROCESSED_PATH if domestic else MCS_ALL_PROCESSED_PATH
-
-#     if save:
-#         data.to_csv(str(PROJECT_DIR) + suffix)
-
-#     return data
