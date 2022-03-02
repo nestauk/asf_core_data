@@ -351,7 +351,7 @@ def join_mcs_epc_data(
     if verbose:
 
         print("After joining:\n-----------------\n")
-        print(merged["installation_type"].value_counts(dropna=False))
+        # print(merged["installation_type"].value_counts(dropna=False))
         print(merged.shape)
 
         print(
@@ -368,18 +368,18 @@ def join_mcs_epc_data(
     )
 
     if verbose:
+        pass
+        # print(
+        #     merged.loc[merged["compressed_epc_address"].isna()][
+        #         "installation_type"
+        #     ].value_counts(dropna=False)
+        # )
 
-        print(
-            merged.loc[merged["compressed_epc_address"].isna()][
-                "installation_type"
-            ].value_counts(dropna=False)
-        )
-
-        print(
-            merged.loc[~merged["compressed_epc_address"].isna()][
-                "installation_type"
-            ].value_counts(dropna=False)
-        )
+        # print(
+        #     merged.loc[~merged["compressed_epc_address"].isna()][
+        #         "installation_type"
+        #     ].value_counts(dropna=False)
+        # )
 
     if not all_records:
         merged = merged.sort_values("date", ascending=True).drop_duplicates(
@@ -393,7 +393,7 @@ def join_mcs_epc_data(
             print(merged.shape)
 
             print("After removing duplicates:\n-----------------\n")
-            print(merged["installation_type"].value_counts(dropna=False))
+            #  print(merged["installation_type"].value_counts(dropna=False))
             print(merged.shape)
 
             print(merged.loc[merged["compressed_epc_address"].isna()].shape)

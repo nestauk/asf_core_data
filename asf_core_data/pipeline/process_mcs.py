@@ -16,28 +16,22 @@ MAX_COST = config["MCS_MAX_COST"]
 CLUSTER_TIME_INTERVAL = config["MCS_CLUSTER_TIME_INTERVAL"]
 
 
-# def remove_old_records(hps):
-#     """Remove records that are duplicated or have a newer version.
-#     Removes duplicates, groups by address, then only takes the
-#     record with highest version.
+def remove_old_records(hps):
+    """Remove records that are duplicated or have a newer version.
+    Removes duplicates, groups by address, then only takes the
+    record with highest version.
 
-#     Args:
-#         hps (Dataframe): HP installation records.
+    Args:
+        hps (Dataframe): HP installation records.
 
-#     Returns:
-#         Dataframe: HP installation records without old records.
-#     """
-#     most_recent_indices = (
-#         hps.groupby(["address_1", "address_2", "address_3"])
-#         ["version"].idxmax()
-#     )
+    Returns:
+        Dataframe: HP installation records without old records.
+    """
+    most_recent_indices = hps.groupby(["address_1", "address_2", "address_3"])[
+        "version"
+    ].idxmax()
 
-#     hps = (
-#         hps.iloc[most_recent_indices].drop_duplicates()
-#         .reset_index(drop=True)
-#     )
-
-#     return hps
+    return hps.iloc[most_recent_indices].reset_index(drop=True)
 
 
 def add_columns(hps):
@@ -136,6 +130,7 @@ def get_processed_mcs_data(save=True):
 
     data = get_raw_mcs_data()
 
+    data = remove_old_records(data)
     data = add_columns(data)
     data = mask_outliers(data)
     data = identify_clusters(data)
