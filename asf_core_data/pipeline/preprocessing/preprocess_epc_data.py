@@ -92,7 +92,7 @@ def preprocess_data(df, remove_duplicates=True, save_data=True, verbose=True):
     if remove_duplicates:
 
         df = feature_engineering.filter_by_year(
-            df, "BUILDING_ID", None, selection="latest entry"
+            df, "UPRN", None, selection="latest entry"
         )
 
         processing_steps.append(("After removing duplicates", df.shape[0], df.shape[1]))
@@ -188,6 +188,7 @@ def main():
             "EXTENSION_COUNT",
             "SECONDHEAT_DESCRIPTION",
             "ADDRESS2",
+            #  "LMK_KEY",
         ],
         nrows=None,
     )

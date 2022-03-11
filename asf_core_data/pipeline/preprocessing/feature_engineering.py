@@ -502,7 +502,7 @@ def count_number_of_entries(row, feature, ref_counts):
 
     feature: str
         Feature by which to count building entries.
-        e.g. "BUILDING_REFERNCE_NUMBER" or "BUILDING_ID"
+        e.g. "BUILDING_REFERNCE_NUMBER" or "BUILDING_ID" or "UPRN"
 
     ref_counts : pandas.Series
         Value counts for building reference number.
@@ -569,12 +569,13 @@ def get_building_entry_feature(df, feature):
         EPC dataframe with # entry feature."""
 
     # Catch invalid inputs
-    if feature not in ["BUILDING_REFERENCE_NUMBER", "BUILDING_ID"]:
+    if feature not in ["BUILDING_REFERENCE_NUMBER", "BUILDING_ID", "UPRN"]:
         raise IOError("Feature '{}' is not a valid feature.".format(feature))
 
     feature_name_dict = {
         "BUILDING_REFERENCE_NUMBER": "N_ENTRIES",
         "BUILDING_ID": "N_ENTRIES_BUILD_ID",
+        "UPRN": "N_SAME_UPRN_ENTRIES",
     }
 
     # Get name of new feature
@@ -600,6 +601,9 @@ def get_building_entries(df):
 
     if "BUILDING_ID" in df.columns:
         df = get_building_entry_feature(df, "BUILDING_ID")
+
+    if "UPRN" in df.columns:
+        df = get_building_entry_feature(df, "UPRN")
 
     return df
 
