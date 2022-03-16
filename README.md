@@ -4,11 +4,11 @@ Last updated: March 14 2022 by Julia Suter
 
 ## Overview <a name="overview"></a>
 
-The ASF Core Data repository provides a codebase for **retrieving, cleaning, processing and combining datasets** that are of great relevance to the Sustainable Future Mission at Nesta. Our goal is to accelerate home decarbonisation, for instance by pushing the uptake of heat pumps. Read more about A Sustainable Future at Nesta [here](https://www.nesta.org.uk/sustainable-future/).
+The ASF Core Data repository provides a codebase for **retrieving, cleaning, processing and combining datasets** that are of great relevance to the Sustainable Future Mission at Nesta. Our goal is to accelerate home decarbonisation, for instance by increasing the uptake of heat pumps. Read more about A Sustainable Future at Nesta [here](https://www.nesta.org.uk/sustainable-future/).
 
 <img src="./documentation/Home-PNG-HD.png" alt="drawing" style="width:200px;"/>
 
-A large section of this repository is dedicated to the **Energy Performance Certificate (EPC) Register**. Another section helps validating, cleaning and processing a subset of the **Microgeneration Certification Scheme (MCS)** Installations Database (MID), includings data about heat pump installations and heat pump installer companies.
+A large section of this repository is dedicated to the **Energy Performance Certificate (EPC) Register**. Another section helps validating, cleaning and processing a subset of the **Microgeneration Certification Scheme (MCS)** Installations Database (MID), including data about heat pump installations and heat pump installer companies.
 
 Both datasets will be updated with new data on a regular basis. Check [here](#recent_data) for the most recent updates.
 
@@ -49,8 +49,8 @@ Generally, both the EPC and MCS data will be updated every three months. Release
 | --------------------------- | ---------------- | ---------------- |
 | EPC England/Wales           | up to Q4 2021    | March 14th, 2022 |
 | EPC Scotland                | up to Q2 2021    | March 14th, 2022 |
-| MCS Heat Pump Installations | <mark>???</mark> | <mark>???</mark> |
-| MCS HP Installer Data       | <mark>???</mark> | <mark>???</mark> |
+| MCS Heat Pump Installations | up to Q4 2021    | February 25th, 2022 |
+| MCS HP Installer Data       | up to Q4 2021    | March 15th, 2022 |
 
 <a href="#top">[back to top]</a>
 
@@ -80,9 +80,9 @@ Everyone is welcome to contribute to our work: raise issues, offer pull requests
 
 The EPC Register and the Index of Multiple Deprivation are open-source datasets accessible to everyone.
 
-The MID (MCS Installations Database) belongs to MCS, as well as the subset we work on. Thus, we cannot share the raw data and access will only be granted to Nesta empkloyees. If you require access to this data, please reach out to MCS directly or ask us for contact details.
+The MID (MCS Installations Database) belongs to MCS, as well as the subset we work on. Thus, we cannot share the raw data and access will only be granted to Nesta employees. If you require access to this data, please reach out to MCS directly or ask us for contact details.
 
-The Cleansed EPC dataset was kindly provided by EST and we are not allow to share that version. For access, please reach out to EST directly or ask us for contact details.
+The Cleansed EPC dataset was kindly provided by EST and we are not allowed to share that version. For access, please reach out to EST directly or ask us for contact details.
 
 # Datasets <a name="datasets"></a>
 
@@ -96,7 +96,7 @@ The Cleansed EPC dataset was kindly provided by EST and we are not allow to shar
 
 The EPC Register provides data on building characteristics and energy efficiency. Visit the respective websites for [England and Wales](https://epc.opendatacommunities.org/) and [Scotland](https://statistics.gov.scot/resource?uri=http%3A%2F%2Fstatistics.gov.scot%2Fdata%2Fdomestic-energy-performance-certificates) to learn more.
 
-You can retrieve the data either by downloading it or pulling it from the S3 bucket with `make inputs-pull`. If you chose to download the data, please follow the steps [here](#epc_update).
+You can retrieve the data either by downloading it or pulling it from the S3 bucket with `make inputs-pull`. If you choose to download the data, please follow the steps [here](#epc_update).
 
 In `inputs/data/EPC/raw_data` you can find the raw EPC data. The current version holds up to 2021.
 
@@ -166,7 +166,7 @@ Since duplicates can be interesting for some research questions, we also save th
 
 ### Downloading and Updating EPC Data <a name="epc_update"></a>
 
-The original data was for England and Wales is freely available [here](https://epc.opendatacommunities.org/). The data for Scotland can be downloaded from [here](https://statistics.gov.scot/resource?uri=http%3A%2F%2Fstatistics.gov.scot%2Fdata%2Fdomestic-energy-performance-certificates). You may need to sign in with your email address.
+The original data for England and Wales is freely available [here](https://epc.opendatacommunities.org/). The data for Scotland can be downloaded from [here](https://statistics.gov.scot/resource?uri=http%3A%2F%2Fstatistics.gov.scot%2Fdata%2Fdomestic-energy-performance-certificates). You may need to sign in with your email address.
 
 Note that the data is updated every quarter so in order to work with the most recent data, the EPC data needs to be downloaded and preprocessed. [Here](#recent_data) you can check when the data was updated last time. If you need to download or update the EPC data, follow the steps below.
 
@@ -220,7 +220,7 @@ Below we describe the necessary steps to download and update the data. Don't wor
 
 <mark>More to follow and to be polished, just some examples</mark>
 
-### Predicting the next wave of heat pump adoptors
+### Predicting the next wave of heat pump adopters
 
 GitHub: https://github.com/nestauk/heat_pump_adoption_modelling
 Report: [follows]
