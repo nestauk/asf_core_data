@@ -17,6 +17,8 @@ from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 # Load config file
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
+print(PROJECT_DIR)
+
 # Get paths
 RAW_ENG_WALES_DATA_PATH = str(PROJECT_DIR) + config["RAW_ENG_WALES_DATA_PATH"]
 RAW_SCOTLAND_DATA_PATH = str(PROJECT_DIR) + config["RAW_SCOTLAND_DATA_PATH"]
