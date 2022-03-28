@@ -1,5 +1,8 @@
 MCS_RAW_S3_PATH: "inputs/MCS/mcs_heat_pumps.xlsx"
 MCS_RAW_LOCAL_PATH: "/inputs/data/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_INSTALLER_S3_PATH: "inputs/MCS/mcs_installer_information.xlsx"
+PREPROC_GEO_MCS_INSTALLATIONS_PATH: "/outputs/MCS/cleaned_geocoded_mcs_installations.csv"
+PREPROC_MCS_INSTALLER_COMPANY_PATH: "/outputs/MCS/cleaned_geocoded_mcs_installer_companies.csv"
 
 RAW_EPC_DATA_PATH: "/outputs/EPC_data/preprocessed_data/Q2_2021/EPC_GB_raw.csv"
 PREPROC_EPC_DATA_DEDUPL_PATH: "/outputs/EPC_data/preprocessed_data/Q2_2021/EPC_GB_preprocessed_and_deduplicated.csv"
@@ -10,6 +13,8 @@ RAW_SCOTLAND_DATA_ZIP: "/inputs/data/EPC/raw_data/Scotland/D_EPC_data.zip"
 
 RAW_ENG_WALES_DATA_PATH: "/inputs/data/EPC/raw_data/England_Wales/"
 RAW_SCOTLAND_DATA_PATH: "/inputs/data/EPC/raw_data/Scotland/"
+
+UK_GEO_PATH: "inputs/supplementary_data/ukpostcodes_to_coordindates.csv"
 
 IMD_ENGLAND_PATH: "/inputs/deprivation_data/England_IMD.csv"
 IMD_WALES_PATH: "/inputs/deprivation_data/Wales_IMD.csv"
