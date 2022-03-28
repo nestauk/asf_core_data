@@ -6,14 +6,17 @@ import datetime as dt
 import boto3
 import os
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data import PROJECT_DIR, get_yaml_config, Path, bucket_name
+
+from asf_core_data.getters.data_getters import s3, load_s3_data
+
+from asf_core_data.pipeline.mcs.process.process_mcs_utils import colnames_dict
 
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
 BUCKET_NAME = config["BUCKET_NAME"]
 MCS_RAW_S3_PATH = config["MCS_RAW_S3_PATH"]
 MCS_RAW_LOCAL_PATH = config["MCS_RAW_LOCAL_PATH"]
-
 
 def get_raw_mcs_data(
     local_path=str(PROJECT_DIR) + MCS_RAW_LOCAL_PATH, refresh=False, verbose=True
@@ -33,59 +36,33 @@ def get_raw_mcs_data(
     """
 
     if refresh or not os.path.exists(local_path):
-        s3 = boto3.resource("s3")
-        bucket = s3.Bucket(BUCKET_NAME)
-        bucket.download_file(MCS_RAW_S3_PATH, local_path)
-
-    colnames_dict = {
-        "Version Number": "version",
-        "Certificate Creation Date": "cert_date",
-        "Commissioning Date": "date",
-        "Address Line 1": "address_1",
-        "Address Line 2": "address_2",
-        "Address Line 3": "address_3",
-        "County": "county",
-        "Postcode": "postcode",
-        "Local Authority": "local_authority",
-        "Total Installed Capacity": "capacity",
-        "Estimated Annual Generation": "estimated_annual_generation",
-        "Installation Company Name": "installer_name",
-        "Green Deal Installation?": "green_deal",
-        "Products": "products",
-        "Flow temp/SCOP ": "flow_scop",
-        "Technology Type": "tech_type",
-        "Installation Type": "installation_type",
-        "End User Installation Type": "end_user_installation_type",
-        "Installation New at Commissioning Date?": "new",
-        "Renewable System Design": "design",
-        "Annual Space Heating Demand": "heat_demand",
-        "Annual Water Heating Demand": "water_demand",
-        "Annual Space Heating Supplied": "heat_supplied",
-        "Annual Water Heating Supplied": "water_supplied",
-        "Installation Requires Metering?": "metering",
-        "RHI Metering Status": "rhi_status",
-        "RHI Metering Not Ready Reason": "rhi_not_ready",
-        "Number of MCS Certificates": "n_certificates",
-        "Heating System Type": "system_type",  # check - what's this?
-        "Alternative Heating System Type": "alt_type",
-        "Alternative Heating System Fuel Type": "alt_fuel",
-        "Overall Cost": "cost",
-    }
-
-    hps = (
-        pd.read_excel(
-            local_path,
-            dtype={
-                "Commissioning Date": dt.datetime,
+        data = load_s3_data(s3, bucket_name, MCS_RAW_S3_PATH)
+        hps = data.astype(
+            {
                 "Address Line 1": str,
                 "Address Line 2": str,
                 "Address Line 3": str,
                 "Postcode": str,
-            },
+            }
         )
-        .rename(columns=colnames_dict)
-        .convert_dtypes()
-    )
+        hps["Commissioning Date"] = hps["Commissioning Date"].dt.to_pydatetime()
+        hps = hps.rename(columns=colnames_dict)
+
+    else:
+        hps = (
+            pd.read_excel(
+                local_path,
+                dtype={
+                    "Commissioning Date": dt.datetime,
+                    "Address Line 1": str,
+                    "Address Line 2": str,
+                    "Address Line 3": str,
+                    "Postcode": str,
+                },
+            )
+            .rename(columns=colnames_dict)
+            .convert_dtypes()
+        )
 
     if verbose:
         print("Original # samples:", hps.shape)
