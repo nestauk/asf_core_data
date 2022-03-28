@@ -18,6 +18,7 @@ BUCKET_NAME = config["BUCKET_NAME"]
 MCS_RAW_S3_PATH = config["MCS_RAW_S3_PATH"]
 MCS_RAW_LOCAL_PATH = config["MCS_RAW_LOCAL_PATH"]
 
+
 def get_raw_mcs_data(
     local_path=str(PROJECT_DIR) + MCS_RAW_LOCAL_PATH, refresh=False, verbose=True
 ):
