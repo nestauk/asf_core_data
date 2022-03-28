@@ -1,5 +1,5 @@
 """
-script to get and save data from s3 bucket and from geojson files.
+script to get and save data from s3 bucket and from files.
 """
 #######################################################
 
