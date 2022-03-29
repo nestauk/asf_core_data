@@ -57,6 +57,7 @@ mcs_companies_dict = {
     "PCode": "postcode",
     "Solar Thermal": "solar_thermal",
     "Wind Turbines": "wind_turbines",
+    "Air Source Heat Pumps": "air_source_hps",
     "Exhaust Air Heat Pumps": "exhaust_air_hps",
     "Biomass": "biomass",
     "Solar Photovoltaics": "solar_pv",

@@ -125,7 +125,7 @@ if __name__ == "__main__":
     )
 
     # geocode data
-    geocoded_cleaned_installations_data = geocode_postcode(mcs_test, uk_geo_data)
+    geocoded_cleaned_installations_data = geocode_postcode(mcs_data, uk_geo_data)
     geocoded_cleaned_installers_data = geocode_postcode(
         cleaned_installers_data, uk_geo_data
     )
