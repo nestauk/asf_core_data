@@ -18,8 +18,14 @@ import recordlinkage as rl
 import time
 
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
-from asf_core_data.pipeline.mcs.process.process_mcs import get_processed_mcs_data
+from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
+    get_processed_mcs_data,
+)
 from asf_core_data.getters.epc.get_epc import load_preprocessed_epc_data
+from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
+    remove_punctuation,
+    extract_token_set,
+)
 
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
@@ -28,76 +34,7 @@ address_fields = config["MCS_EPC_ADDRESS_FIELDS"]
 characteristic_fields = config["MCS_EPC_CHARACTERISTIC_FIELDS"]
 matching_parameter = config["MCS_EPC_MATCHING_PARAMETER"]
 merged_path = config["MCS_EPC_MERGED_PATH"]
-supervised_model_features = config["EPC_PREPROC_FEAT_SELECTION"]
-
-#### UTILS
-
-
-def rm_punct(address):
-    """Remove all unwanted punctuation from an address.
-    Underscores are kept and slashes/dashes are converted
-    to underscores so that the numeric tokens in e.g.
-    "Flat 3/2" and "Flat 3-2" are treated as a whole later.
-    Parameters
-    ----------
-    address : str
-        Address to format.
-    Return
-    ----------
-    address : str
-        Formatted address."""
-
-    if (address is pd.NA) | (address is np.nan):
-        return ""
-    else:
-        # Replace / and - with _
-        address = re.sub(r"[/-]", "_", address)
-        # Remove all punctuation other than _
-        punct_regex = r"[\!\"#\$%&\\\'(\)\*\+,-\./:;<=>\?@\[\]\^`\{|\}~”“]"
-        address = re.sub(punct_regex, "", address)
-
-        return address
-
-
-def extract_token_set(address, postcode):
-    """Extract valid numeric tokens from address string.
-    Numeric tokens are considered to be character strings containing numbers
-    e.g. "45", "3a", "4_1".
-    'Valid' is defined as
-    - below a certain token_length (to remove long MPAN strings)
-    - not the inward or outward code of the property's postcode
-    - not the property's postcode with space removed
-    Parameters
-    ----------
-    address : string
-        String from which to extract tokens.
-    postcode : string
-        String used for removal of tokens corresponding to postcode parts.
-    Return
-    ----------
-    valid_token_set : set
-        Set of valid tokens.
-        Set chosen as the order does not matter for comparison purposes.
-    """
-
-    tokens = re.findall("\w*\d\w*", address)
-    valid_tokens = [
-        token
-        for token in tokens
-        if (
-            (len(token) < max_token_length)
-            & (token.lower() not in postcode.lower().split())
-            & (token.lower() != postcode.lower().replace(" ", ""))
-        )
-    ]
-    valid_token_set = set(valid_tokens)
-
-    return valid_token_set
-
-
-# wonder if single-letter tokens should be in here too
-# for e.g. "Flat A" or whether this would give too many
-# false positives
+supervised_model_features = config["EPC_PREPROC_FEAT_SELECTION"]  # needed?
 
 # ---------------------------------------------------------------------------------
 
@@ -123,12 +60,14 @@ def prepare_hps(hps):
     hps["standardised_address"] = [
         # Make address 1 and 2 lowercase, strip whitespace,
         # and combine into a single string separated by a space
-        rm_punct(add1).lower().strip() + " " + rm_punct(add2).lower().strip()
+        remove_punctuation(add1).lower().strip()
+        + " "
+        + remove_punctuation(add2).lower().strip()
         for add1, add2 in zip(hps["address_1"].fillna(""), hps["address_2"].fillna(""))
     ]
 
     hps["numeric_tokens"] = [
-        extract_token_set(address, postcode)
+        extract_token_set(address, postcode, max_token_length)
         for address, postcode in zip(
             hps["standardised_address"].fillna(""), hps["postcode"].fillna("")
         )
@@ -143,7 +82,7 @@ def prepare_epcs(epcs):
     Parameters
     ----------
     epcs : pandas.Dataframe
-        Dataframe with POSTCODE and ADDRESS1 fields.
+        Dataframe with POSTCODE, ADDRESS1 and ADDRESS2 fields.
     Return
     ----------
     epcs : pandas.Dataframe
@@ -171,7 +110,7 @@ def prepare_epcs(epcs):
     # Remove punctuation, lowercase and concatenate address fields
     # for approximate matching
     epcs["standardised_address"] = [
-        rm_punct(address).lower().strip() for address in epcs["ADDRESS1"]
+        remove_punctuation(address).lower().strip() for address in epcs["ADDRESS1"]
     ]
 
     epcs["numeric_tokens"] = [
@@ -404,6 +343,54 @@ def join_mcs_epc_data(
         merged.to_csv(str(PROJECT_DIR) + merged_path)
 
     return merged
+
+
+def select_most_relevant_epc(data):
+    """From a "fully joined" MCS-EPC dataset, chooses the "best"
+    EPC for each HP installation record (i.e. the one that is assumed
+    to best reflect the status of the property at the time of HP installation).
+    The EPC chosen is the latest one before the installation if it exists;
+    otherwise it is the earliest one after the installation.
+
+    Args:
+        data ([type]): Joined MCS-EPC data. Assumed to
+        contain INSPECTION_DATE, date and index_x columns.
+
+    Returns:
+        Dataframe: HP installation records attached to the
+    """
+
+    # Sort data by INSPECTION_DATE
+    data = data.sort_values("INSPECTION_DATE").reset_index(drop=True)
+
+    # Identify rows where the EPC data is before the MCS one
+    data["epc_before_mcs"] = data["INSPECTION_DATE"] <= data["date"]
+
+    # Identify indices of last EPC record before MCS
+    last_epc_before_mcs_indices = (
+        data.reset_index()
+        .loc[data["epc_before_mcs"]]
+        .groupby("index_x")
+        .tail(1)["index"]
+        .values
+    )
+
+    data["last_epc_before_mcs"] = False
+    data["last_epc_before_mcs"].iloc[last_epc_before_mcs_indices] = True
+
+    # Filter to either "last EPC before MCS" or "EPC after MCS",
+    # then group by installation and take first record -
+    # this will be the last EPC before MCS
+    # if it exists, otherwise the first EPC after MCS
+    filtered_data = (
+        data.loc[data["last_epc_before_mcs"] | ~data["epc_before_mcs"]]
+        .groupby("index_x")
+        .head(1)
+        .reset_index(drop=True)
+        .drop(columns=["epc_before_mcs", "last_epc_before_mcs"])
+    )
+
+    return filtered_data
 
 
 # ---------------------------------------------------------------------------------

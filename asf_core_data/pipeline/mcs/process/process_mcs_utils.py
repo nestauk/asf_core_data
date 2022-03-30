@@ -9,6 +9,8 @@ import pandas as pd
 import requests
 import time
 import string
+import re
+import numpy as np
 
 #######################################################
 
@@ -176,3 +178,68 @@ def match_companies_house(company_name, api_key):
         )  # sleep for 5 minutes as developer guidelines state you can make 600 requests per 5 mins
     else:
         print(f"{response.status_code} error!")
+
+
+def remove_punctuation(address):
+    """Remove all unwanted punctuation from an address.
+    Underscores are kept and slashes/dashes are converted
+    to underscores so that the numeric tokens in e.g.
+    "Flat 3/2" and "Flat 3-2" are treated as a whole later.
+    Parameters
+    ----------
+    address : str
+        Address to format.
+    Return
+    ----------
+    address : str
+        Formatted address."""
+
+    if (address is pd.NA) | (address is np.nan):
+        return ""
+    else:
+        # Replace / and - with _
+        address = re.sub(r"[/-]", "_", address)
+        # Remove all punctuation other than _
+        punct_regex = r"[\!\"#\$%&\\\'(\)\*\+,-\./:;<=>\?@\[\]\^`\{|\}~”“]"
+        address = re.sub(punct_regex, "", address)
+
+        return address
+
+
+def extract_token_set(address, postcode, max_token_length):
+    """Extract valid numeric tokens from address string.
+    Numeric tokens are considered to be character strings containing numbers
+    e.g. "45", "3a", "4_1".
+    'Valid' is defined as
+    - below a certain token_length (to remove long MPAN strings)
+    - not the inward or outward code of the property's postcode
+    - not the property's postcode with space removed
+    Parameters
+    ----------
+    address : string
+        String from which to extract tokens.
+    postcode : string
+        String used for removal of tokens corresponding to postcode parts.
+    Return
+    ----------
+    valid_token_set : set
+        Set of valid tokens.
+        Set chosen as the order does not matter for comparison purposes.
+    """
+    # wonder if single-letter tokens should be in here too
+    # for e.g. "Flat A" or whether this would give too many
+    # false positives
+
+    tokens = re.findall("\w*\d\w*", address)
+    valid_tokens = [
+        token
+        for token in tokens
+        if (
+            (len(token) < max_token_length)
+            & (token.lower() not in postcode.lower().split())
+            & (token.lower() != postcode.lower().replace(" ", ""))
+        )
+    ]
+    valid_token_set = set(valid_tokens)
+
+    return valid_token_set

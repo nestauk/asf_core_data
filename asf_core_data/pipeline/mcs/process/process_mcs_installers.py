@@ -7,7 +7,9 @@ To run script, (in activated conda environment) python process_mcs_installers.py
 import argparse
 import pandas as pd
 
-from asf_core_data.pipeline.mcs.process.process_mcs import get_processed_mcs_data
+from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
+    get_processed_mcs_data,
+)
 
 from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
 

@@ -23,7 +23,8 @@ def get_raw_mcs_data(
     local_path=str(PROJECT_DIR) + MCS_RAW_LOCAL_PATH, refresh=False, verbose=True
 ):
     """Get raw MCS HP installation data (both domestic and non-domestic)
-    with no processing other than renaming columns.
+    with no processing other than renaming columns, setting correct dtypes
+    and removing duplicate records.
 
     Args:
         local_path (str, optional): Local path to raw data.
@@ -31,6 +32,8 @@ def get_raw_mcs_data(
         refresh (bool, optional): Whether or not to update the local copy
             of the data from S3. If local_path does not exist, data will be
             pulled from S3 even if refresh is False. Defaults to False.
+        verbose (bool, optional): Whether to print info about the number of
+            samples before and after deduplication.
 
     Returns:
         DataFrame: Raw HP installation data.
@@ -72,7 +75,8 @@ def get_raw_mcs_data(
     # hps["installation_type"] = hps["installation_type"].str.strip()
     hps.drop_duplicates(inplace=True)
 
-    print("After preprocessing # samples:", hps.shape)
+    if verbose:
+        print("After dropping duplicates, # samples:", hps.shape)
 
     # if verbose:
     #     print(hps["installation_type"].value_counts(dropna=False))

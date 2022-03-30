@@ -1,5 +1,5 @@
-# File: asf_core_data/pipeline/process_mcs.py
-"""Processing MCS heat pump data."""
+# File: asf_core_data/pipeline/mcs/process/process_mcs_installations.py
+"""Processing MCS heat pump installation data."""
 
 import pandas as pd
 import re
@@ -72,14 +72,16 @@ def add_columns(hps):
 
 
 def mask_outliers(hps, max_cost=MAX_COST):
-    """Replace unreasonable values in HP installation data with NA.
+    """Replace 'unreasonable' values in HP installation data with NA.
+    'Unreasonable' values are cost values that are 0 or above the max_cost,
+    flow_temp values less than or equal to 0, and scop values that are 0.
 
     Args:
         dhps (DataFrame): DataFrame with cost, flow_temp and scop columns.
         max_cost (numeric): Maximum allowed cost value in £.
 
     Returns:
-        [type]: [description]
+        DataFrame: HP installations with masked outliers.
     """
     hps["cost"] = hps["cost"].mask((hps["cost"] == 0) | (hps["cost"] > max_cost))
 
@@ -93,17 +95,17 @@ def mask_outliers(hps, max_cost=MAX_COST):
 
 
 def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
-    """Label HP records with whether they form part of a "cluster"
+    """Label HP records with whether they form part of a 'cluster'
     of installations in the same postcode and around the same time.
     This suggests that these installations were done en masse.
 
     Args:
-        dhps (DataFrame): DataFrame of HP installations with "postcode" and "date" columns.
+        dhps (DataFrame): DataFrame of HP installations with 'postcode' and 'date' columns.
         time_interval (int, optional): Maximum gap between two installations in the same postcode.
         Defaults to CLUSTER_TIME_INTERVAL.
 
     Returns:
-        DataFrame: DataFrame with added "cluster" column.
+        DataFrame: DataFrame with added 'cluster' column.
     """
 
     hps["diff_bwd"] = (
@@ -136,5 +138,6 @@ def get_processed_mcs_data(save=True):
 
     if save:
         data.to_csv(str(PROJECT_DIR) + MCS_PROCESSED_PATH)
+        print("Processed data saved in " + str(PROJECT_DIR) + MCS_PROCESSED_PATH)
 
     return data
