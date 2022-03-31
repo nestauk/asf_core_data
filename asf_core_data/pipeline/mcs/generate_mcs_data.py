@@ -27,28 +27,24 @@ def generate_processed_mcs(epc_version, geocode=True):
         raise ValueError(
             "epc_version should be one of 'none', 'full', 'newest' or 'most_relevant'"
         )
-
-    installations = get_processed_mcs_data(save=False)
+    if epc_version == "none":
+        processed_mcs = get_processed_mcs_data(save=False)
+    else:
+        joined_mcs_epc = join_mcs_epc_data(save=False, all_records=True)
+        if epc_version == "newest":
+            processed_mcs = joined_mcs_epc.loc[
+                joined_mcs_epc.groupby("index_x")["INSPECTION_DATE"].idxmax()
+            ]
+        elif epc_version == "most_relevant":
+            processed_mcs = select_most_relevant_epc(joined_mcs_epc)
+        else:
+            processed_mcs = joined_mcs_epc
 
     if geocode:
         print("geocoding not yet implemented")
         # add geocoding here
 
-    if epc_version == "none":
-        return installations
-    else:
-        joined_mcs_epc = join_mcs_epc_data(
-            hps=installations, save=False, all_records=True
-        )
-
-        if epc_version == "newest":
-            return joined_mcs_epc.loc[
-                joined_mcs_epc.groupby("index_x")["INSPECTION_DATE"].idxmax()
-            ]
-        elif epc_version == "most_relevant":
-            return select_most_relevant_epc(joined_mcs_epc)
-        else:
-            return joined_mcs_epc
+    return processed_mcs
 
 
 if __name__ == "__main__":
