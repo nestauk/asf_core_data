@@ -1,4 +1,3 @@
-import pandas as pd
 import datacompy
 
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path

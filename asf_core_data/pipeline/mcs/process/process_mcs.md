@@ -12,6 +12,10 @@ The code for cleaning MCS installation data is found in **process_mcs_installati
 - Cleans installer names
 - Returns the cleaned installation data
 
+## Installer data
+
+...
+
 ## Joining MCS and EPC data
 
 **mcs_epc_joining.py** contains code for joining MCS installations to domestic EPC data. The function **join_mcs_epc_data** takes MCS installation data, attempts to match the address with an address in the domestic EPC register, and if successful adds relevant fields from the EPC to the installation records (if **all_records** is set to True then a row will be added for each matching EPC).
