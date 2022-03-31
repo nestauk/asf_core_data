@@ -1,3 +1,10 @@
+"""to run script,
+
+can provide different old_df, new_df and comp_df s3 directory paths directly when running script.
+defaults to paths in config/base.yaml
+
+python compare_mcs_installations.py --old_df OLD_DF_PATH --new_df NEW_DF_PATH --comp_df COMP_DF_PATH
+"""
 import datacompy
 import pandas as pd
 import pandera as pa
@@ -9,17 +16,10 @@ from asf_core_data.getters.data_getters import s3, load_s3_data
 import sys
 import argparse
 
+
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
 bucket_name = config["BUCKET_NAME"]
-
-old_data_path = "inputs/MCS/mcs_heat_pumps_sept_21.xlsx"
-new_data_path = config["MCS_RAW_S3_PATH"]
-installers_path = config["MCS_RAW_INSTALLER_S3_PATH"]
-
-old_data = load_s3_data(s3, bucket_name, old_data_path)
-new_data = load_s3_data(s3, bucket_name, new_data_path)
-mcs_installers = load_s3_data(s3, bucket_name, installers_path)
 
 
 def compare_mcs(old_data, new_data):
@@ -116,6 +116,38 @@ if __name__ == "__main__":
         str(PROJECT_DIR)
         + f'/asf_core_data/pipeline/mcs/test/mcs_test_{datetime.now().strftime("%Y%m%d-%H%M%S")}.txt'
     )
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-old_df",
+        "--old_df",
+        nargs="?",
+        default="inputs/MCS/mcs_heat_pumps_sept_21.xlsx",
+        help="directory of old_installations_df in s3",
+    )
+    parser.add_argument(
+        "-new_df",
+        "--new_df",
+        nargs="?",
+        default=config["MCS_RAW_S3_PATH"],
+        help="directory of new_installations_df in s3",
+    )
+    parser.add_argument(
+        "-comp_df",
+        "--comp_df",
+        nargs="?",
+        default=config["MCS_RAW_INSTALLER_S3_PATH"],
+        help="directory of comp_df in s3",
+    )
+
+    args = parser.parse_args()
+    old_data_path = args.old_df
+    new_data_path = args.new_df
+    installers_path = args.comp_df
+
+    old_data = load_s3_data(s3, bucket_name, old_data_path)
+    new_data = load_s3_data(s3, bucket_name, new_data_path)
+    mcs_installers = load_s3_data(s3, bucket_name, installers_path)
 
     sys.stdout = open(test_output_txt, "w")
     print(f"---- within installer check of {installers_path}----")
