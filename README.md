@@ -210,7 +210,7 @@ The MCS datasets contain information on MCS-certified heat pump **installations*
 The MCS **installations** dataset contains one record for each MCS certificate version (i.e. a certificate which is registered then updated will appear twice in the dataset). In almost all cases, each MCS certificate is associated with a single heat pump installation. Features in the dataset include
   
   - characteristics of the property: address, heat and water demand, alternative heating system
-  - characteristics of the installed heat pump: model, manufacturer, capacity, flow temperature and SCOP
+  - characteristics of the installed heat pump: model, manufacturer, capacity, flow temperature, SCOP
   - characteristics of the installation: overall cost, installer name, whether or not the installation is eligible for RHI
 
 The MCS **installers** dataset contains one record for each MCS-certified installer. Features in the dataset include
@@ -224,7 +224,7 @@ Both datasets are provided quarterly by MCS and are stored in the **asf-core-dat
 **asf_core_data/pipeline/mcs** contains functions for processing the raw MCS data and joining it with EPC data. In particular, running **generate_mcs_data.py** will process and save four different versions of the data to S3:
   
   1. Cleaned MCS installation data, with one row for each **installation**, taking the most recent version of each certificate
-  2. As above with EPC data fully joined: when a property also appears in EPC data, a row is included for each EPC (so the full EPC history of the property appears in the data)
+  2. As in 1., with EPC data fully joined: when a property also appears in EPC data, a row is included for each EPC (so the full EPC history of the property appears in the data)
   3. As in 2., filtered only to the most recent EPC
   4. As in 2., filtered to the "most relevant" EPC which aims to best reflect the status of the property at the time of the installation: the latest EPC before the installation if one exists, otherwise the earliest EPC after the installation
   
