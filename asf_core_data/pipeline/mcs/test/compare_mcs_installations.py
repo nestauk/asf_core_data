@@ -118,7 +118,7 @@ if __name__ == "__main__":
     )
 
     sys.stdout = open(test_output_txt, "w")
-    print(f"---- within intaller check of {installers_path}----")
+    print(f"---- within installer check of {installers_path}----")
     within_mcs_installers_check(mcs_installers)
     print(
         f"---- between installations check of {old_data_path} and {new_data_path}----"
