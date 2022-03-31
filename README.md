@@ -1,6 +1,6 @@
 # ASF Core Data <a name="core_data_overview"></a>
 
-Last updated: March 14 2022 by Julia Suter
+Last updated: March 31 2022 by Chris Williamson
 
 ## Overview <a name="overview"></a>
 
