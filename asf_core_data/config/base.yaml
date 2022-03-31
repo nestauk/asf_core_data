@@ -152,10 +152,11 @@ MCS_EPC_MATCHING_PARAMETER: 0.7
 MCS_EPC_MERGED_PATH: "/outputs/mcs_epc.csv"
 MCS_EPC_MAX_TOKEN_LENGTH: 8
 
-MCS_INSTALLATIONS_PATH: "/outputs/MCS/mcs_installations.csv"
-MCS_INSTALLATIONS_EPC_FULL_PATH: "/outputs/MCS/mcs_installations_epc_full.csv"
-MCS_INSTALLATIONS_EPC_NEWEST_PATH: "/outputs/MCS/mcs_installations_epc_newest.csv"
-MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH: "/outputs/MCS/mcs_installations_epc_most_relevant.csv"
+# no .csv so that current date can be added
+MCS_INSTALLATIONS_PATH: "/outputs/MCS/mcs_installations"
+MCS_INSTALLATIONS_EPC_FULL_PATH: "/outputs/MCS/mcs_installations_epc_full"
+MCS_INSTALLATIONS_EPC_NEWEST_PATH: "/outputs/MCS/mcs_installations_epc_newest"
+MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH: "/outputs/MCS/mcs_installations_epc_most_relevant"
 
 parse_dates:
   ["INSPECTION_DATE", "LODGEMENT_DATE", "HP_INSTALL_DATE", "FIRST_HP_MENTION"]

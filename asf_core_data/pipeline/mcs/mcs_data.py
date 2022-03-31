@@ -1,3 +1,5 @@
+from datetime import date
+
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_mcs_data,
@@ -19,7 +21,7 @@ mcs_installations_epc_most_relevant_path = config[
 ]
 
 
-def get_mcs(epc_version, geocode=True):
+def generate_processed_mcs(epc_version, geocode=True):
 
     if epc_version not in ["none", "full", "newest", "most_relevant"]:
         raise ValueError(
@@ -50,8 +52,8 @@ def get_mcs(epc_version, geocode=True):
 
 
 if __name__ == "__main__":
-    # Execute only if run as a script
-
+    # Get today's date for filename suffix
+    today = date.today().strftime("%y%m%d")
     # Get all four versions and save them in S3
     for parameter, path in [
         ("none", mcs_installations_path),
@@ -59,6 +61,7 @@ if __name__ == "__main__":
         ("newest", mcs_installations_epc_newest_path),
         ("most_relevant", mcs_installations_epc_most_relevant_path),
     ]:
-        data = get_mcs(epc_version=parameter)
-        save_to_s3(s3, bucket_name, data, path)
-        print("Saved in S3: " + path)
+        data = generate_processed_mcs(epc_version=parameter)
+        full_path = path + "_" + today + ".csv"
+        save_to_s3(s3, bucket_name, data, full_path)
+        print("Saved in S3: " + full_path)
