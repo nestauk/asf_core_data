@@ -11,25 +11,35 @@ from zipfile import ZipFile
 
 
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data.config import base_config
 
 # ---------------------------------------------------------------------------------
 
 # Load config file
-config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
+# config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
 print(PROJECT_DIR)
 
 # Get paths
-RAW_ENG_WALES_DATA_PATH = str(PROJECT_DIR) + config["RAW_ENG_WALES_DATA_PATH"]
-RAW_SCOTLAND_DATA_PATH = str(PROJECT_DIR) + config["RAW_SCOTLAND_DATA_PATH"]
+REL_RAW_ENG_WALES_DATA_PATH = base_config.RAW_ENG_WALES_DATA_PATH
+REL_RAW_SCOTLAND_DATA_PATH = base_config.RAW_SCOTLAND_DATA_PATH
 
-RAW_ENG_WALES_DATA_ZIP = str(PROJECT_DIR) + config["RAW_ENG_WALES_DATA_ZIP"]
-RAW_SCOTLAND_DATA_ZIP = str(PROJECT_DIR) + config["RAW_SCOTLAND_DATA_ZIP"]
+REL_RAW_ENG_WALES_DATA_ZIP = base_config.RAW_ENG_WALES_DATA_ZIP
+REL_RAW_SCOTLAND_DATA_ZIP = base_config.RAW_SCOTLAND_DATA_ZIP
 
-RAW_EPC_DATA_PATH = str(PROJECT_DIR) + config["RAW_EPC_DATA_PATH"]
+REL_RAW_EPC_DATA_PATH = base_config.RAW_EPC_DATA_PATH
+
+ROOT_DATA = base_config.ROOT_DATA_PATH
 
 
-def load_wales_certificates(subset=None, usecols=None, nrows=None, low_memory=False):
+def load_wales_certificates(
+    data_path=ROOT_DATA,
+    rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH_DATA_PATH,
+    subset=None,
+    usecols=None,
+    nrows=None,
+    low_memory=False,
+):
 
     """Load the England and/or Wales EPC data.
 
@@ -56,11 +66,15 @@ def load_wales_certificates(subset=None, usecols=None, nrows=None, low_memory=Fa
     EPC_certs : pandas.DateFrame
         England/Wales EPC certificate data for given features."""
 
+    RAW_ENG_WALES_DATA_PATH = data_path + rel_data_path
+    RAW_ENG_WALES_DATA_ZIP = data_path + base_config.RAW_ENG_WALES_DATA_ZIP
+    print(RAW_ENG_WALES_DATA_PATH)
+
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not Path(
         RAW_ENG_WALES_DATA_PATH + "domestic-W06000015-Cardiff/certificates.csv"
     ).is_file():
-        extract_data(RAW_ENG_WALES_DATA_ZIP)
+        extract_data(base_config.RAW_ENG_WALES_DATA_ZIP)
 
     # Get all directories
     directories = [
@@ -342,9 +356,9 @@ def load_cleansed_epc(remove_duplicates=True, usecols=None, nrows=None):
         Cleansed EPC datast as dataframe."""
 
     if remove_duplicates:
-        file_path = str(PROJECT_DIR) + config["EST_CLEANSED_EPC_DATA_DEDUPL_PATH"]
+        file_path = str(PROJECT_DIR) + base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH
     else:
-        file_path = str(PROJECT_DIR) + config["EST_CLEANSED_EPC_DATA_PATH"]
+        file_path = str(PROJECT_DIR) + base_config.EST_CLEANSED_EPC_DATA_PATH
 
     # If file does not exist (probably just not unzipped), unzip the data
     if not Path(file_path).is_file():
@@ -413,16 +427,22 @@ def load_preprocessed_epc_data(
         EPC data in the given version."""
 
     version_path_dict = {
-        "raw": "RAW_EPC_DATA_PATH",
-        "preprocessed_dedupl": "PREPROC_EPC_DATA_DEDUPL_PATH",
-        "preprocessed": "PREPROC_EPC_DATA_PATH",
+        "raw": base_config.RAW_EPC_DATA_PATH,
+        "preprocessed_dedupl": base_config.PREPROC_EPC_DATA_DEDUPL_PATH,
+        "preprocessed": base_config.PREPROC_EPC_DATA_PATH,
+    }
+
+    version_path_snapshot_dict = {
+        "raw": base_config.SNAPSHOT_RAW_EPC_DATA_PATH,
+        "preprocessed_dedupl": base_config.SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH,
+        "preprocessed": base_config.base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH,
     }
 
     # Get the respective file path for version
-    file_path = str(PROJECT_DIR) + config[version_path_dict[version]]
+    file_path = str(PROJECT_DIR) + version_path_dict[version]
 
     if snapshot_data:
-        file_path = str(PROJECT_DIR) + config["SNAPSHOT_" + version_path_dict[version]]
+        file_path = str(PROJECT_DIR) + version_path_snapshot_dict[version]
 
     # If file does not exist (likely just not unzipped), unzip the data
     if not Path(file_path).is_file():
@@ -436,7 +456,7 @@ def load_preprocessed_epc_data(
         dtype=dtype,
     )  # , low_memory=low_memory)
 
-    for col in config["parse_dates"]:
+    for col in base_config.parse_dates:
         if col in epc_df.columns:
             epc_df[col] = pd.to_datetime(epc_df[col])
 
