@@ -29,12 +29,12 @@ REL_RAW_SCOTLAND_DATA_ZIP = base_config.RAW_SCOTLAND_DATA_ZIP
 
 REL_RAW_EPC_DATA_PATH = base_config.RAW_EPC_DATA_PATH
 
-ROOT_DATA = base_config.ROOT_DATA_PATH
+ROOT_DATA = Path(base_config.ROOT_DATA_PATH)
 
 
 def load_wales_certificates(
     data_path=ROOT_DATA,
-    rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH_DATA_PATH,
+    rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
     subset=None,
     usecols=None,
     nrows=None,
@@ -66,8 +66,8 @@ def load_wales_certificates(
     EPC_certs : pandas.DateFrame
         England/Wales EPC certificate data for given features."""
 
-    RAW_ENG_WALES_DATA_PATH = data_path + rel_data_path
-    RAW_ENG_WALES_DATA_ZIP = data_path + base_config.RAW_ENG_WALES_DATA_ZIP
+    RAW_ENG_WALES_DATA_PATH = data_path / rel_data_path
+    RAW_ENG_WALES_DATA_ZIP = data_path / base_config.RAW_ENG_WALES_DATA_ZIP
     print(RAW_ENG_WALES_DATA_PATH)
 
     # If sample file does not exist (probably just not unzipped), unzip the data
@@ -435,7 +435,7 @@ def load_preprocessed_epc_data(
     version_path_snapshot_dict = {
         "raw": base_config.SNAPSHOT_RAW_EPC_DATA_PATH,
         "preprocessed_dedupl": base_config.SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH,
-        "preprocessed": base_config.base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH,
+        "preprocessed": base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH,
     }
 
     # Get the respective file path for version
