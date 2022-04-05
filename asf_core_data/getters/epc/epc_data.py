@@ -468,6 +468,8 @@ def get_epc_sample(full_df, sample_size):
 def main():
     """Main function for testing."""
 
+    epc = load_preprocessed_epc_data(version="preprocessed_dedupl")
+
 
 if __name__ == "__main__":
     # Execute only if run as a script
