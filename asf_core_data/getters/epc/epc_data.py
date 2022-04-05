@@ -71,9 +71,10 @@ def load_wales_certificates(
     print(RAW_ENG_WALES_DATA_PATH)
 
     # If sample file does not exist (probably just not unzipped), unzip the data
-    if not Path(
-        RAW_ENG_WALES_DATA_PATH + "domestic-W06000015-Cardiff/certificates.csv"
-    ).is_file():
+    if (
+        not RAW_ENG_WALES_DATA_PATH
+        / "domestic-W06000015-Cardiff/certificates.csv".is_file()
+    ):
         extract_data(base_config.RAW_ENG_WALES_DATA_ZIP)
 
     # Get all directories
@@ -96,7 +97,7 @@ def load_wales_certificates(
     # Only load columns of interest (if given)
     epc_certs = [
         pd.read_csv(
-            RAW_ENG_WALES_DATA_PATH + directory + "/recommendations.csv",
+            RAW_ENG_WALES_DATA_PATH / directory / "/recommendations.csv",
             low_memory=low_memory,
             usecols=usecols,
             nrows=nrows,
