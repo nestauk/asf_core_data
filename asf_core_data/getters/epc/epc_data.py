@@ -21,13 +21,13 @@ from asf_core_data.config import base_config
 print(PROJECT_DIR)
 
 # Get paths
-REL_RAW_ENG_WALES_DATA_PATH = base_config.RAW_ENG_WALES_DATA_PATH
-REL_RAW_SCOTLAND_DATA_PATH = base_config.RAW_SCOTLAND_DATA_PATH
+# EL_RAW_ENG_WALES_DATA_PATH = base_config.RAW_ENG_WALES_DATA_PATH
+# REL_RAW_SCOTLAND_DATA_PATH = base_config.RAW_SCOTLAND_DATA_PATH
 
-REL_RAW_ENG_WALES_DATA_ZIP = base_config.RAW_ENG_WALES_DATA_ZIP
-REL_RAW_SCOTLAND_DATA_ZIP = base_config.RAW_SCOTLAND_DATA_ZIP
+# REL_RAW_ENG_WALES_DATA_ZIP = base_config.RAW_ENG_WALES_DATA_ZIP
+# REL_RAW_SCOTLAND_DATA_ZIP = base_config.RAW_SCOTLAND_DATA_ZIP
 
-REL_RAW_EPC_DATA_PATH = base_config.RAW_EPC_DATA_PATH
+# REL_RAW_EPC_DATA_PATH = base_config.RAW_EPC_DATA_PATH
 
 ROOT_DATA = Path(base_config.ROOT_DATA_PATH)
 
@@ -68,13 +68,11 @@ def load_wales_certificates(
 
     RAW_ENG_WALES_DATA_PATH = data_path / rel_data_path
     RAW_ENG_WALES_DATA_ZIP = data_path / base_config.RAW_ENG_WALES_DATA_ZIP
-    print(RAW_ENG_WALES_DATA_PATH)
 
     # If sample file does not exist (probably just not unzipped), unzip the data
-    if (
-        not RAW_ENG_WALES_DATA_PATH
-        / "domestic-W06000015-Cardiff/certificates.csv".is_file()
-    ):
+    if not (
+        RAW_ENG_WALES_DATA_PATH / "domestic-W06000015-Cardiff/certificates.csv"
+    ).is_file():
         extract_data(base_config.RAW_ENG_WALES_DATA_ZIP)
 
     # Get all directories
@@ -97,7 +95,7 @@ def load_wales_certificates(
     # Only load columns of interest (if given)
     epc_certs = [
         pd.read_csv(
-            RAW_ENG_WALES_DATA_PATH / directory / "/recommendations.csv",
+            RAW_ENG_WALES_DATA_PATH / directory / "recommendations.csv",
             low_memory=low_memory,
             usecols=usecols,
             nrows=nrows,
@@ -137,7 +135,13 @@ def extract_data(file_path):
         print("Done!")
 
 
-def load_scotland_data(usecols=None, nrows=None, low_memory=False):
+def load_scotland_data(
+    data_path=ROOT_DATA,
+    rel_data_path=base_config.RAW_SCOTLAND_DATA_PATH,
+    usecols=None,
+    nrows=None,
+    low_memory=False,
+):
     """Load the Scotland EPC data.
 
     Parameters
@@ -158,6 +162,9 @@ def load_scotland_data(usecols=None, nrows=None, low_memory=False):
     ---------
     EPC_certs : pandas.DateFrame
         Scotland EPC certificate data for given features."""
+
+    RAW_SCOTLAND_DATA_PATH = data_path / rel_data_path
+    RAW_SCOTLAND_DATA_ZIP = data_path / base_config.RAW_ENG_WALES_DATA_ZIP
 
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not [
@@ -206,7 +213,14 @@ def load_scotland_data(usecols=None, nrows=None, low_memory=False):
     return epc_certs
 
 
-def load_wales_england_data(subset=None, usecols=None, nrows=None, low_memory=False):
+def load_wales_england_data(
+    data_path=ROOT_DATA,
+    rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
+    subset=None,
+    usecols=None,
+    nrows=None,
+    low_memory=False,
+):
     """Load the England and/or Wales EPC data.
 
     Parameters
@@ -231,6 +245,9 @@ def load_wales_england_data(subset=None, usecols=None, nrows=None, low_memory=Fa
     ---------
     EPC_certs : pandas.DateFrame
         England/Wales EPC certificate data for given features."""
+
+    RAW_ENG_WALES_DATA_PATH = data_path / rel_data_path
+    RAW_ENG_WALES_DATA_ZIP = data_path / base_config.RAW_ENG_WALES_DATA_ZIP
 
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not Path(
@@ -258,7 +275,7 @@ def load_wales_england_data(subset=None, usecols=None, nrows=None, low_memory=Fa
     # Only load columns of interest (if given)
     epc_certs = [
         pd.read_csv(
-            RAW_ENG_WALES_DATA_PATH + directory + "/certificates.csv",
+            RAW_ENG_WALES_DATA_PATH / directory / "certificates.csv",
             low_memory=low_memory,
             usecols=usecols,
             nrows=nrows,
@@ -275,7 +292,9 @@ def load_wales_england_data(subset=None, usecols=None, nrows=None, low_memory=Fa
     return epc_certs
 
 
-def load_raw_epc_data(subset="GB", usecols=None, nrows=None, low_memory=False):
+def load_raw_epc_data(
+    data_path=ROOT_DATA, subset="GB", usecols=None, nrows=None, low_memory=False
+):
     """Load and return EPC dataset, or specific subset, as pandas dataframe.
 
     Parameters
@@ -304,7 +323,9 @@ def load_raw_epc_data(subset="GB", usecols=None, nrows=None, low_memory=False):
 
     # Get Scotland data
     if subset in ["Scotland", "GB"]:
-        epc_Scotland_df = load_scotland_data(usecols=usecols, nrows=nrows)
+        epc_Scotland_df = load_scotland_data(
+            data_path=data_path, usecols=usecols, nrows=nrows
+        )
         all_epc_df.append(epc_Scotland_df)
 
         if subset == "Scotland":
@@ -313,7 +334,11 @@ def load_raw_epc_data(subset="GB", usecols=None, nrows=None, low_memory=False):
     # Get the Wales/England data
     if subset in ["Wales", "England"]:
         epc_df = load_wales_england_data(
-            subset, usecols=usecols, nrows=nrows, low_memory=low_memory
+            data_path=data_path,
+            subset=subset,
+            usecols=usecols,
+            nrows=nrows,
+            low_memory=low_memory,
         )
         return epc_df
 
@@ -323,7 +348,11 @@ def load_raw_epc_data(subset="GB", usecols=None, nrows=None, low_memory=False):
         for country in ["Wales", "England"]:
 
             epc_df = load_wales_england_data(
-                country, usecols=usecols, nrows=nrows, low_memory=low_memory
+                data_path=data_path,
+                subset=country,
+                usecols=usecols,
+                nrows=nrows,
+                low_memory=low_memory,
             )
             all_epc_df.append(epc_df)
 
@@ -335,7 +364,13 @@ def load_raw_epc_data(subset="GB", usecols=None, nrows=None, low_memory=False):
         raise IOError("'{}' is not a valid subset of the EPC dataset.".format(subset))
 
 
-def load_cleansed_epc(remove_duplicates=True, usecols=None, nrows=None):
+def load_cleansed_epc(
+    data_path=ROOT_DATA,
+    rel_data_path=base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH,
+    remove_duplicates=True,
+    usecols=None,
+    nrows=None,
+):
     """Load the cleansed EPC dataset (provided by EST)
     with the option of excluding/including duplicates.
 
@@ -356,18 +391,48 @@ def load_cleansed_epc(remove_duplicates=True, usecols=None, nrows=None):
     cleansed_epc : pandas.DataFrame
         Cleansed EPC datast as dataframe."""
 
+    EST_CLEANSED_PATH = data_path / rel_data_path
+
     if remove_duplicates:
-        file_path = str(PROJECT_DIR) + base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH
+        if (
+            EST_CLEANSED_PATH
+            != data_path / base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH
+        ):
+            raise Warning(
+                "Make sure you passed the path to the deduplicated EST cleansed version, as it cannot be confirmed when passing custom paths."
+            )
+
+        if EST_CLEANSED_PATH == data_path / base_config.EST_CLEANSED_EPC_DATA_PATH:
+            EST_CLEANSED_PATH = (
+                data_path / base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH
+            )
+            raise Warning(
+                "Path was corrected from {} to {} since remove_duplicates is set to True.".format(
+                    base_config.EST_CLEANSED_EPC_DATA_PATH,
+                    base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH,
+                )
+            )
+
     else:
-        file_path = str(PROJECT_DIR) + base_config.EST_CLEANSED_EPC_DATA_PATH
+        if (
+            EST_CLEANSED_PATH
+            == data_path / base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH
+        ):
+            EST_CLEANSED_PATH = data_path / base_config.EST_CLEANSED_EPC_DATA_PATH
+            raise Warning(
+                "Path was corrected from {} to {} since remove_duplicates is set to False.".format(
+                    base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH,
+                    base_config.EST_CLEANSED_EPC_DATA_PATH,
+                )
+            )
 
     # If file does not exist (probably just not unzipped), unzip the data
-    if not Path(file_path).is_file():
-        extract_data(file_path + ".zip")
+    if not EST_CLEANSED_PATH.is_file():
+        extract_data(EST_CLEANSED_PATH / ".zip")
 
     print("Loading cleansed EPC data... This will take a moment.")
     cleansed_epc = pd.read_csv(
-        file_path, usecols=usecols, nrows=nrows, low_memory=False
+        EST_CLEANSED_PATH, usecols=usecols, nrows=nrows, low_memory=False
     )
 
     # Drop first column
@@ -376,12 +441,13 @@ def load_cleansed_epc(remove_duplicates=True, usecols=None, nrows=None):
 
     # Add HP feature
     cleansed_epc["HEAT_PUMP"] = cleansed_epc.FINAL_HEATING_SYSTEM == "Heat pump"
-    print("Done!")
 
     return cleansed_epc
 
 
 def load_preprocessed_epc_data(
+    data_path=ROOT_DATA,
+    rel_data_path=base_config.RAW_EPC_DATA_PATH.parent,
     version="preprocessed_dedupl",
     usecols=None,
     nrows=None,
@@ -428,30 +494,29 @@ def load_preprocessed_epc_data(
         EPC data in the given version."""
 
     version_path_dict = {
-        "raw": base_config.RAW_EPC_DATA_PATH,
-        "preprocessed_dedupl": base_config.PREPROC_EPC_DATA_DEDUPL_PATH,
-        "preprocessed": base_config.PREPROC_EPC_DATA_PATH,
+        "raw": base_config.RAW_EPC_DATA_PATH.name,
+        "preprocessed_dedupl": base_config.PREPROC_EPC_DATA_DEDUPL_PATH.name,
+        "preprocessed": base_config.PREPROC_EPC_DATA_PATH.name,
     }
 
     version_path_snapshot_dict = {
-        "raw": base_config.SNAPSHOT_RAW_EPC_DATA_PATH,
-        "preprocessed_dedupl": base_config.SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH,
-        "preprocessed": base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH,
+        "raw": base_config.SNAPSHOT_RAW_EPC_DATA_PATH.name,
+        "preprocessed_dedupl": base_config.SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH.name,
+        "preprocessed": base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH.name,
     }
 
-    # Get the respective file path for version
-    file_path = str(PROJECT_DIR) + version_path_dict[version]
+    EPC_DATA_PATH = data_path / rel_data_path / version_path_dict[version]
 
     if snapshot_data:
-        file_path = str(PROJECT_DIR) + version_path_snapshot_dict[version]
+        EPC_DATA_PATH = data_path / rel_data_path / version_path_snapshot_dict[version]
 
     # If file does not exist (likely just not unzipped), unzip the data
-    if not Path(file_path).is_file():
-        extract_data(file_path + ".zip")
+    if not Path(EPC_DATA_PATH).is_file():
+        extract_data(EPC_DATA_PATH + ".zip")
 
     # Load  data
     epc_df = pd.read_csv(
-        file_path,
+        EPC_DATA_PATH,
         usecols=usecols,
         nrows=nrows,
         dtype=dtype,

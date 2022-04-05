@@ -6,46 +6,48 @@ BATCH = "Q4_2021"
 
 ROOT_DATA_PATH = "."
 
-EST_CLEANSED_EPC_DATA_DEDUPL_PATH = "/inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
-EST_CLEANSED_EPC_DATA_DEDUPL_PATH_ZIP = "/inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv.zip"
+EST_CLEANSED_EPC_DATA_DEDUPL_PATH = "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
+EST_CLEANSED_EPC_DATA_DEDUPL_PATH_ZIP = "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv.zip"
 
 EST_CLEANSED_EPC_DATA_PATH = (
-    "/inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed.csv"
+    "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed.csv"
 )
 EST_CLEANSED_EPC_DATA_PATH_ZIP = (
-    "/inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed.csv.zip"
+    "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed.csv.zip"
 )
 
-RAW_EPC_DATA_PATH = "/outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv"
-PREPROC_EPC_DATA_DEDUPL_PATH = "/outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
+RAW_EPC_DATA_PATH = "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv"
+PREPROC_EPC_DATA_DEDUPL_PATH = "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
 PREPROC_EPC_DATA_PATH = (
-    "/outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed.csv"
+    "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed.csv"
 )
 
-SNAPSHOT_RAW_EPC_DATA_PATH = "/inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv"
-SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH = "/inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
+SNAPSHOT_RAW_EPC_DATA_PATH = "inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv"
+SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH = (
+    "inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
+)
 SNAPSHOT_PREPROC_EPC_DATA_PATH = (
-    "/inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed.csv"
+    "//EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed.csv"
 )
 
 RAW_ENG_WALES_DATA_ZIP = (
-    "/inputs/data/EPC/raw_data/England_Wales/all-domestic-certificates.zip"
+    "inputs/data/EPC/raw_data/England_Wales/all-domestic-certificates.zip"
 )
-RAW_SCOTLAND_DATA_ZIP = "/inputs/data/EPC/raw_data/Scotland/D_EPC_data.zip"
+RAW_SCOTLAND_DATA_ZIP = "inputs/data/EPC/raw_data/Scotland/D_EPC_data.zip"
 
-RAW_ENG_WALES_DATA_PATH = "/inputs/data/EPC/raw_data/England_Wales/"
-RAW_SCOTLAND_DATA_PATH = "/inputs/data/EPC/raw_data/Scotland/"
+RAW_ENG_WALES_DATA_PATH = "inputs/data/EPC/raw_data/England_Wales/"
+RAW_SCOTLAND_DATA_PATH = "inputs/data/EPC/raw_data/Scotland/"
 
-IMD_ENGLAND_PATH = "/inputs/data/utils/IMD/England_IMD.csv"
-IMD_WALES_PATH = "/inputs/data/utils/IMD/Wales_IMD.csv"
-IMD_SCOTLAND_PATH = "/inputs/data/utils/IMD/Scotland_IMD.csv"
+IMD_ENGLAND_PATH = "inputs/data/utils/IMD/England_IMD.csv"
+IMD_WALES_PATH = "inputs/data/utils/IMD/Wales_IMD.csv"
+IMD_SCOTLAND_PATH = "inputs/data/utils/IMD/Scotland_IMD.csv"
 
-POSTCODE_TO_COORD_PATH = "/inputs/data/utils/geospatial/ukpostcodes_to_coordindates.csv"
-MERGED_MCS_EPC = "/inputs/MCS_data/mcs_epc.csv"
+POSTCODE_TO_COORD_PATH = "inputs/data/utils/geospatial/ukpostcodes_to_coordindates.csv"
+MERGED_MCS_EPC = "inputs/MCS_data/mcs_epc.csv"
 
-SUPERVISED_MODEL_OUTPUT = "/outputs/supervised_model/"
-SUPERVISED_MODEL_FIG_PATH = "/outputs/supervised_model/figures/"
-HEAT_PUMP_COSTS_FIG_PATH = "/outputs/figures/hp_costs/"
+SUPERVISED_MODEL_OUTPUT = "outputs/supervised_model/"
+SUPERVISED_MODEL_FIG_PATH = "outputs/supervised_model/figures/"
+HEAT_PUMP_COSTS_FIG_PATH = "outputs/figures/hp_costs/"
 
 EPC_FEAT_SELECTION = [
     "ADDRESS1",
