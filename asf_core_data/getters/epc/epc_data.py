@@ -125,7 +125,7 @@ def extract_data(file_path):
         raise IOError("The file '{}' does not exist.".format(file_path))
 
     # Get directory
-    zip_dir = os.path.dirname(file_path) + "/"
+    zip_dir = file_path.parent
 
     # Unzip the data
     with ZipFile(file_path, "r") as zip:
@@ -186,7 +186,7 @@ def load_scotland_data(
 
     epc_certs = [
         pd.read_csv(
-            RAW_SCOTLAND_DATA_PATH + file,
+            RAW_SCOTLAND_DATA_PATH / file,
             low_memory=low_memory,
             usecols=usecols,
             nrows=nrows,
@@ -251,7 +251,7 @@ def load_wales_england_data(
 
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not Path(
-        RAW_ENG_WALES_DATA_PATH + "domestic-W06000015-Cardiff/certificates.csv"
+        RAW_ENG_WALES_DATA_PATH / "domestic-W06000015-Cardiff/certificates.csv"
     ).is_file():
         extract_data(RAW_ENG_WALES_DATA_ZIP)
 
@@ -447,7 +447,7 @@ def load_cleansed_epc(
 
 def load_preprocessed_epc_data(
     data_path=ROOT_DATA,
-    rel_data_path=base_config.RAW_EPC_DATA_PATH.parent,
+    rel_data_path=(base_config.RAW_EPC_DATA_PATH).parent,
     version="preprocessed_dedupl",
     usecols=None,
     nrows=None,
@@ -494,15 +494,17 @@ def load_preprocessed_epc_data(
         EPC data in the given version."""
 
     version_path_dict = {
-        "raw": base_config.RAW_EPC_DATA_PATH.name,
-        "preprocessed_dedupl": base_config.PREPROC_EPC_DATA_DEDUPL_PATH.name,
-        "preprocessed": base_config.PREPROC_EPC_DATA_PATH.name,
+        "raw": Path(base_config.RAW_EPC_DATA_PATH).name,
+        "preprocessed_dedupl": Path(base_config.PREPROC_EPC_DATA_DEDUPL_PATH).name,
+        "preprocessed": Path(base_config.PREPROC_EPC_DATA_PATH).name,
     }
 
     version_path_snapshot_dict = {
-        "raw": base_config.SNAPSHOT_RAW_EPC_DATA_PATH.name,
-        "preprocessed_dedupl": base_config.SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH.name,
-        "preprocessed": base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH.name,
+        "raw": Path(base_config.SNAPSHOT_RAW_EPC_DATA_PATH).name,
+        "preprocessed_dedupl": Path(
+            base_config.SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH
+        ).name,
+        "preprocessed": Path(base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH).name,
     }
 
     EPC_DATA_PATH = data_path / rel_data_path / version_path_dict[version]
@@ -512,7 +514,7 @@ def load_preprocessed_epc_data(
 
     # If file does not exist (likely just not unzipped), unzip the data
     if not Path(EPC_DATA_PATH).is_file():
-        extract_data(EPC_DATA_PATH + ".zip")
+        extract_data(EPC_DATA_PATH.parent / (EPC_DATA_PATH.name + ".zip"))
 
     # Load  data
     epc_df = pd.read_csv(
