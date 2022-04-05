@@ -181,15 +181,15 @@ def form_matching(df1, df2):
     return matching
 
 
-def join_mcs_epc_data(
+def join_prepared_mcs_epc_data(
     hps=None,
     epcs=None,
-    save=True,
+    # save=True,
     all_records=False,
-    drop_epc_address=False,
+    drop_epc_address=True,
     verbose=True,
 ):
-    """Join MCS and EPC data.
+    """Join prepared MCS and EPC data.
     Parameters
     ----------
     hps : pandas.Dataframe
@@ -213,20 +213,6 @@ def join_mcs_epc_data(
     ----------
     merged : pandas.Dataframe
         Dataframe containing merged MCS and EPC records."""
-
-    if hps is None:
-        print("Preparing HP data...")
-        hps = get_processed_mcs_data()
-        hps = prepare_hps(hps)
-
-    if epcs is None:
-        epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
-        print("Preparing EPC data...")
-        fields_of_interest = address_fields + characteristic_fields
-        epcs = load_preprocessed_epc_data(
-            version=epc_version, usecols=fields_of_interest, low_memory=True
-        )
-        epcs = prepare_epcs(epcs)
 
     print("Forming a matching...")
     matching = form_matching(df1=hps, df2=epcs)
@@ -339,10 +325,34 @@ def join_mcs_epc_data(
 
             print(merged.shape)
 
-    if save:
-        merged.to_csv(str(PROJECT_DIR) + merged_path)
+    # if save:
+    #     merged.to_csv(str(PROJECT_DIR) + merged_path)
 
     return merged
+
+
+def join_mcs_epc_data(hps=None, epcs=None, all_records=False):
+
+    if hps is None:
+        print("Getting HP data...")
+        hps = get_processed_mcs_data()
+
+    if epcs is None:
+        epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
+        print("Getting EPC data...")
+        fields_of_interest = address_fields + characteristic_fields
+        epcs = load_preprocessed_epc_data(
+            version=epc_version, usecols=fields_of_interest, low_memory=True
+        )
+
+    prepared_hps = prepare_hps(hps)
+    prepared_epcs = prepare_epcs(epcs)
+
+    joined = join_prepared_mcs_epc_data(
+        prepared_hps, prepared_epcs, all_records=all_records
+    )
+
+    return joined
 
 
 def select_most_relevant_epc(data):

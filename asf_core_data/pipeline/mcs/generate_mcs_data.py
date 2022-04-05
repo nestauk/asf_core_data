@@ -29,7 +29,23 @@ keyword_to_path_dict = {
 
 
 def generate_processed_mcs_installations(epc_version="none"):
+    """Generates processed version of MCS installation data (with optional
+    joined EPC data) from the raw data.
 
+    Args:
+        epc_version (str, optional): One of "none", "full", "newest" or "most_relevant".
+        "none" returns just installation data, "full" returns installation data with
+        each property's entire EPC history attached, "newest" selects the EPC
+        corresponding to the most recent inspection and "most_relevant" selects the
+        most recent EPC from before the HP installation if one exists or the earliest EPC
+        from after the HP installation otherwise. Defaults to "none".
+
+    Raises:
+        ValueError: if epc_version is not one of the specified values.
+
+    Returns:
+        DataFrame: installation (+ EPC) data.
+    """
     if epc_version not in ["none", "full", "newest", "most_relevant"]:
         raise ValueError(
             "epc_version should be one of 'none', 'full', 'newest' or 'most_relevant'"
@@ -54,20 +70,38 @@ def generate_processed_mcs_installations(epc_version="none"):
 
 
 def get_mcs_installations(epc_version="none", refresh=False):
+    """Gets MCS (+ EPC) data. Tries to get the most recent version
+    from S3 if one exists. Otherwise generates the specified data from
+    the raw data.
 
+    Args:
+        epc_version (str, optional): One of "none", "full", "newest" or "most_relevant".
+            "none" returns just installation data, "full" returns installation data with
+            each property's entire EPC history attached, "newest" selects the EPC
+            corresponding to the most recent inspection and "most_relevant" selects the
+            most recent EPC from before the HP installation if one exists or the earliest EPC
+            from after the HP installation otherwise. Defaults to "none".
+        refresh (bool, optional): If True, skips the S3 check and generates the processed
+            data from raw data. Defaults to False.
+
+    Returns:
+        DataFrame: installation (+ EPC) data.
+    """
     if not refresh:
         bucket = s3.Bucket(bucket_name)
         folder = "outputs/MCS/"
-        file_list = [object.key for object in bucket.objects.filter(Prefix=folder)]
+        file_list = [
+            ("/" + object.key) for object in bucket.objects.filter(Prefix=folder)
+        ]  # HACK?
         file_prefix = keyword_to_path_dict[epc_version]
         matches = [
             filename for filename in file_list if filename.startswith(file_prefix)
         ]
         if len(matches) > 0:
-            latest_version = max(matches) + ".csv"
+            latest_version = max(matches)
             print("Loading", latest_version, "from S3")
             mcs_installations = load_s3_data(
-                s3, bucket_name, keyword_to_path_dict[epc_version]
+                s3, bucket_name, latest_version[1:]  # HACK!
             )
             return mcs_installations
         else:
@@ -80,9 +114,14 @@ def get_mcs_installations(epc_version="none", refresh=False):
 
 
 def generate_and_save_mcs():
+    """Generates and saves the different versions of the MCS-EPC data to S3.
+    Different versions are a) just installation data, b) installation data with
+    each property's entire EPC history attached, c) with the EPC corresponding
+    to the most recent inspection and d) with the most recent EPC from before
+    the HP installation if one exists or the earliest EPC from after the HP
+    installation otherwise.
+    """
     today = date.today().strftime("%y%m%d")
-
-    # Get all four versions and save them in S3
 
     no_epc_path, full_epc_path, newest_epc_path, most_relevant_epc_path = [
         (path_stem + "_" + today + ".csv")
