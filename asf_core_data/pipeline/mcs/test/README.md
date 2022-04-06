@@ -1,6 +1,6 @@
-### MCS: within dataset and between dataset testing
+# MCS: within dataset and between dataset testing
 
-Welcome to the testing pipeline of MCS installations and installers data!
+Welcome to the testing pipeline of MCS installations and installers data :nerd_face:!
 
 #### Set Up
 
