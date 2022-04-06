@@ -122,7 +122,7 @@ if __name__ == "__main__":
         "-old_df",
         "--old_df",
         nargs="?",
-        default="inputs/MCS/mcs_heat_pumps_sept_21.xlsx",
+        default="inputs/MCS/mcs_heat_pumps.xlsx",
         help="directory of old_installations_df in s3",
     )
     parser.add_argument(
