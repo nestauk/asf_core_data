@@ -17,24 +17,6 @@ MAX_COST = config["MCS_MAX_COST"]
 CLUSTER_TIME_INTERVAL = config["MCS_CLUSTER_TIME_INTERVAL"]
 
 
-def remove_old_records(hps):
-    """Remove records that are duplicated or have a newer version.
-    Removes duplicates, groups by address, then only takes the
-    record with highest version.
-
-    Args:
-        hps (Dataframe): HP installation records.
-
-    Returns:
-        Dataframe: HP installation records without old records.
-    """
-    most_recent_indices = hps.groupby(["address_1", "address_2", "address_3"])[
-        "version"
-    ].idxmax()
-
-    return hps.iloc[most_recent_indices].reset_index(drop=True)
-
-
 def add_columns(hps):
     """Adds product_id, product_name, manufacturer, flow_temp, scop,
     rhi and year columns to HP installation records.
@@ -83,13 +65,15 @@ def mask_outliers(hps, max_cost=MAX_COST):
     Returns:
         DataFrame: HP installations with masked outliers.
     """
-    hps["cost"] = hps["cost"].mask((hps["cost"] == 0) | (hps["cost"] > max_cost))
+    hps["cost"] = hps["cost"].mask((hps["cost"] <= 0) | (hps["cost"] > max_cost))
 
     hps["flow_temp"] = pd.to_numeric(hps["flow_temp"])
     hps["flow_temp"] = hps["flow_temp"].mask(hps["flow_temp"] <= 0)
 
     hps["scop"] = pd.to_numeric(hps["scop"].mask(hps["scop"] == "Unspecified"))
     hps["scop"] = hps["scop"].mask(hps["scop"] == 0)
+
+    hps["capacity"] = hps["capacity"].mask(hps["capacity"] < 0)
 
     return hps
 
@@ -130,7 +114,6 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
 def get_processed_mcs_data(save=True):
     data = get_raw_mcs_data()
 
-    data = remove_old_records(data)
     data = add_columns(data)
     data = mask_outliers(data)
     data = identify_clusters(data)
