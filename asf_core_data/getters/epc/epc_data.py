@@ -18,8 +18,6 @@ from asf_core_data.config import base_config
 # Load config file
 # config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
-print(PROJECT_DIR)
-
 # Get paths
 # EL_RAW_ENG_WALES_DATA_PATH = base_config.RAW_ENG_WALES_DATA_PATH
 # REL_RAW_SCOTLAND_DATA_PATH = base_config.RAW_SCOTLAND_DATA_PATH
@@ -29,11 +27,9 @@ print(PROJECT_DIR)
 
 # REL_RAW_EPC_DATA_PATH = base_config.RAW_EPC_DATA_PATH
 
-ROOT_DATA = Path(base_config.ROOT_DATA_PATH)
-
 
 def load_wales_certificates(
-    data_path=ROOT_DATA,
+    data_path=base_config.ROOT_DATA,
     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
     subset=None,
     usecols=None,
@@ -136,7 +132,7 @@ def extract_data(file_path):
 
 
 def load_scotland_data(
-    data_path=ROOT_DATA,
+    data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_SCOTLAND_DATA_PATH,
     usecols=None,
     nrows=None,
@@ -163,8 +159,8 @@ def load_scotland_data(
     EPC_certs : pandas.DateFrame
         Scotland EPC certificate data for given features."""
 
-    RAW_SCOTLAND_DATA_PATH = data_path / rel_data_path
-    RAW_SCOTLAND_DATA_ZIP = data_path / base_config.RAW_ENG_WALES_DATA_ZIP
+    RAW_SCOTLAND_DATA_PATH = Path(data_path) / rel_data_path
+    RAW_SCOTLAND_DATA_ZIP = Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP
 
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not [
@@ -214,7 +210,7 @@ def load_scotland_data(
 
 
 def load_wales_england_data(
-    data_path=ROOT_DATA,
+    data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
     subset=None,
     usecols=None,
@@ -246,8 +242,8 @@ def load_wales_england_data(
     EPC_certs : pandas.DateFrame
         England/Wales EPC certificate data for given features."""
 
-    RAW_ENG_WALES_DATA_PATH = data_path / rel_data_path
-    RAW_ENG_WALES_DATA_ZIP = data_path / base_config.RAW_ENG_WALES_DATA_ZIP
+    RAW_ENG_WALES_DATA_PATH = Path(data_path) / rel_data_path
+    RAW_ENG_WALES_DATA_ZIP = Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP
 
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not Path(
@@ -293,7 +289,11 @@ def load_wales_england_data(
 
 
 def load_raw_epc_data(
-    data_path=ROOT_DATA, subset="GB", usecols=None, nrows=None, low_memory=False
+    data_path=base_config.ROOT_DATA_PATH,
+    subset="GB",
+    usecols=None,
+    nrows=None,
+    low_memory=False,
 ):
     """Load and return EPC dataset, or specific subset, as pandas dataframe.
 
@@ -365,7 +365,7 @@ def load_raw_epc_data(
 
 
 def load_cleansed_epc(
-    data_path=ROOT_DATA,
+    data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH,
     remove_duplicates=True,
     usecols=None,
@@ -446,8 +446,8 @@ def load_cleansed_epc(
 
 
 def load_preprocessed_epc_data(
-    data_path=ROOT_DATA,
-    rel_data_path=(base_config.RAW_EPC_DATA_PATH).parent,
+    data_path=base_config.ROOT_DATA_PATH,
+    rel_data_path=base_config.RAW_EPC_DATA_PATH.parent,
     version="preprocessed_dedupl",
     usecols=None,
     nrows=None,
@@ -494,26 +494,26 @@ def load_preprocessed_epc_data(
         EPC data in the given version."""
 
     version_path_dict = {
-        "raw": Path(base_config.RAW_EPC_DATA_PATH).name,
-        "preprocessed_dedupl": Path(base_config.PREPROC_EPC_DATA_DEDUPL_PATH).name,
-        "preprocessed": Path(base_config.PREPROC_EPC_DATA_PATH).name,
+        "raw": base_config.RAW_EPC_DATA_PATH.name,
+        "preprocessed_dedupl": base_config.PREPROC_EPC_DATA_DEDUPL_PATH.name,
+        "preprocessed": base_config.PREPROC_EPC_DATA_PATH.name,
     }
 
     version_path_snapshot_dict = {
-        "raw": Path(base_config.SNAPSHOT_RAW_EPC_DATA_PATH).name,
-        "preprocessed_dedupl": Path(
-            base_config.SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH
-        ).name,
-        "preprocessed": Path(base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH).name,
+        "raw": base_config.SNAPSHOT_RAW_EPC_DATA_PATH.name,
+        "preprocessed_dedupl": base_config.SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH.name,
+        "preprocessed": base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH.name,
     }
 
-    EPC_DATA_PATH = data_path / rel_data_path / version_path_dict[version]
+    EPC_DATA_PATH = Path(data_path) / rel_data_path / version_path_dict[version]
 
     if snapshot_data:
-        EPC_DATA_PATH = data_path / rel_data_path / version_path_snapshot_dict[version]
+        EPC_DATA_PATH = (
+            Path(data_path) / rel_data_path / version_path_snapshot_dict[version]
+        )
 
     # If file does not exist (likely just not unzipped), unzip the data
-    if not Path(EPC_DATA_PATH).is_file():
+    if not EPC_DATA_PATH.is_file():
         extract_data(EPC_DATA_PATH.parent / (EPC_DATA_PATH.name + ".zip"))
 
     # Load  data

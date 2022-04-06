@@ -1,3 +1,5 @@
+from asf_core_data import Path
+
 MCS_RAW_S3_PATH = "inputs/MCS/mcs_heat_pumps.xlsx"
 MCS_RAW_LOCAL_PATH = "/inputs/data/MCS/mcs_heat_pumps.xlsx"
 
@@ -6,48 +8,62 @@ BATCH = "Q4_2021"
 
 ROOT_DATA_PATH = "."
 
-EST_CLEANSED_EPC_DATA_DEDUPL_PATH = "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
-EST_CLEANSED_EPC_DATA_DEDUPL_PATH_ZIP = "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv.zip"
+EST_CLEANSED_EPC_DATA_DEDUPL_PATH = Path(
+    "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
+)
+EST_CLEANSED_EPC_DATA_DEDUPL_PATH_ZIP = Path(
+    "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv.zip"
+)
 
-EST_CLEANSED_EPC_DATA_PATH = (
+EST_CLEANSED_EPC_DATA_PATH = Path(
     "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed.csv"
 )
-EST_CLEANSED_EPC_DATA_PATH_ZIP = (
+EST_CLEANSED_EPC_DATA_PATH_ZIP = Path(
     "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed.csv.zip"
 )
 
-RAW_EPC_DATA_PATH = "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv"
-PREPROC_EPC_DATA_DEDUPL_PATH = "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
-PREPROC_EPC_DATA_PATH = (
+RAW_EPC_DATA_PATH = Path("outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv")
+PREPROC_EPC_DATA_DEDUPL_PATH = Path(
+    "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
+)
+PREPROC_EPC_DATA_PATH = Path(
     "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed.csv"
 )
 
-SNAPSHOT_RAW_EPC_DATA_PATH = "inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv"
-SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH = (
+PROCESSED_EPC_DATA_PATH = PREPROC_EPC_DATA_PATH = Path(
+    "outputs/EPC_data/preprocessed_data/Q4_2021/"
+)
+
+SNAPSHOT_RAW_EPC_DATA_PATH = Path(
+    "inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv"
+)
+SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH = Path(
     "inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
 )
-SNAPSHOT_PREPROC_EPC_DATA_PATH = (
+SNAPSHOT_PREPROC_EPC_DATA_PATH = Path(
     "//EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed.csv"
 )
 
-RAW_ENG_WALES_DATA_ZIP = (
+RAW_ENG_WALES_DATA_ZIP = Path(
     "inputs/data/EPC/raw_data/England_Wales/all-domestic-certificates.zip"
 )
-RAW_SCOTLAND_DATA_ZIP = "inputs/data/EPC/raw_data/Scotland/D_EPC_data.zip"
+RAW_SCOTLAND_DATA_ZIP = Path("inputs/data/EPC/raw_data/Scotland/D_EPC_data.zip")
 
-RAW_ENG_WALES_DATA_PATH = "inputs/data/EPC/raw_data/England_Wales/"
-RAW_SCOTLAND_DATA_PATH = "inputs/data/EPC/raw_data/Scotland/"
+RAW_ENG_WALES_DATA_PATH = Path("inputs/data/EPC/raw_data/England_Wales/")
+RAW_SCOTLAND_DATA_PATH = Path("inputs/data/EPC/raw_data/Scotland/")
 
-IMD_ENGLAND_PATH = "inputs/data/utils/IMD/England_IMD.csv"
-IMD_WALES_PATH = "inputs/data/utils/IMD/Wales_IMD.csv"
-IMD_SCOTLAND_PATH = "inputs/data/utils/IMD/Scotland_IMD.csv"
+IMD_ENGLAND_PATH = Path("inputs/data/utils/IMD/England_IMD.csv")
+IMD_WALES_PATH = Path("inputs/data/utils/IMD/Wales_IMD.csv")
+IMD_SCOTLAND_PATH = Path("inputs/data/utils/IMD/Scotland_IMD.csv")
 
-POSTCODE_TO_COORD_PATH = "inputs/data/utils/geospatial/ukpostcodes_to_coordindates.csv"
-MERGED_MCS_EPC = "inputs/MCS_data/mcs_epc.csv"
+POSTCODE_TO_COORD_PATH = Path(
+    "inputs/data/utils/geospatial/ukpostcodes_to_coordindates.csv"
+)
+MERGED_MCS_EPC = Path("inputs/MCS_data/mcs_epc.csv")
 
-SUPERVISED_MODEL_OUTPUT = "outputs/supervised_model/"
-SUPERVISED_MODEL_FIG_PATH = "outputs/supervised_model/figures/"
-HEAT_PUMP_COSTS_FIG_PATH = "outputs/figures/hp_costs/"
+SUPERVISED_MODEL_OUTPUT = Path("outputs/supervised_model/")
+SUPERVISED_MODEL_FIG_PATH = Path("outputs/supervised_model/figures/")
+HEAT_PUMP_COSTS_FIG_PATH = Path("outputs/figures/hp_costs/")
 
 EPC_FEAT_SELECTION = [
     "ADDRESS1",
@@ -221,11 +237,11 @@ dtypes = {
     "DIFF_POT_ENERGY_RATING": float,
 }
 
-MCS_HP_PATH = "/inputs/MCS_data/mcs_heat_pumps.xlsx"
-MCS_DOMESTIC_HP_PATH = "/outputs/mcs_domestic_hps.csv"
-INFLATION_PATH = "/inputs/MCS_data/inflation.csv"
+MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
+MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
+INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
 MCS_EPC_MATCHING_PARAMETER = 0.7
-MCS_EPC_MERGED_PATH = "/outputs/mcs_epc.csv"
+MCS_EPC_MERGED_PATH = Path("/outputs/mcs_epc.csv")
 MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 parse_dates = [

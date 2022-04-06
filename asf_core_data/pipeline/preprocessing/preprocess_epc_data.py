@@ -12,6 +12,7 @@ from asf_core_data.pipeline.preprocessing import (
     data_cleaning,
 )
 from asf_core_data.getters.epc import epc_data
+from asf_core_data.config import base_config
 
 # ----------------------------------------------------------------------------------
 
@@ -23,10 +24,13 @@ RAW_EPC_DATA_PATH = str(PROJECT_DIR) + config["RAW_EPC_DATA_PATH"]
 PREPROC_EPC_DATA_PATH = str(PROJECT_DIR) + config["PREPROC_EPC_DATA_PATH"]
 PREPROC_EPC_DATA_DEDUPL_PATH = str(PROJECT_DIR) + config["PREPROC_EPC_DATA_DEDUPL_PATH"]
 
-EPC_FEAT_SELECTION = config["EPC_FEAT_SELECTION"]
 
-
-def preprocess_data(df, remove_duplicates=True, save_data=True, verbose=True):
+def preprocess_data(
+    df,
+    remove_duplicates=True,
+    save_data=base_config.PREPROC_EPC_DATA_PATH,
+    verbose=True,
+):
     """Preprocess the raw EPC data by cleaning it and removing duplications.
     The data at the different processing steps can be saved.
 
@@ -64,9 +68,11 @@ def preprocess_data(df, remove_duplicates=True, save_data=True, verbose=True):
     # Raw data
     # --------------------------------
 
-    if save_data:
+    if save_data is not None:
+        file_path = Path(save_data) / base_config.RAW_EPC_DATA_PATH.name
+        print("Saving to raw data to {}".format(file_path))
         # Save unaltered_version
-        df.to_csv(RAW_EPC_DATA_PATH, index=False)
+        df.to_csv(save_data / base_config.RAW_EPC_DATA_PATH.name, index=False)
 
     processing_steps = []
     processing_steps.append(("Original data", df.shape[0], df.shape[1]))
@@ -81,9 +87,11 @@ def preprocess_data(df, remove_duplicates=True, save_data=True, verbose=True):
     df = feature_engineering.get_additional_features(df)
     processing_steps.append(("After adding features", df.shape[0], df.shape[1]))
 
-    if save_data:
+    if save_data is not None:
+        file_path = Path(save_data) / base_config.PREPROC_EPC_DATA_PATH.name
+        print("Saving to preprocessed data to {}".format(file_path))
         # Save unaltered_version
-        df.to_csv(PREPROC_EPC_DATA_PATH, index=False)
+        df.to_csv(file_path, index=False)
 
     # --------------------------------
     # Deduplicated data
@@ -97,9 +105,14 @@ def preprocess_data(df, remove_duplicates=True, save_data=True, verbose=True):
 
         processing_steps.append(("After removing duplicates", df.shape[0], df.shape[1]))
 
-        if save_data:
+        if save_data is not None:
+            file_path = Path(save_data) / base_config.PREPROC_EPC_DATA_DEDUPL_PATH.name
+            print(
+                "Saving to preprocessed and deduplicated data to {}".format(file_path)
+            )
+
             # Save unaltered_version
-            df.to_csv(PREPROC_EPC_DATA_DEDUPL_PATH, index=False)
+            df.to_csv(file_path, index=False)
 
     # --------------------------------
     # Print stats
@@ -115,10 +128,10 @@ def preprocess_data(df, remove_duplicates=True, save_data=True, verbose=True):
 
 def load_and_preprocess_epc_data(
     subset="GB",
-    usecols=EPC_FEAT_SELECTION,
+    usecols=base_config.EPC_FEAT_SELECTION,
     nrows=None,
     remove_duplicates=True,
-    save_data=True,
+    save_data=base_config.PREPROC_EPC_DATA_PATH,
 ):
     """Load and preprocess the EPC data.
 
@@ -150,10 +163,16 @@ def load_and_preprocess_epc_data(
     # Do not save/overwrite the preprocessed data when not loading entire GB dataset
     # in order to prevent confusion.
     if subset != "GB":
-        print(
-            "The preprocessed data will be returned but not be written to file. Change subset to 'GB' or save processed data manually."
+        raise Warning(
+            "Careful! You're not lodaing the complete GB dataset. Are you sure you would like to save the output to '{}'?".format(
+                save_data
+            )
         )
-        save_data = False
+        warning_input = input("Save to this directory? [y]/n")
+        if warning_input.lower in ["", "y", "yes"]:
+            pass
+        else:
+            save_data = None
 
     epc_df = epc_data.load_raw_epc_data(subset=subset, usecols=usecols, nrows=nrows)
     epc_df = preprocess_data(
@@ -172,7 +191,7 @@ def main():
 
     print("Loading and preprocessing EPC data... This will take a while.\n")
     epc_df = load_and_preprocess_epc_data(
-        usecols=EPC_FEAT_SELECTION
+        usecols=base_config.EPC_FEAT_SELECTION
         + [
             "SOLAR_WATER_HEATING_FLAG",
             "FLOOR_HEIGHT",
@@ -191,6 +210,7 @@ def main():
             #  "LMK_KEY",
         ],
         nrows=None,
+        save_data=base_config.PREPROC_EPC_DATA_PATH,
     )
 
     end_time = time.time()
