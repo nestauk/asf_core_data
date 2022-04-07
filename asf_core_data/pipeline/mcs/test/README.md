@@ -21,7 +21,7 @@ To run bash script in activated conda environment, `bash mcs_test.sh`.
 
 #### To Dos
 
-1. Within testing of latest installations data;
+1. ~~Within testing of latest installations data;~~
 2. Between dataset testing of latest installer data and previous installer data;
 3. Schedule bash script for quarterly data dumps;
 4. Use pydrive2 to download data rather than gdown.
