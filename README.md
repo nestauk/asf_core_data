@@ -219,7 +219,7 @@ The MCS **installations** dataset contains one record for each MCS certificate. 
   - characteristics of the installation: commissioning date, overall cost, installer name, whether or not the installation is eligible for RHI
   - characteristics of the certificate: version number, certification date
 
-For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing).
+For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing). Further information about the fields included in this dataset can be found [here](https://docs.google.com/spreadsheets/d/1XaGDblbCIBTkStH3_RE7d6qzzKAWghRf/edit#gid=1260528248). (Access to these documents is provided only to Nesta employees)
 
 ### Installers <a name="mcs_installers"></a>
   
