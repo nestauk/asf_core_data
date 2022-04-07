@@ -207,12 +207,15 @@ Below we describe the necessary steps to download and update the data. Don't wor
 
 The MCS datasets contain information on MCS-certified heat pump **installations** and **installers**. These datasets are proprietary and cannot be shared outside of Nesta.
   
-The MCS **installations** dataset contains one record for each MCS certificate version (i.e. a certificate which is registered then updated will appear twice in the dataset). In almost all cases, each MCS certificate is associated with a single heat pump installation. Features in the dataset include
+The MCS **installations** dataset contains one record for each MCS certificate. In almost all cases, each MCS certificate corresponds to a single heat pump system installation (which in some cases may feature multiple heat pumps). The dataset contains records of both domestic and non-domestic installations. Features in the dataset include
   
   - characteristics of the property: address, heat and water demand, alternative heating system
   - characteristics of the installed heat pump: model, manufacturer, capacity, flow temperature, SCOP
-  - characteristics of the installation: overall cost, installer name, whether or not the installation is eligible for RHI
+  - characteristics of the installation: commissioning date, overall cost, installer name, whether or not the installation is eligible for RHI
+  - characteristics of the certificate: version number, certification date
 
+For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing).
+  
 The MCS **installers** dataset contains one record for each MCS-certified installer. Features in the dataset include
   
   - name and address
