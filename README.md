@@ -38,6 +38,9 @@ This repository is the foundation for many projects in our work on sustainabilit
   - [Preprocessed EPC](#preprocessed_epc)
   - [Downloading and Updating](#epc_update)
 - [MCS](#mcs)
+  - [Installations](#mcs_installations)
+  - [Installers](#mcs_installers)
+  - [Merging with EPC](#mcs_epc_merging)
 
 [Project Examples](#projects)
 
@@ -205,7 +208,9 @@ Below we describe the necessary steps to download and update the data. Don't wor
 
 ## MCS Data <a name="mcs"></a>
 
-The MCS datasets contain information on MCS-certified heat pump **installations** and **installers**. These datasets are proprietary and cannot be shared outside of Nesta.
+The MCS datasets contain information on MCS-certified heat pump **installations** and **installers**. These datasets are proprietary and cannot be shared outside of Nesta. Both datasets are provided quarterly by MCS and are stored in the **asf-core-data** bucket on S3.
+
+### Installations <a name="mcs_installations"></a>
   
 The MCS **installations** dataset contains one record for each MCS certificate. In almost all cases, each MCS certificate corresponds to a single heat pump system installation (which in some cases may feature multiple heat pumps). The dataset contains records of both domestic and non-domestic installations. Features in the dataset include
   
@@ -215,6 +220,8 @@ The MCS **installations** dataset contains one record for each MCS certificate. 
   - characteristics of the certificate: version number, certification date
 
 For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing).
+
+### Installers <a name="mcs_installers"></a>
   
 The MCS **installers** dataset contains one record for each MCS-certified installer. Features in the dataset include
   
@@ -222,7 +229,7 @@ The MCS **installers** dataset contains one record for each MCS-certified instal
   - technologies installed
   - locations in which the installer operates
 
-Both datasets are provided quarterly by MCS and are stored in the **asf-core-data** bucket on S3.
+### Merging with EPC <a name="mcs_epc_merging"></a>
   
 **asf_core_data/pipeline/mcs** contains functions for processing the raw MCS data and joining it with EPC data. In particular, running **generate_mcs_data.py** will process and save four different versions of the data to S3:
   
