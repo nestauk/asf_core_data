@@ -30,8 +30,9 @@ def load_s3_data(s3, bucket_name, file_name):
     if fnmatch(file_name, "*.xlsx"):
         return pd.read_excel(os.path.join("s3://" + bucket_name, file_name))
     elif fnmatch(file_name, "*.csv"):
-        return pd.read_csv(os.path.join("s3://" + bucket_name, file_name))
-
+        return pd.read_csv(
+            os.path.join("s3://" + bucket_name, file_name), encoding="unicode_escape"
+        )
     else:
         print('Function not supported for file type other than "*.xlsx" and "*.csv"')
 
