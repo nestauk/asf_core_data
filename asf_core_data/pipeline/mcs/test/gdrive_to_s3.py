@@ -1,8 +1,6 @@
 ########################################
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
-
-import gdown
 import os
 from datetime import datetime
 
@@ -59,7 +57,8 @@ def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
         output_path = str(PROJECT_DIR) + local_data_dump_dir + latest_dump_name
         s3_path = s3_data_dump_dir + latest_dump_name
         file_id = _["id"]
-        gdown.download(id=file_id, output=output_path, quiet=False)
+        file = drive.CreateFile({"id": file_id})
+        file.GetContentFile(output_path)
         s3.Bucket(bucket_name).upload_file(output_path, s3_path)
 
 

@@ -5,4 +5,4 @@ latest_outputs=$(aws s3api list-objects --bucket asf-core-data --prefix inputs/M
 latest_outputs_array=($latest_outputs)
 new_installations="${latest_outputs_array[1]}"
 new_installers="${latest_outputs_array[2]}"
-python compare_mcs_installations.py --new_df "${new_installations}" --comp_df "${new_installers}"
+python compare_mcs_installations.py --new_installations_df "${new_installations}" --new_installers_df "${new_installers}"

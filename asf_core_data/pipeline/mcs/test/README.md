@@ -13,8 +13,8 @@ There are permissions to [Julia Suter](mailto:julia.suter@nesta.org.uk), [Chris 
 Once you have downloaded `client_secrets.json`, you will be able to run the bash script to:
 
 1. Pull the latest installers and installations data from google drive (latest is based on createdDate), save data locally then upload to S3. the data name is important: installations data **must** have the phrase **installations** in the title while installer data **must** have the phrase **installer** in the title.
-2. Run data comparisons between the newest installations data and an older installations dataset.
-3. Run within dataset testing of the latest installer data.
+2. Run data comparisons between the newest installations data and an older installations dataset and newest installers data and an older installations dataset.
+3. Run within dataset testing of the latest installer and installations data.
 4. Output testing information to a timestamped `.txt` file in folder.
 
 To run bash script in activated conda environment, `bash mcs_test.sh`.
@@ -22,6 +22,5 @@ To run bash script in activated conda environment, `bash mcs_test.sh`.
 #### To Dos
 
 1. ~~Within testing of latest installations data;~~
-2. Between dataset testing of latest installer data and previous installer data;
-3. Schedule bash script for quarterly data dumps;
-4. Use pydrive2 to download data rather than gdown.
+2. ~~Between dataset testing of latest installer data and previous installer data;~~
+3. ~~Use pydrive2 to download data rather than gdown.~~
