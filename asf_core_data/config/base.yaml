@@ -22,6 +22,13 @@ IMD_ENGLAND_PATH: "/inputs/deprivation_data/England_IMD.csv"
 IMD_WALES_PATH: "/inputs/deprivation_data/Wales_IMD.csv"
 IMD_SCOTLAND_PATH: "/inputs/deprivation_data/Scotland_IMD.csv"
 
+RAW_POPULATION_PATH: "inputs/supplementary_data/population/raw_population_density.csv"
+CLEAN_POPULATION_PATH: "/outputs/supplementary_data/population/clean_population_density.csv"
+SHAPE_URL: "https://gisco-services.ec.europa.eu/distribution/v2/nuts/download/ref-nuts-2021-20m.geojson.zip"
+SHAPEFILE_PATH: "/inputs/shapefiles/"
+NUTS_FILE: "NUTS_RG_20M_2021_4326_LEVL_2.geojson"
+EPSG: 4326
+
 EPC_FEAT_SELECTION:
   [
     "ADDRESS1",
