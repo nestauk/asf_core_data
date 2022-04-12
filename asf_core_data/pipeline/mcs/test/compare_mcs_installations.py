@@ -45,12 +45,7 @@ def compare_mcs_installers(old_installers_data, new_installers_data):
     compare = datacompy.Compare(
         old_installers_data,
         new_installers_data,
-        join_columns=[
-            "Company Name",
-            "MCS certificate number",
-            "Add 1",
-            "PCode",
-        ],
+        join_columns=["Company Name", "MCS certificate number", "Add 1", "PCode",],
         df1_name="Old Installers Data",
         df2_name="New Installers Data",
     )

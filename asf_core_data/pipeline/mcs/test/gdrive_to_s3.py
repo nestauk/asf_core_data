@@ -58,9 +58,12 @@ def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
         s3_path = s3_data_dump_dir + latest_dump_name
         file_id = _["id"]
         file = drive.CreateFile({"id": file_id})
+        print(f"downloaded file {file_id} locally...")
         file.GetContentFile(output_path)
         s3.Bucket(bucket_name).upload_file(output_path, s3_path)
+        print(f"pushed file {file_id} to s3...")
 
 
 if __name__ == "__main__":
     drive_to_s3(local_data_dump_dir, s3_data_dump_dir)
+    print("google drive to s3 complete!")
