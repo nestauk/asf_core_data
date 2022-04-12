@@ -105,10 +105,6 @@ if __name__ == "__main__":
     raw_population_path = config["RAW_POPULATION_PATH"]
     clean_population_path = config["CLEAN_POPULATION_PATH"]
 
-    # raw_population_data = load_s3_data(s3, bucket_name, raw_population_path)
-    raw_population_data = pd.read_csv(
-        os.path.join("s3://" + bucket_name, raw_population_path),
-        encoding="unicode_escape",
-    )
+    raw_population_data = load_s3_data(s3, bucket_name, raw_population_path)
     clean_population_data = process_population_density_data(raw_population_data)
     save_to_s3(s3, bucket_name, clean_population_data, clean_population_path)
