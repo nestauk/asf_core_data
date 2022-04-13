@@ -2,6 +2,7 @@
 """Cleaning and standardising the EPC dataset."""
 
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data.config import base_config
 from numpy.core import numeric
 import pandas as pd
 import numpy as np
@@ -38,7 +39,7 @@ def standardise_dates(df, features):
         df[feature] = pd.to_datetime(df[feature], errors="coerce")
 
         df.loc[
-            (df[feature].dt.year > config["CURRENT_YEAR"] + 1)
+            (df[feature].dt.year > base_config.CURRENT_YEAR + 1)
             & (df[feature].dt.year < 2018),
             feature,
         ] = np.datetime64("NaT")
@@ -75,7 +76,7 @@ def date_formatter(date):
         year = "20" + year[-2:]
 
     # Discard entries past current year + plus (future projects) and before 2008
-    if len(year) != 4 or int(year) > config["CURRENT_YEAR"] + 1 or int(year) < 2008:
+    if len(year) != 4 or int(year) > base_config.CURRENT_YEAR + 1 or int(year) < 2008:
         return "unknown"
 
     formatted_date = year + "/" + month + "/" + day

@@ -4,6 +4,7 @@
 # ----------------------------------------------------------------------------------
 
 import time
+import os
 
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 
@@ -14,20 +15,23 @@ from asf_core_data.pipeline.preprocessing import (
 from asf_core_data.getters.epc import epc_data
 from asf_core_data.config import base_config
 
+import warnings
+
 # ----------------------------------------------------------------------------------
 
-# Load config file
-config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
+# # Load config file
+# config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
-# Get paths
-RAW_EPC_DATA_PATH = str(PROJECT_DIR) + config["RAW_EPC_DATA_PATH"]
-PREPROC_EPC_DATA_PATH = str(PROJECT_DIR) + config["PREPROC_EPC_DATA_PATH"]
-PREPROC_EPC_DATA_DEDUPL_PATH = str(PROJECT_DIR) + config["PREPROC_EPC_DATA_DEDUPL_PATH"]
+# # Get paths
+# RAW_EPC_DATA_PATH = str(PROJECT_DIR) + config["RAW_EPC_DATA_PATH"]
+# PREPROC_EPC_DATA_PATH = str(PROJECT_DIR) + config["PREPROC_EPC_DATA_PATH"]
+# PREPROC_EPC_DATA_DEDUPL_PATH = str(PROJECT_DIR) + config["PREPROC_EPC_DATA_DEDUPL_PATH"]
 
 
 def preprocess_data(
     df,
     remove_duplicates=True,
+    batch=None,
     save_data=base_config.PREPROC_EPC_DATA_PATH,
     verbose=True,
 ):
@@ -69,10 +73,12 @@ def preprocess_data(
     # --------------------------------
 
     if save_data is not None:
-        file_path = Path(save_data) / base_config.RAW_EPC_DATA_PATH.name
+        file_path = epc_data.get_version_path(
+            Path(save_data) / base_config.RAW_EPC_DATA_PATH.name, batch=batch
+        )
         print("Saving to raw data to {}".format(file_path))
         # Save unaltered_version
-        df.to_csv(save_data / base_config.RAW_EPC_DATA_PATH.name, index=False)
+        df.to_csv(file_path, index=False)
 
     processing_steps = []
     processing_steps.append(("Original data", df.shape[0], df.shape[1]))
@@ -88,7 +94,9 @@ def preprocess_data(
     processing_steps.append(("After adding features", df.shape[0], df.shape[1]))
 
     if save_data is not None:
-        file_path = Path(save_data) / base_config.PREPROC_EPC_DATA_PATH.name
+        file_path = epc_data.get_version_path(
+            Path(save_data) / base_config.PREPROC_EPC_DATA_PATH.name, batch=batch
+        )
         print("Saving to preprocessed data to {}".format(file_path))
         # Save unaltered_version
         df.to_csv(file_path, index=False)
@@ -106,7 +114,10 @@ def preprocess_data(
         processing_steps.append(("After removing duplicates", df.shape[0], df.shape[1]))
 
         if save_data is not None:
-            file_path = Path(save_data) / base_config.PREPROC_EPC_DATA_DEDUPL_PATH.name
+            file_path = epc_data.get_version_path(
+                Path(save_data) / base_config.PREPROC_EPC_DATA_DEDUPL_PATH.name,
+                batch=batch,
+            )
             print(
                 "Saving to preprocessed and deduplicated data to {}".format(file_path)
             )
@@ -128,8 +139,11 @@ def preprocess_data(
 
 def load_and_preprocess_epc_data(
     subset="GB",
+    data_path=base_config.ROOT_DATA_PATH,
+    rel_data_path=base_config.RAW_DATA_PATH,
     usecols=base_config.EPC_FEAT_SELECTION,
-    nrows=None,
+    batch=None,
+    n_samples=None,
     remove_duplicates=True,
     save_data=base_config.PREPROC_EPC_DATA_PATH,
 ):
@@ -162,21 +176,39 @@ def load_and_preprocess_epc_data(
 
     # Do not save/overwrite the preprocessed data when not loading entire GB dataset
     # in order to prevent confusion.
+
+    if not os.path.isabs(save_data):
+
+        save_data = data_path / save_data
+
+    print(save_data)
+
     if subset != "GB":
-        raise Warning(
-            "Careful! You're not lodaing the complete GB dataset. Are you sure you would like to save the output to '{}'?".format(
+
+        print(save_data)
+        warnings.warn(
+            "Careful! You're not loading the complete GB dataset. Are you sure you would like to save the output to '{}'?".format(
                 save_data
             )
         )
-        warning_input = input("Save to this directory? [y]/n")
-        if warning_input.lower in ["", "y", "yes"]:
-            pass
-        else:
+        warning_input = input("Save to this directory?  yes/[no]")
+        if warning_input.lower in ["", "n", "no"]:
             save_data = None
 
-    epc_df = epc_data.load_raw_epc_data(subset=subset, usecols=usecols, nrows=nrows)
+    epc_df = epc_data.load_raw_epc_data(
+        subset=subset,
+        data_path=data_path,
+        rel_data_path=rel_data_path,
+        batch=batch,
+        usecols=usecols,
+        n_samples=n_samples,
+    )
+
     epc_df = preprocess_data(
-        epc_df, remove_duplicates=remove_duplicates, save_data=save_data
+        epc_df,
+        remove_duplicates=remove_duplicates,
+        save_data=save_data,
+        batch=batch,
     )
     return epc_df
 

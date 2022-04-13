@@ -1,63 +1,65 @@
 from asf_core_data import Path
 
 MCS_RAW_S3_PATH = "inputs/MCS/mcs_heat_pumps.xlsx"
-MCS_RAW_LOCAL_PATH = "/inputs/data/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_LOCAL_PATH = "/inputs/MCS/mcs_heat_pumps.xlsx"
 
 CURRENT_YEAR = 2021
-BATCH = "Q4_2021"
+LATEST_BATCH = "Q4_2021_0721"
+
+LATEST_V = "most_recent"
+OTHER_V = "older_versions"
 
 ROOT_DATA_PATH = "."
 
 EST_CLEANSED_EPC_DATA_DEDUPL_PATH = Path(
-    "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
+    "inputs/EPC/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
 )
 EST_CLEANSED_EPC_DATA_DEDUPL_PATH_ZIP = Path(
-    "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv.zip"
+    "inputs/EPC/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv.zip"
 )
 
 EST_CLEANSED_EPC_DATA_PATH = Path(
-    "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed.csv"
+    "inputs/EPC/EST_cleansed_versions/EPC_England_Wales_cleansed.csv"
 )
 EST_CLEANSED_EPC_DATA_PATH_ZIP = Path(
-    "inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed.csv.zip"
+    "inputs/EPC/EST_cleansed_versions/EPC_England_Wales_cleansed.csv.zip"
 )
 
-RAW_EPC_DATA_PATH = Path("outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv")
+RAW_EPC_DATA_PATH = Path("outputs/EPC/preprocessed_data/{}/EPC_GB_raw.csv")
+
 PREPROC_EPC_DATA_DEDUPL_PATH = Path(
-    "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
+    "outputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed_and_deduplicated.csv"
 )
-PREPROC_EPC_DATA_PATH = Path(
-    "outputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed.csv"
-)
+PREPROC_EPC_DATA_PATH = Path("outputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed.csv")
 
 PROCESSED_EPC_DATA_PATH = PREPROC_EPC_DATA_PATH = Path(
-    "outputs/EPC_data/preprocessed_data/Q4_2021/"
+    "./outputs/EPC/preprocessed_data/{}/"
 )
 
-SNAPSHOT_RAW_EPC_DATA_PATH = Path(
-    "inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_raw.csv"
-)
+SNAPSHOT_RAW_EPC_DATA_PATH = Path("inputs/EPC/preprocessed_data/{}/EPC_GB_raw.csv")
 SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH = Path(
-    "inputs/EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed_and_deduplicated.csv"
+    "inputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed_and_deduplicated.csv"
 )
 SNAPSHOT_PREPROC_EPC_DATA_PATH = Path(
-    "//EPC_data/preprocessed_data/Q4_2021/EPC_GB_preprocessed.csv"
+    "/EPC/preprocessed_data/{}/EPC_GB_preprocessed.csv"
 )
 
 RAW_ENG_WALES_DATA_ZIP = Path(
-    "inputs/data/EPC/raw_data/England_Wales/all-domestic-certificates.zip"
+    "inputs/EPC/raw_data/{}/England_Wales/all-domestic-certificates.zip"
 )
-RAW_SCOTLAND_DATA_ZIP = Path("inputs/data/EPC/raw_data/Scotland/D_EPC_data.zip")
+RAW_SCOTLAND_DATA_ZIP = Path("inputs/EPC/raw_data/{}/Scotland/D_EPC_data.zip")
 
-RAW_ENG_WALES_DATA_PATH = Path("inputs/data/EPC/raw_data/England_Wales/")
-RAW_SCOTLAND_DATA_PATH = Path("inputs/data/EPC/raw_data/Scotland/")
+RAW_DATA_PATH = Path("inputs/EPC/raw_data/{}/")
 
-IMD_ENGLAND_PATH = Path("inputs/data/utils/IMD/England_IMD.csv")
-IMD_WALES_PATH = Path("inputs/data/utils/IMD/Wales_IMD.csv")
-IMD_SCOTLAND_PATH = Path("inputs/data/utils/IMD/Scotland_IMD.csv")
+RAW_ENG_WALES_DATA_PATH = Path("inputs/EPC/raw_data/{}/England_Wales/")
+RAW_SCOTLAND_DATA_PATH = Path("inputs/EPC/raw_data/{}/Scotland/")
+
+IMD_ENGLAND_PATH = Path("inputs/supplementary_data/IMD/England_IMD.csv")
+IMD_WALES_PATH = Path("inputs/supplementary_data/IMD/Wales_IMD.csv")
+IMD_SCOTLAND_PATH = Path("inputs/supplementary_data/IMD/Scotland_IMD.csv")
 
 POSTCODE_TO_COORD_PATH = Path(
-    "inputs/data/utils/geospatial/ukpostcodes_to_coordindates.csv"
+    "inputs/supplementary_data/geospatial/ukpostcodes_to_coordindates.csv"
 )
 MERGED_MCS_EPC = Path("inputs/MCS_data/mcs_epc.csv")
 
@@ -107,6 +109,7 @@ EPC_FEAT_SELECTION = [
     "TOTAL_FLOOR_AREA",
     "ENERGY_TARIFF",
     "UPRN",
+    "SECONDHEAT_DESCRIPTION",
 ]
 
 EPC_PREPROC_FEAT_SELECTION = [
@@ -165,6 +168,7 @@ EPC_PREPROC_FEAT_SELECTION = [
     "ENERGY_RATING_CAT",
     "DIFF_POT_ENERGY_RATING",
     "UPRN",
+    "SECONDHEAT_DESCRIPTION",
 ]
 
 dtypes = {

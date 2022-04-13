@@ -3,8 +3,12 @@
 
 # ---------------------------------------------------------------------------------
 
+from hashlib import new
+
+# from multiprocessing import _RLockType
 import os
 import re
+import random
 import pandas as pd
 import numpy as np
 from zipfile import ZipFile
@@ -13,27 +17,107 @@ from zipfile import ZipFile
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 from asf_core_data.config import base_config
 
+import warnings
+
+import boto3
+
 # ---------------------------------------------------------------------------------
 
-# Load config file
-# config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
-# Get paths
-# EL_RAW_ENG_WALES_DATA_PATH = base_config.RAW_ENG_WALES_DATA_PATH
-# REL_RAW_SCOTLAND_DATA_PATH = base_config.RAW_SCOTLAND_DATA_PATH
+def get_all_batch_names(data_path=None, rel_path=base_config.RAW_DATA_PATH):
 
-# REL_RAW_ENG_WALES_DATA_ZIP = base_config.RAW_ENG_WALES_DATA_ZIP
-# REL_RAW_SCOTLAND_DATA_ZIP = base_config.RAW_SCOTLAND_DATA_ZIP
+    if data_path == "S3":
 
-# REL_RAW_EPC_DATA_PATH = base_config.RAW_EPC_DATA_PATH
+        client = boto3.client("s3")
+        bucket = "asf-core-data"
+        path = "inputs/EPC/raw_data/"
+
+        batches = [
+            Path(obj["Key"]).stem
+            for obj in client.list_objects(Bucket=bucket, Prefix=path, Delimiter="/")[
+                "Contents"
+            ]
+            if obj["Key"].endswith(".zip")
+        ]
+
+    else:
+
+        data_path = get_version_path(data_path / rel_path.parent, data_path=data_path)
+        batches = [p.name for p in data_path.glob("*/") if not p.name.startswith(".")]
+
+    return batches
+
+
+def get_most_recent_batch(data_path=None, rel_path=base_config.RAW_DATA_PATH):
+
+    if data_path == "S3":
+
+        batches = get_all_batch_names(data_path="S3")
+
+    else:
+        batches = get_all_batch_names(data_path=data_path, rel_path=rel_path)
+
+    return sorted(batches, reverse=True)[0]
+
+
+def check_for_newest_batch(
+    data_path=None, rel_path=base_config.RAW_DATA_PATH, verbose=False
+):
+
+    local_batch = get_most_recent_batch(data_path=data_path, rel_path=rel_path)
+    s3_batch = get_most_recent_batch(data_path="S3")
+
+    if local_batch == s3_batch:
+        if verbose:
+            print("Your local data is up to date with batch {}".format(local_batch))
+        return (True, local_batch)
+
+    else:
+        if verbose:
+            print(
+                "With batch {} your local data is not up to date. The newest batch {} is available on S3.".format(
+                    local_batch, s3_batch
+                )
+            )
+        return (False, s3_batch)
+
+
+def get_version_path(path, data_path, batch="newest"):
+
+    if not "{}" in str(path):
+        return path
+
+    if batch is None or batch.lower() in [
+        "newest",
+        "most recent",
+        "most_recent",
+        "latest",
+        base_config.LATEST_BATCH.lower(),
+    ]:
+        newest_batch = get_most_recent_batch(data_path=data_path)
+        path = str(path).format(newest_batch)
+
+        is_newest, newest_s3_batch = check_for_newest_batch(data_path=data_path)
+        if not is_newest:
+            warnings.warn(
+                "You are loading the newest local batch - but a newer batch ({}) is available on S3.".format(
+                    newest_s3_batch
+                )
+            )
+
+    else:
+        path = str(path).format(batch.upper())
+
+    return Path(path)
 
 
 def load_wales_certificates(
-    data_path=base_config.ROOT_DATA,
+    data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
+    batch=None,
     subset=None,
     usecols=None,
-    nrows=None,
+    n_samples=None,
     low_memory=False,
 ):
 
@@ -49,7 +133,7 @@ def load_wales_certificates(
         List of features/columns to load from EPC dataset.
         If None, then all features will be loaded.
 
-    nrows : int, default=None
+    n_samples : int, default=None
         Number of rows of file to read.
 
     low_memory : bool, default=False
@@ -62,14 +146,18 @@ def load_wales_certificates(
     EPC_certs : pandas.DateFrame
         England/Wales EPC certificate data for given features."""
 
-    RAW_ENG_WALES_DATA_PATH = data_path / rel_data_path
-    RAW_ENG_WALES_DATA_ZIP = data_path / base_config.RAW_ENG_WALES_DATA_ZIP
+    RAW_ENG_WALES_DATA_PATH = get_version_path(
+        data_path / rel_data_path, data_path=data_path, batch=batch
+    )
+    RAW_ENG_WALES_DATA_ZIP = get_version_path(
+        data_path / base_config.RAW_ENG_WALES_DATA_ZIP, data_path=data_path, batch=batch
+    )
 
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not (
         RAW_ENG_WALES_DATA_PATH / "domestic-W06000015-Cardiff/certificates.csv"
     ).is_file():
-        extract_data(base_config.RAW_ENG_WALES_DATA_ZIP)
+        extract_data(RAW_ENG_WALES_DATA_ZIP)
 
     # Get all directories
     directories = [
@@ -94,7 +182,6 @@ def load_wales_certificates(
             RAW_ENG_WALES_DATA_PATH / directory / "recommendations.csv",
             low_memory=low_memory,
             usecols=usecols,
-            nrows=nrows,
         )
         for directory in directories
     ]
@@ -102,6 +189,9 @@ def load_wales_certificates(
     # Concatenate single dataframes into dataframe
     epc_certs = pd.concat(epc_certs, axis=0)
     epc_certs["COUNTRY"] = subset
+
+    if n_samples is not None:
+        epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]
 
     return epc_certs
 
@@ -134,8 +224,9 @@ def extract_data(file_path):
 def load_scotland_data(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_SCOTLAND_DATA_PATH,
+    batch=None,
     usecols=None,
-    nrows=None,
+    n_samples=None,
     low_memory=False,
 ):
     """Load the Scotland EPC data.
@@ -146,7 +237,7 @@ def load_scotland_data(
         List of features/columns to load from EPC dataset.
         If None, then all features will be loaded.
 
-    nrows : int, default=None
+    n_samples : int, default=None
         Number of rows of file to read.
 
     low_memory : bool, default=False
@@ -159,14 +250,20 @@ def load_scotland_data(
     EPC_certs : pandas.DateFrame
         Scotland EPC certificate data for given features."""
 
-    RAW_SCOTLAND_DATA_PATH = Path(data_path) / rel_data_path
-    RAW_SCOTLAND_DATA_ZIP = Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP
+    RAW_SCOTLAND_DATA_PATH = get_version_path(
+        Path(data_path) / rel_data_path, data_path=data_path, batch=batch
+    )
+    RAW_SCOTLAND_DATA_ZIP = get_version_path(
+        Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP,
+        data_path=data_path,
+        batch=batch,
+    )
 
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not [
         file
         for file in os.listdir(RAW_SCOTLAND_DATA_PATH)
-        if file.startswith("D_EPC_data_2012_Q4_extract")
+        if file.startswith("D_EPC_data_")
     ]:
         extract_data(RAW_SCOTLAND_DATA_ZIP)
 
@@ -185,7 +282,6 @@ def load_scotland_data(
             RAW_SCOTLAND_DATA_PATH / file,
             low_memory=low_memory,
             usecols=usecols,
-            nrows=nrows,
             skiprows=1,  # don't load first row (more ellaborate feature names),
             encoding="ISO-8859-1",
         )
@@ -204,17 +300,21 @@ def load_scotland_data(
         }
     )
 
-    epc_certs["UPRN"] = epc_certs["BUILDING_REFERENCE_NUMBER"]
+    if "UPRN" in epc_certs.columns:
+        epc_certs["UPRN"] = epc_certs["BUILDING_REFERENCE_NUMBER"]
+    if n_samples is not None:
+        epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]
 
     return epc_certs
 
 
-def load_wales_england_data(
+def load_england_wales_data(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
+    batch=None,
     subset=None,
     usecols=None,
-    nrows=None,
+    n_samples=None,
     low_memory=False,
 ):
     """Load the England and/or Wales EPC data.
@@ -229,7 +329,7 @@ def load_wales_england_data(
         List of features/columns to load from EPC dataset.
         If None, then all features will be loaded.
 
-    nrows : int, default=None
+    n_samples : int, default=None
         Number of rows of file to read.
 
     low_memory : bool, default=False
@@ -242,8 +342,46 @@ def load_wales_england_data(
     EPC_certs : pandas.DateFrame
         England/Wales EPC certificate data for given features."""
 
-    RAW_ENG_WALES_DATA_PATH = Path(data_path) / rel_data_path
-    RAW_ENG_WALES_DATA_ZIP = Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP
+    if subset in [None, "GB", "all"]:
+
+        additional_samples = 0
+
+        if n_samples is not None:
+            additional_samples = n_samples % 2
+            n_samples = n_samples // 2
+
+        wales_epc = load_england_wales_data(
+            data_path=data_path,
+            rel_data_path=rel_data_path,
+            batch=batch,
+            subset="Wales",
+            usecols=usecols,
+            n_samples=n_samples,
+            low_memory=False,
+        )
+
+        england_epc = load_england_wales_data(
+            data_path=data_path,
+            rel_data_path=rel_data_path,
+            batch=batch,
+            subset="England",
+            usecols=usecols,
+            n_samples=None if n_samples is None else n_samples + additional_samples,
+            low_memory=False,
+        )
+
+        epc_certs = pd.concat([wales_epc, england_epc], axis=0)
+
+        return epc_certs
+
+    RAW_ENG_WALES_DATA_PATH = get_version_path(
+        Path(data_path) / rel_data_path, data_path=data_path, batch=batch
+    )
+    RAW_ENG_WALES_DATA_ZIP = get_version_path(
+        Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP,
+        data_path=data_path,
+        batch=batch,
+    )
 
     # If sample file does not exist (probably just not unzipped), unzip the data
     if not Path(
@@ -261,11 +399,9 @@ def load_wales_england_data(
     # Set subset dict to select respective subset directories
     start_with_dict = {"Wales": "domestic-W", "England": "domestic-E"}
 
-    # Get directories for given subset
-    if subset in start_with_dict:
-        directories = [
-            dir for dir in directories if dir.startswith(start_with_dict[subset])
-        ]
+    directories = [
+        dir for dir in directories if dir.startswith(start_with_dict[subset])
+    ]
 
     # Load EPC certificates for given subset
     # Only load columns of interest (if given)
@@ -274,7 +410,6 @@ def load_wales_england_data(
             RAW_ENG_WALES_DATA_PATH / directory / "certificates.csv",
             low_memory=low_memory,
             usecols=usecols,
-            nrows=nrows,
         )
         for directory in directories
     ]
@@ -283,16 +418,22 @@ def load_wales_england_data(
     epc_certs = pd.concat(epc_certs, axis=0)
     epc_certs["COUNTRY"] = subset
 
-    epc_certs["UPRN"].fillna(epc_certs.BUILDING_REFERENCE_NUMBER, inplace=True)
+    if "UPRN" in epc_certs.columns:
+        epc_certs["UPRN"].fillna(epc_certs.BUILDING_REFERENCE_NUMBER, inplace=True)
+
+    if n_samples is not None:
+        epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]
 
     return epc_certs
 
 
 def load_raw_epc_data(
     data_path=base_config.ROOT_DATA_PATH,
+    rel_data_path=base_config.RAW_DATA_PATH,
+    batch=None,
     subset="GB",
     usecols=None,
-    nrows=None,
+    n_samples=None,
     low_memory=False,
 ):
     """Load and return EPC dataset, or specific subset, as pandas dataframe.
@@ -306,7 +447,7 @@ def load_raw_epc_data(
         List of features/columns to load from EPC dataset.
         If None, then all features will be loaded.
 
-    nrows : int, default=None
+    n_samples : int, default=None
         Number of rows of file to read.
 
     low_memory : bool, default=False
@@ -319,13 +460,33 @@ def load_raw_epc_data(
     EPC_certs : pandas.DateFrame
         EPC certificate data for given area and features."""
 
+    RAW_DATA_PATH = get_version_path(Path(data_path), data_path=data_path, batch=batch)
+
+    if rel_data_path != base_config.RAW_DATA_PATH:
+        wales_england_path = RAW_DATA_PATH / "England_Wales"
+        scotland_path = RAW_DATA_PATH / "Scotland"
+
+    else:
+        wales_england_path = base_config.RAW_ENG_WALES_DATA_PATH
+        scotland_path = base_config.RAW_SCOTLAND_DATA_PATH
+
     all_epc_df = []
+    additional_samples = 0
+
+    if subset == "GB" and n_samples is not None:
+        additional_samples = n_samples % 3
+        n_samples = n_samples // 3
 
     # Get Scotland data
     if subset in ["Scotland", "GB"]:
+
         epc_Scotland_df = load_scotland_data(
-            data_path=data_path, usecols=usecols, nrows=nrows
+            data_path=RAW_DATA_PATH,
+            rel_data_path=scotland_path,
+            usecols=usecols,
+            n_samples=None if n_samples is None else n_samples + additional_samples,
         )
+
         all_epc_df.append(epc_Scotland_df)
 
         if subset == "Scotland":
@@ -333,11 +494,12 @@ def load_raw_epc_data(
 
     # Get the Wales/England data
     if subset in ["Wales", "England"]:
-        epc_df = load_wales_england_data(
-            data_path=data_path,
+        epc_df = load_england_wales_data(
+            data_path=RAW_DATA_PATH,
+            rel_data_path=wales_england_path,
             subset=subset,
             usecols=usecols,
-            nrows=nrows,
+            n_samples=n_samples,
             low_memory=low_memory,
         )
         return epc_df
@@ -347,11 +509,12 @@ def load_raw_epc_data(
 
         for country in ["Wales", "England"]:
 
-            epc_df = load_wales_england_data(
-                data_path=data_path,
+            epc_df = load_england_wales_data(
+                data_path=RAW_DATA_PATH,
+                rel_data_path=wales_england_path,
                 subset=country,
                 usecols=usecols,
-                nrows=nrows,
+                n_samples=n_samples,
                 low_memory=low_memory,
             )
             all_epc_df.append(epc_df)
@@ -369,7 +532,7 @@ def load_cleansed_epc(
     rel_data_path=base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH,
     remove_duplicates=True,
     usecols=None,
-    nrows=None,
+    n_samples=None,
 ):
     """Load the cleansed EPC dataset (provided by EST)
     with the option of excluding/including duplicates.
@@ -432,7 +595,7 @@ def load_cleansed_epc(
 
     print("Loading cleansed EPC data... This will take a moment.")
     cleansed_epc = pd.read_csv(
-        EST_CLEANSED_PATH, usecols=usecols, nrows=nrows, low_memory=False
+        EST_CLEANSED_PATH, usecols=usecols, nrows=n_samples, low_memory=False
     )
 
     # Drop first column
@@ -448,9 +611,10 @@ def load_cleansed_epc(
 def load_preprocessed_epc_data(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_EPC_DATA_PATH.parent,
+    batch=None,
     version="preprocessed_dedupl",
     usecols=None,
-    nrows=None,
+    n_samples=None,
     snapshot_data=False,
     dtype={},
     low_memory=False,
@@ -476,7 +640,7 @@ def load_preprocessed_epc_data(
         List of features/columns to load from EPC dataset.
         If None, then all features will be loaded.
 
-    nrows : int, default=None
+    n_samples : int, default=None
         Number of rows of file to read.
 
     snapshot_data : bool, default=False
@@ -505,7 +669,11 @@ def load_preprocessed_epc_data(
         "preprocessed": base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH.name,
     }
 
-    EPC_DATA_PATH = Path(data_path) / rel_data_path / version_path_dict[version]
+    EPC_DATA_PATH = get_version_path(
+        Path(data_path) / rel_data_path / version_path_dict[version],
+        data_path=data_path,
+        batch=batch,
+    )
 
     if snapshot_data:
         EPC_DATA_PATH = (
@@ -520,7 +688,7 @@ def load_preprocessed_epc_data(
     epc_df = pd.read_csv(
         EPC_DATA_PATH,
         usecols=usecols,
-        nrows=nrows,
+        nrows=n_samples,
         dtype=dtype,
     )  # , low_memory=low_memory)
 
