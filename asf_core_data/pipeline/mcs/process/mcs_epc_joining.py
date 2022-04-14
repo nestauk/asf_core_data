@@ -21,7 +21,7 @@ from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_mcs_data,
 )
-from asf_core_data.getters.epc.get_epc import load_preprocessed_epc_data
+from asf_core_data.getters.epc.epc_data import load_preprocessed_epc_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,
@@ -30,8 +30,8 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
 max_token_length = config["MCS_EPC_MAX_TOKEN_LENGTH"]
-address_fields = config["MCS_EPC_ADDRESS_FIELDS"]
-characteristic_fields = config["MCS_EPC_CHARACTERISTIC_FIELDS"]
+# address_fields = config["MCS_EPC_ADDRESS_FIELDS"]
+# characteristic_fields = config["MCS_EPC_CHARACTERISTIC_FIELDS"]
 matching_parameter = config["MCS_EPC_MATCHING_PARAMETER"]
 merged_path = config["MCS_EPC_MERGED_PATH"]
 supervised_model_features = config["EPC_PREPROC_FEAT_SELECTION"]  # needed?
@@ -182,9 +182,8 @@ def form_matching(df1, df2):
 
 
 def join_prepared_mcs_epc_data(
-    hps=None,
-    epcs=None,
-    # save=True,
+    hps,
+    epcs,
     all_records=False,
     drop_epc_address=True,
     verbose=True,
@@ -195,20 +194,19 @@ def join_prepared_mcs_epc_data(
     hps : pandas.Dataframe
         Dataframe with standardised_postcode, numeric_tokens
         and standardised_address fields.
-        If None, HP data is loaded and augmented.
     epcs : pandas.Dataframe
         Dataframe with standardised_postcode, numeric_tokens
         and standardised_address fields.
-        If None, EPC data is loaded and augmented.
     all_records : bool
         Whether all top matches should be kept, or just one.
         Keeping all records allows for comparison of property
         characteristics over time.
-    save : bool
-        Whether or not to save the output.
     drop_epc_address : bool
         Whether or not to drop addresses from the EPC records.
         Useful to keep for determining whether matches are sensible.
+    verbose : bool
+        Whether or not to print diagnostic information about the
+        matching, e.g. number of matched records.
     Return
     ----------
     merged : pandas.Dataframe
@@ -276,7 +274,6 @@ def join_prepared_mcs_epc_data(
     if verbose:
 
         print("After joining:\n-----------------\n")
-        # print(merged["installation_type"].value_counts(dropna=False))
         print(merged.shape)
 
         print(
@@ -292,20 +289,6 @@ def join_prepared_mcs_epc_data(
         dict(merged.groupby("compressed_epc_address").count()["date"])
     )
 
-    if verbose:
-        pass
-        # print(
-        #     merged.loc[merged["compressed_epc_address"].isna()][
-        #         "installation_type"
-        #     ].value_counts(dropna=False)
-        # )
-
-        # print(
-        #     merged.loc[~merged["compressed_epc_address"].isna()][
-        #         "installation_type"
-        #     ].value_counts(dropna=False)
-        # )
-
     if not all_records:
         merged = merged.sort_values("date", ascending=True).drop_duplicates(
             subset=["compressed_epc_address"], keep="first"
@@ -318,15 +301,11 @@ def join_prepared_mcs_epc_data(
             print(merged.shape)
 
             print("After removing duplicates:\n-----------------\n")
-            #  print(merged["installation_type"].value_counts(dropna=False))
             print(merged.shape)
 
             print(merged.loc[merged["compressed_epc_address"].isna()].shape)
 
             print(merged.shape)
-
-    # if save:
-    #     merged.to_csv(str(PROJECT_DIR) + merged_path)
 
     return merged
 
@@ -340,10 +319,7 @@ def join_mcs_epc_data(hps=None, epcs=None, all_records=False):
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        fields_of_interest = address_fields + characteristic_fields
-        epcs = load_preprocessed_epc_data(
-            version=epc_version, usecols=fields_of_interest, low_memory=True
-        )
+        epcs = load_preprocessed_epc_data(version=epc_version, low_memory=True)
 
     prepared_hps = prepare_hps(hps)
     prepared_epcs = prepare_epcs(epcs)
@@ -401,28 +377,3 @@ def select_most_relevant_epc(data):
     )
 
     return filtered_data
-
-
-# ---------------------------------------------------------------------------------
-
-
-def main():
-    """Main function: Load and join MCS data to EPC data."""
-
-    start_time = time.time()
-
-    join_mcs_epc_data()
-
-    end_time = time.time()
-    runtime = round((end_time - start_time) / 60)
-
-    print(
-        "Loading and joining MCS and EPC data took {} minutes.\n\nOutput saved in {}".format(
-            runtime, merged_path
-        )
-    )
-
-
-if __name__ == "__main__":
-    # Execute only if run as a script
-    main()
