@@ -213,7 +213,7 @@ def load_and_preprocess_epc_data(
     # Do not save/overwrite the preprocessed data when not loading entire GB dataset
     # in order to prevent confusion.
 
-    if not os.path.isabs(save_data):
+    if save_data or not os.path.isabs(save_data):
 
         save_data = data_path / save_data
 
