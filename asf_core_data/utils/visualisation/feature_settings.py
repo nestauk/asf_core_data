@@ -83,8 +83,56 @@ const_year_order_merged = [
     "unknown",
 ]
 
+const_year_order_merged_no_scotland = [
+    "England and Wales: before 1900",
+    "1900-1929",
+    "1930-1949",
+    "1950-1966",
+    "1965-1975",
+    "1976-1983",
+    "1983-1991",
+    "1991-1998",
+    "1996-2002",
+    "2003-2007",
+    "2007 onwards",
+    "unknown",
+]
+
+const_year_order_merged_no_england_wales = [
+    "Scotland: before 1919",
+    "1900-1929",
+    "1930-1949",
+    "1950-1966",
+    "1965-1975",
+    "1976-1983",
+    "1983-1991",
+    "1991-1998",
+    "1996-2002",
+    "2003-2007",
+    "2007 onwards",
+    "unknown",
+]
+
 
 map_dict = {
     "CONSTRUCTION_AGE_BAND": const_year_order_merged,
+    "CONSTRUCTION_AGE_BAND_no_scotland": const_year_order_merged_no_scotland,
+    "CONSTRUCTION_AGE_BAND_no_england_wales": const_year_order_merged_no_england_wales,
     "PROPERTY_TYPE": prop_type_order,
+    "COUNTRY": country_order,
+    "INSPECTION_DATE": year_order,
+    "CURRENT_ENERGY_RATING": rating_order,
+    "POTENTIAL_ENERGY_RATING": rating_order,
+    "MAINHEAT_ENERGY_EFF": efficiency_order,
+    "SHEATING_ENERGY_EFF": efficiency_order,
+    "HOT_WATER_ENERGY_EFF": efficiency_order,
+    "FLOOR_ENERGY_EFF": efficiency_order,
+    "WINDOWS_ENERGY_EFF": efficiency_order,
+    "WALLS_ENERGY_EFF": efficiency_order,
+    "ROOF_ENERGY_EFF": efficiency_order,
+    "MAINHEATC_ENERGY_EFF": efficiency_order,
+    "LIGHTING_ENERGY_EFF": efficiency_order,
+    "TENURE": tenure_order,
+    "BUILT_FORM": built_form_order,
+    "HEATING_SOURCE": heating_source_order,
 }
