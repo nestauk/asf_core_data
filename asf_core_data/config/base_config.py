@@ -32,9 +32,7 @@ PREPROC_EPC_DATA_DEDUPL_PATH = Path(
 )
 PREPROC_EPC_DATA_PATH = Path("outputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed.csv")
 
-PROCESSED_EPC_DATA_PATH = PREPROC_EPC_DATA_PATH = Path(
-    "./outputs/EPC/preprocessed_data/{}/"
-)
+PROCESSED_EPC_DATA_PATH = Path("./outputs/EPC/preprocessed_data/{}/")
 
 SNAPSHOT_RAW_EPC_DATA_PATH = Path("inputs/EPC/preprocessed_data/{}/EPC_GB_raw.csv")
 SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH = Path(

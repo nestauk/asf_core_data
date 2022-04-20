@@ -64,7 +64,7 @@ def check_for_newest_batch(
     data_path=None, rel_path=base_config.RAW_DATA_PATH, verbose=False
 ):
 
-    local_batch = get_most_recent_batch(data_path=data_path, rel_path=rel_path)
+    local_batch = get_most_recent_batch(data_path=data_path)
     s3_batch = get_most_recent_batch(data_path="S3")
 
     if local_batch == s3_batch:
@@ -92,8 +92,8 @@ def get_version_path(path, data_path, batch="newest"):
         "most recent",
         "most_recent",
         "latest",
-        base_config.LATEST_BATCH.lower(),
     ]:
+
         newest_batch = get_most_recent_batch(data_path=data_path)
         path = str(path).format(newest_batch)
 

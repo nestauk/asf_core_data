@@ -3,6 +3,7 @@
 
 # ----------------------------------------------------------------------------------
 
+import re
 import time
 import os
 
@@ -31,6 +32,8 @@ import warnings
 def preprocess_data(
     df,
     remove_duplicates=True,
+    data_path=base_config.ROOT_DATA_PATH,
+    subset="GB",
     batch=None,
     save_data=base_config.PREPROC_EPC_DATA_PATH,
     verbose=True,
@@ -74,9 +77,19 @@ def preprocess_data(
 
     if save_data is not None:
         file_path = epc_data.get_version_path(
-            Path(save_data) / base_config.RAW_EPC_DATA_PATH.name, batch=batch
+            data_path / base_config.RAW_EPC_DATA_PATH,
+            data_path=data_path,
+            batch=batch,
         )
+
+        if subset != "GB":
+            file_path = re.sub(
+                "GB",
+                subset,
+                str(file_path),
+            )
         print("Saving to raw data to {}".format(file_path))
+        print()
         # Save unaltered_version
         df.to_csv(file_path, index=False)
 
@@ -94,10 +107,22 @@ def preprocess_data(
     processing_steps.append(("After adding features", df.shape[0], df.shape[1]))
 
     if save_data is not None:
+
         file_path = epc_data.get_version_path(
-            Path(save_data) / base_config.PREPROC_EPC_DATA_PATH.name, batch=batch
+            data_path / base_config.PREPROC_EPC_DATA_PATH,
+            data_path=data_path,
+            batch=batch,
         )
+
+        if subset != "GB":
+            file_path = re.sub(
+                "GB",
+                subset,
+                str(file_path),
+            )
+
         print("Saving to preprocessed data to {}".format(file_path))
+        print()
         # Save unaltered_version
         df.to_csv(file_path, index=False)
 
@@ -114,13 +139,24 @@ def preprocess_data(
         processing_steps.append(("After removing duplicates", df.shape[0], df.shape[1]))
 
         if save_data is not None:
+
             file_path = epc_data.get_version_path(
-                Path(save_data) / base_config.PREPROC_EPC_DATA_DEDUPL_PATH.name,
+                data_path / base_config.PREPROC_EPC_DATA_DEDUPL_PATH,
+                data_path=data_path,
                 batch=batch,
             )
+
+            if subset != "GB":
+                file_path = re.sub(
+                    "GB",
+                    subset,
+                    str(file_path),
+                )
+
             print(
                 "Saving to preprocessed and deduplicated data to {}".format(file_path)
             )
+            print()
 
             # Save unaltered_version
             df.to_csv(file_path, index=False)
@@ -181,19 +217,17 @@ def load_and_preprocess_epc_data(
 
         save_data = data_path / save_data
 
-    print(save_data)
+    # if subset != "GB":
 
-    if subset != "GB":
-
-        print(save_data)
-        warnings.warn(
-            "Careful! You're not loading the complete GB dataset. Are you sure you would like to save the output to '{}'?".format(
-                save_data
-            )
-        )
-        warning_input = input("Save to this directory?  yes/[no]")
-        if warning_input.lower in ["", "n", "no"]:
-            save_data = None
+    #     print(save_data)
+    #     warnings.warn(
+    #         "Careful! You're not loading the complete GB dataset. Are you sure you would like to save the output to '{}'?".format(
+    #             save_data
+    #         )
+    #     )
+    #     warning_input = input("Save to this directory?  yes/[no]")
+    #     if warning_input.lower in ["", "n", "no"]:
+    #         save_data = None
 
     epc_df = epc_data.load_raw_epc_data(
         subset=subset,
@@ -206,6 +240,8 @@ def load_and_preprocess_epc_data(
 
     epc_df = preprocess_data(
         epc_df,
+        data_path=data_path,
+        subset=subset,
         remove_duplicates=remove_duplicates,
         save_data=save_data,
         batch=batch,
