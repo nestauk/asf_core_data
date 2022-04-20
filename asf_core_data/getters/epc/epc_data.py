@@ -111,7 +111,7 @@ def get_version_path(path, data_path, batch="newest"):
     return Path(path)
 
 
-def load_wales_certificates(
+def load_wales_recommendations(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
     batch=None,
