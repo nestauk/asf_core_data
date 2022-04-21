@@ -10,3 +10,4 @@ typer
 sh
 openpyxl
 boto3
+h3
