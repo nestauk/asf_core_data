@@ -32,7 +32,7 @@ def get_postcode_coordinates(
     location_data_df : pandas.DateFrame
         Location data (postcode, latitude, longitude)."""
 
-    path = data_path / rel_data_path
+    path = Path(data_path) / rel_data_path
 
     # Load data
     postcode_coordinates_df = pd.read_csv(path)
