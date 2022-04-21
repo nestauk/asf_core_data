@@ -11,6 +11,10 @@ OTHER_V = "older_versions"
 
 ROOT_DATA_PATH = "."
 
+POSTCODE_TO_COORD_PATH = Path(
+    "inputs/supplementary_data/geospatial/ukpostcodes_to_coordindates.csv"
+)
+
 EST_CLEANSED_EPC_DATA_DEDUPL_PATH = Path(
     "inputs/EPC/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
 )

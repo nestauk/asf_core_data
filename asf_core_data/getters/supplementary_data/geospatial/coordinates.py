@@ -18,7 +18,9 @@ from asf_core_data.config import base_config
 # LOCATION_PATH = str(PROJECT_DIR) + data_config["POSTCODE_TO_COORD_PATH"]
 
 
-def get_postcode_coordinates():
+def get_postcode_coordinates(
+    data_path=PROJECT_DIR, rel_data_path=base_config.POSTCODE_TO_COORD_PATH
+):
     """Load location data (postcode, latitude, longitude).
 
     Parameters
@@ -30,8 +32,10 @@ def get_postcode_coordinates():
     location_data_df : pandas.DateFrame
         Location data (postcode, latitude, longitude)."""
 
+    path = data_path / rel_data_path
+
     # Load data
-    postcode_coordinates_df = pd.read_csv(base_config.LOCATION_PATH)
+    postcode_coordinates_df = pd.read_csv(path)
 
     # Remove ID (not necessary and conflicts with EPC dataframe)
     del postcode_coordinates_df["id"]
