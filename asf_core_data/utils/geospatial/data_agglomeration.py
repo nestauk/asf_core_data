@@ -1,7 +1,12 @@
+import re
+from xml.sax import default_parser_list
 import h3
 import pandas as pd
+
+from asf_core_data import PROJECT_DIR
 from asf_core_data.getters.supplementary_data.geospatial import coordinates
 from asf_core_data.pipeline.preprocessing import data_cleaning
+from asf_core_data.config import base_config
 
 
 def add_hex_id(df, resolution=7.5):
@@ -27,7 +32,9 @@ def add_hex_id(df, resolution=7.5):
     return df
 
 
-def get_postcode_coordinates(df):
+def get_postcode_coordinates(
+    df, data_path=PROJECT_DIR, rel_data_path=base_config.POSTCODE_TO_COORD_PATH
+):
     """Add coordinates (longitude and latitude) to the dataframe
     based on the postcode.
 
@@ -40,7 +47,9 @@ def get_postcode_coordinates(df):
         Same dataframe with longitude and latitude columns added."""
 
     # Get postcode/coordinates
-    postcode_coordinates_df = coordinates.get_postcode_coordinates()
+    postcode_coordinates_df = coordinates.get_postcode_coordinates(
+        data_path=data_cleaning, rel_data_path=rel_data_path
+    )
 
     # Reformat POSTCODE
     df = data_cleaning.reformat_postcode(df)
