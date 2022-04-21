@@ -1,6 +1,6 @@
 import h3
 import pandas as pd
-from asf_core_data.getters.supplementary_data import coordinates
+from asf_core_data.getters.supplementary_data.geospatial import coordinates
 from asf_core_data.pipeline.preprocessing import data_cleaning
 
 
