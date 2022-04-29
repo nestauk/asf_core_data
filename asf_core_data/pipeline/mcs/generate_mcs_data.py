@@ -92,7 +92,7 @@ def get_mcs_installations(epc_version="none", refresh=False):
         folder = "outputs/MCS/"
         file_list = [
             ("/" + object.key) for object in bucket.objects.filter(Prefix=folder)
-        ]  # HACK?
+        ]  # bit of a hack
         file_prefix = keyword_to_path_dict[epc_version]
         matches = [
             filename for filename in file_list if filename.startswith(file_prefix)
@@ -101,7 +101,7 @@ def get_mcs_installations(epc_version="none", refresh=False):
             latest_version = max(matches)
             print("Loading", latest_version, "from S3")
             mcs_installations = load_s3_data(
-                s3, bucket_name, latest_version[1:]  # HACK!
+                s3, bucket_name, latest_version[1:]  # undoing the hack
             )
             return mcs_installations
         else:

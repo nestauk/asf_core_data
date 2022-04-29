@@ -48,7 +48,7 @@ def add_columns(hps):
     hps["rhi"].mask(hps["rhi_status"].isna())
 
     # Add installation year
-    hps["year"] = hps["date"].dt.year
+    hps["commission_year"] = hps["commission_date"].dt.year
 
     return hps
 
@@ -84,7 +84,7 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
     This suggests that these installations were done en masse.
 
     Args:
-        dhps (DataFrame): DataFrame of HP installations with 'postcode' and 'date' columns.
+        dhps (DataFrame): DataFrame of HP installations with 'postcode' and 'commission_date' columns.
         time_interval (int, optional): Maximum gap between two installations in the same postcode.
         Defaults to CLUSTER_TIME_INTERVAL.
 
@@ -93,11 +93,13 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
     """
 
     hps["diff_bwd"] = (
-        hps.sort_values(["postcode", "date"]).groupby("postcode")["date"].diff()
+        hps.sort_values(["postcode", "commission_date"])
+        .groupby("postcode")["commission_date"]
+        .diff()
     )
     hps["diff_fwd"] = (
-        hps.sort_values(["postcode", "date"])
-        .groupby("postcode")["date"]
+        hps.sort_values(["postcode", "commission_date"])
+        .groupby("postcode")["commission_date"]
         .diff(periods=-1)
     )
 

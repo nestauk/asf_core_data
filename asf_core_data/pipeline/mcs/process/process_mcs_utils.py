@@ -17,7 +17,7 @@ import numpy as np
 colnames_dict = {
     "Version Number": "version",
     "Certificate Creation Date": "cert_date",
-    "Commissioning Date": "date",
+    "Commissioning Date": "commission_date",
     "Address Line 1": "address_1",
     "Address Line 2": "address_2",
     "Address Line 3": "address_3",

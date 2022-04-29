@@ -290,7 +290,7 @@ def join_prepared_mcs_epc_data(
     )
 
     if not all_records:
-        merged = merged.sort_values("date", ascending=True).drop_duplicates(
+        merged = merged.sort_values("commission_date", ascending=True).drop_duplicates(
             subset=["compressed_epc_address"], keep="first"
         )
         if verbose:
@@ -340,7 +340,7 @@ def select_most_relevant_epc(data):
 
     Args:
         data ([type]): Joined MCS-EPC data. Assumed to
-        contain INSPECTION_DATE, date and index_x columns.
+        contain INSPECTION_DATE, commission_date and index_x columns.
 
     Returns:
         Dataframe: HP installation records attached to the
@@ -350,7 +350,7 @@ def select_most_relevant_epc(data):
     data = data.sort_values("INSPECTION_DATE").reset_index(drop=True)
 
     # Identify rows where the EPC data is before the MCS one
-    data["epc_before_mcs"] = data["INSPECTION_DATE"] <= data["date"]
+    data["epc_before_mcs"] = data["INSPECTION_DATE"] <= data["commission_date"]
 
     # Identify indices of last EPC record before MCS
     last_epc_before_mcs_indices = (
