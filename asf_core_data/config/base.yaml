@@ -1,0 +1,173 @@
+MCS_RAW_S3_PATH: "inputs/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_LOCAL_PATH: "/inputs/data/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_INSTALLER_S3_PATH: "inputs/MCS/mcs_installer_information.xlsx"
+lOCAL_NEW_MCS_DATA_DUMP_DIR: "/inputs/data/mcs/"
+S3_NEW_MCS_DATA_DUMP_DIR: "inputs/MCS/latest_raw_data/"
+PREPROC_GEO_MCS_INSTALLATIONS_PATH: "outputs/MCS/cleaned_geocoded_mcs_installations.csv"
+PREPROC_MCS_INSTALLER_COMPANY_PATH: "outputs/MCS/cleaned_geocoded_mcs_installer_companies.csv"
+
+RAW_EPC_DATA_PATH: "/outputs/EPC_data/preprocessed_data/Q2_2021/EPC_GB_raw.csv"
+PREPROC_EPC_DATA_DEDUPL_PATH: "/outputs/EPC_data/preprocessed_data/Q2_2021/EPC_GB_preprocessed_and_deduplicated.csv"
+PREPROC_EPC_DATA_PATH: "/outputs/EPC_data/preprocessed_data/Q2_2021/EPC_GB_preprocessed.csv"
+PREPROC_EPC_DATA_SAMPLE_PATH: "inputs/EPC/EST_cleansed_versions/EPC_GB_preprocessed_and_deduplicated_sample.csv"
+PREPROC_EPC_DATA_SAMPLE_PROX_PATH: "outputs/EPC/EPC_GB_preprocessed_and_deduplicated_sample_prox.csv"
+
+RAW_ENG_WALES_DATA_ZIP: "/inputs/data/EPC/raw_data/England_Wales/all-domestic-certificates.zip"
+RAW_SCOTLAND_DATA_ZIP: "/inputs/data/EPC/raw_data/Scotland/D_EPC_data.zip"
+
+RAW_ENG_WALES_DATA_PATH: "/inputs/data/EPC/raw_data/England_Wales/"
+RAW_SCOTLAND_DATA_PATH: "/inputs/data/EPC/raw_data/Scotland/"
+
+UK_GEO_PATH: "inputs/supplementary_data/geospatial/ukpostcodes_to_coordindates.csv"
+
+IMD_ENGLAND_PATH: "/inputs/deprivation_data/England_IMD.csv"
+IMD_WALES_PATH: "/inputs/deprivation_data/Wales_IMD.csv"
+IMD_SCOTLAND_PATH: "/inputs/deprivation_data/Scotland_IMD.csv"
+
+RAW_POPULATION_PATH: "inputs/supplementary_data/population/raw_population_density.csv"
+CLEAN_POPULATION_PATH: "/outputs/supplementary_data/population/clean_population_density.csv"
+SHAPE_URL: "https://gisco-services.ec.europa.eu/distribution/v2/nuts/download/ref-nuts-2021-20m.geojson.zip"
+SHAPEFILE_PATH: "/inputs/shapefiles/"
+NUTS_FILE: "NUTS_RG_20M_2021_4326_LEVL_2.geojson"
+EPSG: 4326
+
+EPC_FEAT_SELECTION:
+  [
+    "ADDRESS1",
+    "POSTCODE",
+    "POSTTOWN",
+    "MAINS_GAS_FLAG",
+    "NUMBER_HABITABLE_ROOMS",
+    "LOCAL_AUTHORITY_LABEL",
+    "TRANSACTION_TYPE",
+    "CURRENT_ENERGY_RATING",
+    "POTENTIAL_ENERGY_RATING",
+    "CURRENT_ENERGY_EFFICIENCY",
+    "ENERGY_CONSUMPTION_CURRENT",
+    "TENURE",
+    "MAINHEAT_ENERGY_EFF",
+    "SHEATING_ENERGY_EFF",
+    "HOT_WATER_ENERGY_EFF",
+    "FLOOR_ENERGY_EFF",
+    "WINDOWS_ENERGY_EFF",
+    "WALLS_ENERGY_EFF",
+    "ROOF_ENERGY_EFF",
+    "MAINHEATC_ENERGY_EFF",
+    "LIGHTING_ENERGY_EFF",
+    "MAINHEAT_DESCRIPTION",
+    "CO2_EMISSIONS_CURRENT",
+    "CO2_EMISS_CURR_PER_FLOOR_AREA",
+    "LIGHTING_COST_CURRENT",
+    "LIGHTING_COST_POTENTIAL",
+    "HEATING_COST_CURRENT",
+    "HEATING_COST_POTENTIAL",
+    "HOT_WATER_COST_CURRENT",
+    "HOT_WATER_COST_POTENTIAL",
+    "BUILDING_REFERENCE_NUMBER",
+    "LODGEMENT_DATE",
+    "INSPECTION_DATE",
+    "BUILT_FORM",
+    "PROPERTY_TYPE",
+    "CONSTRUCTION_AGE_BAND",
+    "TRANSACTION_TYPE",
+    "MAIN_FUEL",
+    "TOTAL_FLOOR_AREA",
+    "ENERGY_TARIFF",
+  ]
+
+EPC_PREPROC_FEAT_SELECTION:
+  [
+    "BUILDING_REFERENCE_NUMBER",
+    "ADDRESS1",
+    "ADDRESS2",
+    "POSTTOWN",
+    "POSTCODE",
+    "INSPECTION_DATE",
+    "LODGEMENT_DATE",
+    "ENERGY_CONSUMPTION_CURRENT",
+    "TOTAL_FLOOR_AREA",
+    "CURRENT_ENERGY_EFFICIENCY",
+    "CURRENT_ENERGY_RATING",
+    "POTENTIAL_ENERGY_RATING",
+    "CO2_EMISS_CURR_PER_FLOOR_AREA",
+    "WALLS_ENERGY_EFF",
+    "ROOF_ENERGY_EFF",
+    "FLOOR_ENERGY_EFF",
+    "WINDOWS_ENERGY_EFF",
+    "MAINHEAT_DESCRIPTION",
+    "MAINHEAT_ENERGY_EFF",
+    "MAINHEATC_ENERGY_EFF",
+    "SHEATING_ENERGY_EFF",
+    "HOT_WATER_ENERGY_EFF",
+    "LIGHTING_ENERGY_EFF",
+    "CO2_EMISSIONS_CURRENT",
+    "HEATING_COST_CURRENT",
+    "HEATING_COST_POTENTIAL",
+    "HOT_WATER_COST_CURRENT",
+    "HOT_WATER_COST_POTENTIAL",
+    "LIGHTING_COST_CURRENT",
+    "LIGHTING_COST_POTENTIAL",
+    "CONSTRUCTION_AGE_BAND",
+    "CONSTRUCTION_AGE_BAND_ORIGINAL",
+    "NUMBER_HABITABLE_ROOMS",
+    "LOCAL_AUTHORITY_LABEL",
+    "MAINS_GAS_FLAG",
+    "MAIN_FUEL",
+    "ENERGY_TARIFF",
+    "TENURE",
+    "TRANSACTION_TYPE",
+    "BUILT_FORM",
+    "PROPERTY_TYPE",
+    "COUNTRY",
+    "INSPECTION_DATE",
+    "UNIQUE_ADDRESS",
+    "BUILDING_ID",
+    "N_ENTRIES",
+    "N_ENTRIES_BUILD_ID",
+    "HEATING_SYSTEM",
+    "HEATING_FUEL",
+    "HP_INSTALLED",
+    "HP_TYPE",
+    "CURR_ENERGY_RATING_NUM",
+    "ENERGY_RATING_CAT",
+    "DIFF_POT_ENERGY_RATING",
+  ]
+
+MCS_MAX_COST: 200000
+MCS_MAX_CAPACITY: 45
+MCS_CLUSTER_TIME_INTERVAL: 31
+MCS_EPC_ADDRESS_FIELDS: ["ADDRESS1", "ADDRESS2", "POSTTOWN", "POSTCODE"]
+MCS_EPC_CHARACTERISTIC_FIELDS:
+  [
+    "TOTAL_FLOOR_AREA",
+    "CONSTRUCTION_AGE_BAND",
+    "BUILT_FORM",
+    "PROPERTY_TYPE",
+    "BUILDING_REFERENCE_NUMBER",
+    "INSPECTION_DATE",
+    "FLOOR_ENERGY_EFF",
+    "WALLS_ENERGY_EFF",
+    "NUMBER_HABITABLE_ROOMS",
+    "HP_INSTALLED",
+    "TENURE",
+    "CURRENT_ENERGY_RATING",
+    "LOCAL_AUTHORITY_LABEL",
+  ]
+
+BUCKET_NAME: "asf-core-data"
+MCS_HP_PATH: "/inputs/MCS_data/mcs_heat_pumps.xlsx"
+MCS_DOMESTIC_HP_PATH: "/outputs/mcs_domestic_hps.csv"
+MCS_PROCESSED_PATH: "/outputs/data/mcs_processed.csv"
+INFLATION_PATH: "/inputs/MCS_data/inflation.csv"
+MCS_EPC_MATCHING_PARAMETER: 0.7
+MCS_EPC_MERGED_PATH: "/outputs/mcs_epc.csv"
+MCS_EPC_MAX_TOKEN_LENGTH: 8
+
+# no .csv so that current date can be added
+MCS_INSTALLATIONS_PATH: "/outputs/MCS/mcs_installations"
+MCS_INSTALLATIONS_EPC_FULL_PATH: "/outputs/MCS/mcs_installations_epc_full"
+MCS_INSTALLATIONS_EPC_NEWEST_PATH: "/outputs/MCS/mcs_installations_epc_newest"
+MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH: "/outputs/MCS/mcs_installations_epc_most_relevant"
+
+parse_dates:
+  ["INSPECTION_DATE", "LODGEMENT_DATE", "HP_INSTALL_DATE", "FIRST_HP_MENTION"]

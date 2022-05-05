@@ -8,3 +8,13 @@ tqdm
 filelock
 typer
 sh
+openpyxl
+boto3
+recordlinkage
+requests
+pandera
+pydrive2
+geopandas
+fsspec
+s3fs
+geopy
