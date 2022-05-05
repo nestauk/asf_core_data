@@ -99,7 +99,7 @@ def merge_imd_with_other_set(imd_df, other_df, postcode_label="Postcode"):
     imd_df["Postcode"] = imd_df["Postcode"].str.replace(r" ", "")
     other_df["Postcode"] = other_df["Postcode"].str.replace(r" ", "")
 
-    merged_df = pd.merge(imd_df, other_df, on=["Postcode"])
+    merged_df = pd.merge(other_df, imd_df, on=["Postcode"])
 
     merged_df = merged_df.rename(columns={"Postcode": postcode_label})
 

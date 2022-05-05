@@ -34,7 +34,7 @@ def get_raw_mcs_data(
     if refresh or not os.path.exists(local_path):
         s3 = boto3.resource("s3")
         bucket = s3.Bucket("asf-core-data")
-        bucket.download_file(MCS_RAW_S3_PATH, local_path)
+        bucket.download_file(base_config.MCS_RAW_S3_PATH, local_path)
 
     colnames_dict = {
         "Version Number": "version",

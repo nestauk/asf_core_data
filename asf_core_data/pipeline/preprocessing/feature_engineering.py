@@ -11,7 +11,7 @@ import numpy as np
 import re
 from hashlib import md5
 
-from asf_core_data.getters.geospatial import coordinates
+from asf_core_data.getters.supplementary_data.geospatial import coordinates
 from asf_core_data.pipeline.preprocessing import data_cleaning
 
 # ----------------------------------------------------------------------------------

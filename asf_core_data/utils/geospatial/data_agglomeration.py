@@ -48,7 +48,7 @@ def get_postcode_coordinates(
 
     # Get postcode/coordinates
     postcode_coordinates_df = coordinates.get_postcode_coordinates(
-        data_path=data_cleaning, rel_data_path=rel_data_path
+        data_path=data_path, rel_data_path=rel_data_path
     )
 
     # Reformat POSTCODE
@@ -61,8 +61,6 @@ def get_postcode_coordinates(
 
     # Merge with location data
     df = pd.merge(df, postcode_coordinates_df, on=["POSTCODE"])
-
-    print(df.shape)
 
     return df
 
@@ -103,8 +101,8 @@ def map_hex_to_feature(df, feature):
         df, feature, agglo_feature="hex_id"
     )[["hex_id", "MOST_FREQUENT_LOCAL_AUTHORITY_LABEL"]]
 
-    hex_to_feature = hex_to_feature.rename(
-        columns={"MOST_FREQUENT_" + feature: feature}
-    )
+    # hex_to_feature = hex_to_feature.rename(
+    #     columns={"MOST_FREQUENT_" + feature: feature}
+    # )
 
     return hex_to_feature

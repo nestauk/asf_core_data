@@ -69,6 +69,8 @@ SUPERVISED_MODEL_OUTPUT = Path("outputs/supervised_model/")
 SUPERVISED_MODEL_FIG_PATH = Path("outputs/supervised_model/figures/")
 HEAT_PUMP_COSTS_FIG_PATH = Path("outputs/figures/hp_costs/")
 
+KEPLER_OUTPUT = Path("outputs/figures/kepler/")
+
 EPC_FEAT_SELECTION = [
     "ADDRESS1",
     "POSTCODE",
