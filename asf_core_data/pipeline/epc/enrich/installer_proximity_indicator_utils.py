@@ -1,4 +1,4 @@
-"""Script that contains utils for installre proximity indicator."""
+"""Script that contains utils for installer proximity indicator."""
 
 ###############################################################
 import pyproj
