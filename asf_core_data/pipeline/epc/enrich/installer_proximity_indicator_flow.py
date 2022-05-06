@@ -156,11 +156,15 @@ class InstallerProximity(FlowSpec):
     def end(self):
         """Dump EPC data with geo and indicator to outputs."""
         from asf_core_data import bucket_name
-        import pickle
 
         with S3(s3root="s3://" + bucket_name + self.epc_installer_prox_path) as s3:
-            epc_byte_obj = pickle.dumps(self.epc_geo_data)
-            s3.put(self.epc_installer_prox_name, epc_byte_obj)
+            self.epc_geo_data.to_csv(
+                "s3://"
+                + bucket_name
+                + self.epc_installer_prox_path
+                + self.epc_installer_prox_name,
+                index=False,
+            )
 
         print(
             "successfully saved data to: ",
