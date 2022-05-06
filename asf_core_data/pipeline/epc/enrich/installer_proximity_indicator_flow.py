@@ -39,14 +39,14 @@ class InstallerProximity(FlowSpec):
 
     epc_path = Parameter(
         "epc-s3",
-        help="the s3 path to clean epc data",
+        help="the s3 path to clean EPC data",
         type=str,
         default=config["PREPROC_EPC_DATA_SAMPLE_PATH"],
     )
 
     uk_geo_path = Parameter(
         "uk-geo",
-        help="the s3 path to uk postcodes to latlong data",
+        help="the s3 path to UK postcodes to latlong data",
         type=str,
         default=config["UK_GEO_PATH"],
     )
@@ -70,7 +70,6 @@ class InstallerProximity(FlowSpec):
         """Load relevant data."""
         from asf_core_data.getters.data_getters import load_s3_data, s3
         from asf_core_data import bucket_name
-        import pandas as pd
 
         self.clean_installations = load_s3_data(
             s3, bucket_name, self.clean_installations_path
@@ -104,7 +103,7 @@ class InstallerProximity(FlowSpec):
 
     @step
     def geocode_epc(self):
-        """geocode epc data."""
+        """Geocode EPC data."""
         import geopandas as gpd
         import pandas as pd
 
@@ -132,7 +131,7 @@ class InstallerProximity(FlowSpec):
 
     @step
     def calculate_installer_proximity(self):
-        """Calculate installer proximity in preprocessed, deduped epc data."""
+        """Calculate installer proximity in preprocessed, deduped EPC data."""
 
         from asf_core_data.pipeline.epc.enrich.installer_proximity_indicator_utils import (
             calculate_buffer_distribution,
@@ -155,7 +154,7 @@ class InstallerProximity(FlowSpec):
 
     @step
     def end(self):
-        """dump epc data with geo and indicator to outputs."""
+        """Dump EPC data with geo and indicator to outputs."""
         from asf_core_data import bucket_name
         import pickle
 

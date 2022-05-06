@@ -12,17 +12,19 @@ from shapely.ops import transform
 ###############################################################
 
 
-def calculate_point_midpoint(p1: np.ndarray, p2: np.ndarray) -> tuple:
-    """Calculates the midpoint between two latitude and longitude points.
-
+def calculate_point_distance(long, lat, central_point):
+    """Calculates distance between installation central point and a point.
+    
     Inputs:
-        p1 (np.ndarray): latitude and longitude point 1
-        p2 (np.ndarray): latitude and longitude point 2
+        long (np.ndarray): longitude of point 
+        lat (np.ndarray): latitude of point 
+        central_point (np.ndarry): latitude and longitude of point
 
     Outputs:
-        Midpoint point of p1 and p2
+        Distance between installation central point and a point
+
     """
-    return (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
+    return distance(tuple(central_point), (long, lat))
 
 
 def generate_geodesic_point_buffer(lat: int, lon: int, km: int) -> Polygon:
@@ -66,40 +68,40 @@ def generate_distance_spread_buffers(
     for company_name, installation_info in clean_installations.groupby(
         "installer_name"
     ):
-        latlongs = installation_info[["longitude", "latitude"]].values
-        if len(latlongs) > 1:
-            central_point = calculate_point_midpoint(latlongs[0], latlongs[1])
-        elif company_name in list(set(cleaned_installer_companies.installer_name)):
-            central_point = tuple(
-                cleaned_installer_companies[
-                    cleaned_installer_companies["installer_name"] == company_name
-                ][["longitude", "latitude"]].values[0]
-            )
+        if len(installation_info) > 1:
+            central_point = installation_info[["longitude", "latitude"]].mean()
+        elif company_name in set(cleaned_installer_companies.installer_name):
+            central_point = cleaned_installer_companies[
+                cleaned_installer_companies["installer_name"] == company_name
+            ][["longitude", "latitude"]].values[0]
+        else:
+            print(f"no installations to generate indicator for {company_name}.")
 
-        dists = [
-            distance(central_point, install_latlong) for install_latlong in latlongs
-        ]
+        dists = installation_info.apply(
+            lambda x: calculate_point_distance(
+                x["longitude"], x["latitude"], central_point
+            ),
+            axis=1,
+        ).tolist()
 
         if len(dists) > 1:
             dist_25, dist_50, dist_75 = np.percentile(dists, [25, 50, 75], axis=0)
-            comp_buffers = [
-                generate_geodesic_point_buffer(
+            company_install_shapes[company_name] = {
+                buffer_name: generate_geodesic_point_buffer(
                     central_point[1], central_point[0], dist.km
                 )
-                for dist in (min(dists), dist_25, dist_50, dist_75, max(dists))
-            ]
-            company_install_shapes[company_name] = {
-                "min_buffer": comp_buffers[0],
-                "25_buffer": comp_buffers[1],
-                "50_buffer": comp_buffers[2],
-                "75_buffer": comp_buffers[3],
-                "max_buffer": comp_buffers[4],
+                for buffer_name, dist in [
+                    ("min_buffer", min(dists)),
+                    ("25_buffer", dist_25),
+                    ("50_buffer", dist_50),
+                    ("75_buffer", dist_75),
+                    ("max_buffer", max(dists)),
+                ]
             }
         else:
             comp_buffer = generate_geodesic_point_buffer(
                 central_point[1], central_point[0], dists[0].km
             )
-            # tbd if this should be considered min or max
             company_install_shapes[company_name] = {"min_buffer": comp_buffer}
 
     return company_install_shapes
@@ -117,10 +119,10 @@ def calculate_buffer_distribution(company_install_shapes, epc_geo):
     """
     buffer_distribution = []
     for company, company_shapes in company_install_shapes.items():
-        in_buffer = [shape.contains(epc_geo) for shape in company_shapes.values()]
-        if any(in_buffer) is not False:
-            smallest_buffer = list(company_shapes.keys())[in_buffer.index(True)]
-            buffer_distribution.append(smallest_buffer)
+        for buffer_name, shape in company_shapes.items():
+            if shape.contains(epc_geo):
+                buffer_distribution.append(buffer_name)
+                break
     return Counter(buffer_distribution)
 
 
@@ -141,17 +143,21 @@ def calculate_weighted_installer_proximity(buffer_distb: Counter) -> int:
     weighted_installer_closeness_score = 0
     for buffer_dist, buffer_count in buffer_distb.items():
         if "min_" in buffer_dist:
-            min_score = (1 * buffer_count) / buffer_distb["max_buffer"]
-            weighted_installer_closeness_score += min_score
+            weighted_installer_closeness_score += (1 * buffer_count) / buffer_distb[
+                "max_buffer"
+            ]
         elif "25_" in buffer_dist:
-            twentyfive_score = (1 - 0.25) * buffer_count / buffer_distb["max_buffer"]
-            weighted_installer_closeness_score += twentyfive_score
+            weighted_installer_closeness_score += (
+                (1 - 0.25) * buffer_count / buffer_distb["max_buffer"]
+            )
         elif "50_" in buffer_dist:
-            fifty_score = (1 - 0.5) * buffer_count / buffer_distb["max_buffer"]
-            weighted_installer_closeness_score += fifty_score
+            weighted_installer_closeness_score += (
+                (1 - 0.5) * buffer_count / buffer_distb["max_buffer"]
+            )
         elif "75_" in buffer_dist:
-            seventyfive_score = (1 - 0.75) * buffer_count / buffer_distb["max_buffer"]
-            weighted_installer_closeness_score += seventyfive_score
+            weighted_installer_closeness_score += (
+                (1 - 0.75) * buffer_count / buffer_distb["max_buffer"]
+            )
 
     assert (
         0 <= weighted_installer_closeness_score <= 1
