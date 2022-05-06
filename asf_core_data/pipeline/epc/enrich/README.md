@@ -16,4 +16,4 @@ The indicator works as follows:
 
 <img width="814" alt="indicator_visual" src="https://user-images.githubusercontent.com/46863334/166961845-b5faebef-6e8e-4338-a2fc-817f01669d91.png">
 
-To generate installer proximity scores on a sample of 10,000 EPC ratings from EST cleansed, deduplicated EPC data for England and Wales, run `python installer_proximity_indicator_flow.py run` in your activated conda environment.
+To generate installer proximity scores on a sample of 50,000 EPC ratings from EST cleansed, deduplicated EPC data for England and Wales, run `python installer_proximity_indicator_flow.py run` in your activated conda environment.
