@@ -3,6 +3,7 @@
 
 # ---------------------------------------------------------------------------------
 
+from email.mime import base
 from hashlib import new
 
 # from multiprocessing import _RLockType
@@ -10,6 +11,7 @@ import os
 import re
 import random
 import pandas as pd
+from regex import D
 import numpy as np
 from zipfile import ZipFile
 
@@ -118,7 +120,8 @@ def load_england_wales_recommendations(
     subset=None,
     usecols=None,
     n_samples=None,
-    low_memory=False,
+    dtype=base_config.dtypes,
+    low_memory=True,
 ):
 
     """Load the England and/or Wales EPC data.
@@ -180,6 +183,7 @@ def load_england_wales_recommendations(
     epc_certs = [
         pd.read_csv(
             RAW_ENG_WALES_DATA_PATH / directory / "recommendations.csv",
+            dtype=dtype,
             low_memory=low_memory,
             usecols=usecols,
         )
@@ -227,7 +231,8 @@ def load_scotland_data(
     batch=None,
     usecols=None,
     n_samples=None,
-    low_memory=False,
+    dtype=base_config.dtypes,
+    low_memory=True,
 ):
     """Load the Scotland EPC data.
 
@@ -280,6 +285,7 @@ def load_scotland_data(
     epc_certs = [
         pd.read_csv(
             RAW_SCOTLAND_DATA_PATH / file,
+            dtype=dtype,
             low_memory=low_memory,
             usecols=usecols,
             skiprows=1,  # don't load first row (more ellaborate feature names),
@@ -315,7 +321,8 @@ def load_england_wales_data(
     subset=None,
     usecols=None,
     n_samples=None,
-    low_memory=False,
+    dtype=base_config.dtypes,
+    low_memory=True,
 ):
     """Load the England and/or Wales EPC data.
 
@@ -356,8 +363,9 @@ def load_england_wales_data(
             batch=batch,
             subset="Wales",
             usecols=usecols,
+            dtype=dtype,
+            low_memory=low_memory,
             n_samples=n_samples,
-            low_memory=False,
         )
 
         england_epc = load_england_wales_data(
@@ -367,7 +375,8 @@ def load_england_wales_data(
             subset="England",
             usecols=usecols,
             n_samples=None if n_samples is None else n_samples + additional_samples,
-            low_memory=False,
+            dtype=dtype,
+            low_memory=low_memory,
         )
 
         epc_certs = pd.concat([wales_epc, england_epc], axis=0)
@@ -408,6 +417,7 @@ def load_england_wales_data(
     epc_certs = [
         pd.read_csv(
             RAW_ENG_WALES_DATA_PATH / directory / "certificates.csv",
+            dtype=dtype,
             low_memory=low_memory,
             usecols=usecols,
             dtype=base_config.dtypes,
@@ -435,7 +445,8 @@ def load_raw_epc_data(
     subset="GB",
     usecols=None,
     n_samples=None,
-    low_memory=False,
+    dtype=base_config.dtypes,
+    low_memory=True,
 ):
     """Load and return EPC dataset, or specific subset, as pandas dataframe.
 
@@ -501,6 +512,7 @@ def load_raw_epc_data(
             subset=subset,
             usecols=usecols,
             n_samples=n_samples,
+            dtype=dtype,
             low_memory=low_memory,
         )
         return epc_df
@@ -516,6 +528,7 @@ def load_raw_epc_data(
                 subset=country,
                 usecols=usecols,
                 n_samples=n_samples,
+                dtype=dtype,
                 low_memory=low_memory,
             )
             all_epc_df.append(epc_df)
@@ -617,8 +630,8 @@ def load_preprocessed_epc_data(
     usecols=None,
     n_samples=None,
     snapshot_data=False,
-    dtype={},
-    low_memory=False,
+    dtype=base_config.dtypes,
+    low_memory=True,
 ):
     """Load the EPC dataset including England, Wales and Scotland.
     Select one of the following versions:
@@ -691,7 +704,8 @@ def load_preprocessed_epc_data(
         usecols=usecols,
         nrows=n_samples,
         dtype=dtype,
-    )  # , low_memory=low_memory)
+        low_memory=low_memory,
+    )
 
     for col in base_config.parse_dates:
         if col in epc_df.columns:
