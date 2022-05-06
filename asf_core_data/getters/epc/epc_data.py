@@ -111,7 +111,7 @@ def get_version_path(path, data_path, batch="newest"):
     return Path(path)
 
 
-def load_wales_recommendations(
+def load_england_wales_recommendations(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
     batch=None,
@@ -410,6 +410,7 @@ def load_england_wales_data(
             RAW_ENG_WALES_DATA_PATH / directory / "certificates.csv",
             low_memory=low_memory,
             usecols=usecols,
+            dtype=base_config.dtypes,
         )
         for directory in directories
     ]
