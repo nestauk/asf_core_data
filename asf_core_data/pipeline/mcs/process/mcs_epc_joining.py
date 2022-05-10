@@ -17,7 +17,9 @@ from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_mcs_data,
 )
-from asf_core_data.getters.epc.epc_data import load_preprocessed_epc_data
+from asf_core_data.getters.epc.epc_data import (
+    load_preprocessed_epc_data,
+)  # TODO: check this import succeeds when epc branch is merged
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,
@@ -77,19 +79,6 @@ def prepare_epcs(epcs):
     Returns:
         Dataframe: EPC records with added fields.
     """
-
-    # Keep original EPC address
-    # epcs["compressed_epc_address"] = (
-    #     epcs["ADDRESS1"] + epcs["ADDRESS2"] + epcs["POSTCODE"]
-    # )
-
-    # Remove white spaces
-    # epcs["compressed_epc_address"] = (
-    #     epcs["compressed_epc_address"]
-    #     .str.strip()
-    #     .str.lower()
-    #     .replace(r"\s+", "", regex=True)
-    # )
 
     # Remove spaces, uppercase and strip whitespace from
     # postcodes in order to exact match on this field
@@ -270,10 +259,6 @@ def join_prepared_mcs_epc_data(
             merged.loc[~merged["original_epc_index"].isna()].shape[0],
         )
         print("\n")
-
-    # merged["# records"] = merged["compressed_epc_address"].map(
-    #     dict(merged.groupby("compressed_epc_address").count()["commission_date"])
-    # )
 
     return merged
 

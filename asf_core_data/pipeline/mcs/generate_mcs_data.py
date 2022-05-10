@@ -10,7 +10,7 @@ from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
 )
 from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
 
-config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
+config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
 bucket_name = config["BUCKET_NAME"]
 mcs_installations_path = config["MCS_INSTALLATIONS_PATH"]
@@ -59,7 +59,7 @@ def generate_processed_mcs_installations(epc_version="none"):
         joined_mcs_epc = join_mcs_epc_data(hps=processed_mcs, all_records=True)
         if epc_version == "newest":
             processed_mcs = joined_mcs_epc.loc[
-                joined_mcs_epc.groupby("index_x")["INSPECTION_DATE"].idxmax()
+                joined_mcs_epc.groupby("original_mcs_index")["INSPECTION_DATE"].idxmax()
             ]
         elif epc_version == "most_relevant":
             processed_mcs = select_most_relevant_epc(joined_mcs_epc)
@@ -142,7 +142,7 @@ def generate_and_save_mcs():
     print("Saved in S3: " + full_epc_path)
 
     newest_mcs_epc = fully_joined_mcs_epc.loc[
-        fully_joined_mcs_epc.groupby("index_x")["INSPECTION_DATE"].idxmax()
+        fully_joined_mcs_epc.groupby("original_mcs_index")["INSPECTION_DATE"].idxmax()
     ]
     save_to_s3(s3, bucket_name, newest_mcs_epc, newest_epc_path)
     print("Saved in S3: " + newest_epc_path)
