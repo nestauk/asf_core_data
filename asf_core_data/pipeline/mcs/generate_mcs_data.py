@@ -1,6 +1,6 @@
 from datetime import date
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_mcs_data,
 )

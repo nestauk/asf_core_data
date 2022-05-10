@@ -29,7 +29,7 @@ def get_raw_installations_data(
 
     Args:
         local_path (str, optional): Local path to raw data.
-            Defaults to str(PROJECT_DIR)+MCS_RAW_LOCAL_PATH.
+            Defaults to str(PROJECT_DIR) + INSTALLATIONS_RAW_LOCAL_PATH.
         refresh (bool, optional): Whether or not to update the local copy
             of the data from S3. If local_path does not exist, data will be
             pulled from S3 even if refresh is False. Defaults to False.
