@@ -9,7 +9,7 @@ from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 from asf_core_data.getters.mcs.get_mcs import get_raw_mcs_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
 
-config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
+config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
 MCS_PROCESSED_PATH = config["MCS_PROCESSED_PATH"]
 MAX_COST = config["MCS_MAX_COST"]
