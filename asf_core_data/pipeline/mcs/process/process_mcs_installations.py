@@ -6,14 +6,12 @@ import re
 import datetime as dt
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
-from asf_core_data.getters.mcs.get_mcs import get_raw_installations_data
+from asf_core_data.getters.mcs.get_mcs_installations import get_raw_installations_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
-MCS_PROCESSED_PATH = config["MCS_PROCESSED_PATH"]
 MAX_COST = config["MCS_MAX_COST"]
-# MAX_CAPACITY = config["MCS_MAX_CAPACITY"]
 CLUSTER_TIME_INTERVAL = config["MCS_CLUSTER_TIME_INTERVAL"]
 
 
@@ -113,16 +111,20 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
 
 
 #####
-def get_processed_installations_data(save=True):
+
+
+def get_processed_installations_data():
+    """Get processed MCS installations data.
+
+    Returns:
+        Dataframe: Processed MCS installations data.
+    """
+
     data = get_raw_installations_data()
 
     data = add_columns(data)
     data = mask_outliers(data)
     data = identify_clusters(data)
     data["installer_name"] = data["installer_name"].apply(clean_company_name)
-
-    if save:
-        data.to_csv(str(PROJECT_DIR) + MCS_PROCESSED_PATH)
-        print("Processed data saved in " + str(PROJECT_DIR) + MCS_PROCESSED_PATH)
 
     return data
