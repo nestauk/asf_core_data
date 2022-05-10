@@ -6,7 +6,7 @@ import re
 import datetime as dt
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
-from asf_core_data.getters.mcs.get_mcs import get_raw_mcs_data
+from asf_core_data.getters.mcs.get_mcs import get_raw_installations_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
@@ -113,8 +113,8 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
 
 
 #####
-def get_processed_mcs_data(save=True):
-    data = get_raw_mcs_data()
+def get_processed_installations_data(save=True):
+    data = get_raw_installations_data()
 
     data = add_columns(data)
     data = mask_outliers(data)

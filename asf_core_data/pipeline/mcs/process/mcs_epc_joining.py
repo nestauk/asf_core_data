@@ -15,7 +15,7 @@ import recordlinkage as rl
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
-    get_processed_mcs_data,
+    get_processed_installations_data,
 )
 from asf_core_data.getters.epc.epc_data import (
     load_preprocessed_epc_data,
@@ -285,7 +285,7 @@ def join_mcs_epc_data(
     """
     if hps is None:
         print("Getting HP data...")
-        hps = get_processed_mcs_data()
+        hps = get_processed_installations_data()
 
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
@@ -306,7 +306,7 @@ def join_mcs_epc_data(
     return joined
 
 
-def select_most_relevant_epc(data):
+def select_most_relevant_epc(joined_df):
     """From a "fully joined" MCS-EPC dataset, chooses the "best"
     EPC for each HP installation record (i.e. the one that is assumed
     to best reflect the status of the property at the time of HP installation).
@@ -314,37 +314,39 @@ def select_most_relevant_epc(data):
     otherwise it is the earliest one after the installation.
 
     Args:
-        data (Dataframe): Joined MCS-EPC data. Assumed to
+        joined_df (Dataframe): Joined MCS-EPC data. Assumed to
         contain INSPECTION_DATE, commission_date and original_mcs_index columns.
 
     Returns:
         Dataframe: Most relevant MCS-EPC records.
     """
 
-    # Sort data by INSPECTION_DATE
-    data = data.sort_values("INSPECTION_DATE").reset_index(drop=True)
+    # Sort joined_df by INSPECTION_DATE
+    joined_df = joined_df.sort_values("INSPECTION_DATE").reset_index(drop=True)
 
     # Identify rows where the EPC data is before the MCS one
-    data["epc_before_mcs"] = data["INSPECTION_DATE"] <= data["commission_date"]
+    joined_df["epc_before_mcs"] = (
+        joined_df["INSPECTION_DATE"] <= joined_df["commission_date"]
+    )
 
     # Identify indices of last EPC record before MCS
     last_epc_before_mcs_indices = (
-        data.reset_index()
-        .loc[data["epc_before_mcs"]]
+        joined_df.reset_index()
+        .loc[joined_df["epc_before_mcs"]]
         .groupby("original_mcs_index")
         .tail(1)["index"]
         .values
     )
 
-    data["last_epc_before_mcs"] = False
-    data["last_epc_before_mcs"].iloc[last_epc_before_mcs_indices] = True
+    joined_df["last_epc_before_mcs"] = False
+    joined_df["last_epc_before_mcs"].iloc[last_epc_before_mcs_indices] = True
 
     # Filter to either "last EPC before MCS" or "EPC after MCS",
     # then group by installation and take first record -
     # this will be the last EPC before MCS
     # if it exists, otherwise the first EPC after MCS
     filtered_data = (
-        data.loc[data["last_epc_before_mcs"] | ~data["epc_before_mcs"]]
+        joined_df.loc[joined_df["last_epc_before_mcs"] | ~joined_df["epc_before_mcs"]]
         .groupby("original_mcs_index")
         .head(1)
         .reset_index(drop=True)
