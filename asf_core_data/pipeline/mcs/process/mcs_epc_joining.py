@@ -234,6 +234,7 @@ def join_prepared_mcs_epc_data(
                 "POSTTOWN",
                 "POSTCODE",
                 "index_y",
+                "postcode_y",
                 "standardised_postcode_y",
                 "numeric_tokens_y",
                 "level_0",
@@ -242,7 +243,11 @@ def join_prepared_mcs_epc_data(
         )
     )
     merged = merged.rename(
-        columns={"index_x": "original_mcs_index", "level_1": "original_epc_index"}
+        columns={
+            "index_x": "original_mcs_index",
+            "level_1": "original_epc_index",
+            "postcode_x": "postcode",
+        }
     )
 
     if drop_epc_address:
