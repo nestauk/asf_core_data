@@ -5,7 +5,7 @@ import pandas as pd
 import re
 import datetime as dt
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.getters.mcs.get_mcs import get_raw_mcs_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
 
