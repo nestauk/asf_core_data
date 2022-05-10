@@ -1,3 +1,6 @@
+# File: asf_core_data/pipeline/mcs/generate_mcs_data.py
+"""Generates MCS heat pump installation data."""
+
 from datetime import date
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
@@ -51,12 +54,12 @@ def generate_processed_mcs_installations(epc_version="none"):
             "epc_version should be one of 'none', 'full', 'newest' or 'most_relevant'"
         )
 
-    processed_mcs = get_processed_mcs_data(save=False)
+    processed_mcs = get_processed_mcs_data()
 
     if epc_version == "none":
         return processed_mcs
     else:
-        joined_mcs_epc = join_mcs_epc_data(hps=processed_mcs, all_records=True)
+        joined_mcs_epc = join_mcs_epc_data(hps=processed_mcs)
         if epc_version == "newest":
             processed_mcs = joined_mcs_epc.loc[
                 joined_mcs_epc.groupby("original_mcs_index")["INSPECTION_DATE"].idxmax()
@@ -141,6 +144,7 @@ def generate_and_save_mcs():
     save_to_s3(s3, bucket_name, fully_joined_mcs_epc, full_epc_path)
     print("Saved in S3: " + full_epc_path)
 
+    # avoid completely regenerating the joined df by just filtering it
     newest_mcs_epc = fully_joined_mcs_epc.loc[
         fully_joined_mcs_epc.groupby("original_mcs_index")["INSPECTION_DATE"].idxmax()
     ]

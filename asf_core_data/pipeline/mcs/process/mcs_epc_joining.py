@@ -1,4 +1,4 @@
-# File: heat_pump_adoption_modelling/pipeline/process/mcs_epc_joining.py
+# File: heat_pump_adoption_modelling/pipeline/mcs/process/mcs_epc_joining.py
 """Joining the MCS and EPC datasets.
 Overall process is as follows:
 - Standardise address and postcode fields
