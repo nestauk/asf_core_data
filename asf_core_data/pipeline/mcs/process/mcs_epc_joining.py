@@ -19,7 +19,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
 )
 from asf_core_data.getters.epc.epc_data import (
     load_preprocessed_epc_data,
-)  # TODO: check this import succeeds when epc branch is merged
+)
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,

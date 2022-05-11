@@ -278,7 +278,6 @@ MCS_EPC_MATCHING_PARAMETER: 0.7
 MCS_EPC_MERGED_PATH: "/outputs/mcs_epc.csv"
 MCS_EPC_MAX_TOKEN_LENGTH: 8
 
-# no .csv so that current date can be added
 MCS_INSTALLATIONS_PATH: "/outputs/MCS/mcs_installations_{}.csv"
 MCS_INSTALLATIONS_EPC_FULL_PATH: "/outputs/MCS/mcs_installations_epc_full_{}.csv"
 MCS_INSTALLATIONS_EPC_NEWEST_PATH: "/outputs/MCS/mcs_installations_epc_newest_{}.csv"
