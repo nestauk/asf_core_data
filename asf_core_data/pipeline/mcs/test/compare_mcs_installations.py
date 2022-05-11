@@ -23,21 +23,21 @@ config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yam
 bucket_name = config["BUCKET_NAME"]
 
 
-def compare_mcs_installations(old_installations_data, new_installations_data):
+# def compare_mcs_installations(old_installations_data, new_installations_data):
 
-    compare = datacompy.Compare(
-        old_installations_data,
-        new_installations_data,
-        join_columns=[
-            "Version Number",
-            "Commissioning Date",
-            "Address Line 1",
-            "Postcode",
-        ],
-        df1_name="Old Installations Data",
-        df2_name="New Installations Data",
-    )
-    print(compare.report())
+#     compare = datacompy.Compare(
+#         old_installations_data,
+#         new_installations_data,
+#         join_columns=[
+#             "Version Number",
+#             "Commissioning Date",
+#             "Address Line 1",
+#             "Postcode",
+#         ],
+#         df1_name="Old Installations Data",
+#         df2_name="New Installations Data",
+#     )
+#     print(compare.report())
 
 
 def compare_mcs_installers(old_installers_data, new_installers_data):
@@ -45,7 +45,12 @@ def compare_mcs_installers(old_installers_data, new_installers_data):
     compare = datacompy.Compare(
         old_installers_data,
         new_installers_data,
-        join_columns=["Company Name", "MCS certificate number", "Add 1", "PCode",],
+        join_columns=[
+            "Company Name",
+            "MCS certificate number",
+            "Add 1",
+            "PCode",
+        ],
         df1_name="Old Installers Data",
         df2_name="New Installers Data",
     )
@@ -122,7 +127,7 @@ def within_mcs_installers_check(mcs_installers):
         mcs_installer_comp_data = schema_withchecks.validate(
             mcs_installers_no_unspecified, lazy=True
         )
-    except pa.errors.SchemaErrors:
+    except pa.errors.SchemaErrors as err:
         err.failure_cases  # dataframe of schema errors
         err.data  # invalid dataframe
 
@@ -266,10 +271,10 @@ if __name__ == "__main__":
     print(f"---- within installation check of {new_installation_data_path}----")
     within_mcs_installations_check(new_installation_data)
 
-    print(
-        f"---- between installations check of {old_installation_data_path} and {new_installation_data_path}----"
-    )
-    compare_mcs_installations(old_installation_data, new_installation_data)
+    # print(
+    #     f"---- between installations check of {old_installation_data_path} and {new_installation_data_path}----"
+    # )
+    # compare_mcs_installations(old_installation_data, new_installation_data)
 
     print(
         f"---- between installations check of {old_installers_path} and {new_installers_path}----"
