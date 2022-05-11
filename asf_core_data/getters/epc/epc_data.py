@@ -11,7 +11,8 @@ import os
 import re
 import random
 import pandas as pd
-from regex import D
+
+# from regex import D
 import numpy as np
 from zipfile import ZipFile
 
@@ -302,7 +303,9 @@ def load_scotland_data(
         columns={
             "WALL_ENV_EFF": "WALLS_ENV_EFF",
             "WALL_ENERGY_EFF": "WALLS_ENERGY_EFF",
+            "WALL_DESCRIPTION": "WALLS_DESCRIPTION",
             "POST_TOWN": "POSTTOWN",
+            "HEAT_LOSS_CORRIDOOR": "HEAT_LOSS_CORRIDOR",
         }
     )
 
@@ -420,7 +423,6 @@ def load_england_wales_data(
             dtype=dtype,
             low_memory=low_memory,
             usecols=usecols,
-            dtype=base_config.dtypes,
         )
         for directory in directories
     ]
