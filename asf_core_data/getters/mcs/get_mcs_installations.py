@@ -7,7 +7,7 @@ import os
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 
-from asf_core_data.getters.data_getters import s3, load_s3_data
+from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
 
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import colnames_dict
 
@@ -16,11 +16,12 @@ config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 BUCKET_NAME = config["BUCKET_NAME"]
 INSTALLATIONS_RAW_S3_PATH = config["INSTALLATIONS_RAW_S3_PATH"]
 INSTALLATIONS_RAW_LOCAL_PATH = config["INSTALLATIONS_RAW_LOCAL_PATH"]
+RAW_DATA_S3_FOLDER = config["RAW_DATA_S3_FOLDER"]
 
 
 def get_raw_installations_data(
     local_path=str(PROJECT_DIR) + INSTALLATIONS_RAW_LOCAL_PATH,
-    refresh=False,
+    refresh=True,
     verbose=True,
 ):
     """Get raw MCS HP installation data (both domestic and non-domestic)
@@ -32,7 +33,7 @@ def get_raw_installations_data(
             Defaults to str(PROJECT_DIR) + INSTALLATIONS_RAW_LOCAL_PATH.
         refresh (bool, optional): Whether or not to update the local copy
             of the data from S3. If local_path does not exist, data will be
-            pulled from S3 even if refresh is False. Defaults to False.
+            pulled from S3 even if refresh is False. Defaults to True.
         verbose (bool, optional): Whether to print info about the number of
             samples before and after deduplication.
 

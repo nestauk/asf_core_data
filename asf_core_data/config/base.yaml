@@ -1,5 +1,6 @@
-INSTALLATIONS_RAW_S3_PATH: "inputs/MCS/mcs_heat_pumps.xlsx"
-INSTALLATIONS_RAW_LOCAL_PATH: "/inputs/data/mcs/mcs_heat_pumps.xlsx"
+RAW_DATA_S3_FOLDER: "inputs/MCS/latest_raw_data"
+INSTALLATIONS_RAW_S3_PATH: "inputs/MCS/mcs_installations.csv"
+INSTALLATIONS_RAW_LOCAL_PATH: "/inputs/data/mcs/installations"
 INSTALLATIONS_RAW_INSTALLER_S3_PATH: "inputs/mcs/mcs_installer_information.xlsx"
 PREPROC_GEO_MCS_INSTALLATIONS_PATH: "/outputs/mcs/cleaned_geocoded_mcs_installations.csv"
 PREPROC_MCS_INSTALLER_COMPANY_PATH: "/outputs/mcs/cleaned_geocoded_mcs_installer_companies.csv"

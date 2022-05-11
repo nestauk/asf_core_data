@@ -2,6 +2,7 @@
 """Generates MCS heat pump installation data."""
 
 from datetime import date
+import pandas as pd
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
@@ -22,6 +23,8 @@ mcs_installations_epc_newest_path = config["MCS_INSTALLATIONS_EPC_NEWEST_PATH"]
 mcs_installations_epc_most_relevant_path = config[
     "MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH"
 ]
+installations_raw_s3_path = config["INSTALLATIONS_RAW_S3_PATH"]
+raw_data_s3_folder = config["RAW_DATA_S3_FOLDER"]
 
 keyword_to_path_dict = {
     "none": mcs_installations_path,
@@ -29,6 +32,30 @@ keyword_to_path_dict = {
     "newest": mcs_installations_epc_newest_path,
     "most_relevant": mcs_installations_epc_most_relevant_path,
 }
+
+
+def concatenate_save_raw_installations():
+    """Generate concatenated installation csv from individual installation files.
+    Takes all files in S3 raw data folder with "installations" in the filename,
+    concatenates and saves the result in the top level MCS inputs folder.
+    """
+
+    bucket = s3.Bucket(bucket_name)
+
+    installations_dfs = [
+        load_s3_data(s3, bucket_name, object.key)
+        for object in bucket.objects.filter(Prefix=raw_data_s3_folder)
+        if "installations" in object.key
+    ]
+
+    concat_installations = pd.concat(installations_dfs)
+    print(
+        "Number of records before removing duplicates:", concat_installations.shape[0]
+    )
+    concat_installations.drop_duplicates(inplace=True, ignore_index=True)
+    print("Number of records after removing duplicates:", concat_installations.shape[0])
+
+    save_to_s3(s3, bucket_name, concat_installations, installations_raw_s3_path)
 
 
 def generate_processed_mcs_installations(epc_version="none"):
@@ -136,7 +163,9 @@ def generate_and_save_mcs():
         ]
     ]
 
-    processed_mcs = get_processed_mcs_data(save=False)
+    concatenate_save_raw_installations()
+
+    processed_mcs = get_processed_mcs_data()
     save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
     print("Saved in S3: " + no_epc_path)
 

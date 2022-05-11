@@ -113,14 +113,18 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
 #####
 
 
-def get_processed_installations_data():
+def get_processed_installations_data(refresh=True):
     """Get processed MCS installations data.
+
+    Args:
+        refresh (bool): Whether or not to redownload the unprocessed data
+        from S3. Defaults to True.
 
     Returns:
         Dataframe: Processed MCS installations data.
     """
 
-    data = get_raw_installations_data()
+    data = get_raw_installations_data(refresh=refresh)
 
     data = add_columns(data)
     data = mask_outliers(data)
