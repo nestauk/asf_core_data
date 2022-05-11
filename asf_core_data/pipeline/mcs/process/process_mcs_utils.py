@@ -184,14 +184,13 @@ def remove_punctuation(address):
     Underscores are kept and slashes/dashes are converted
     to underscores so that the numeric tokens in e.g.
     "Flat 3/2" and "Flat 3-2" are treated as a whole later.
-    Parameters
-    ----------
-    address : str
-        Address to format.
-    Return
-    ----------
-    address : str
-        Formatted address."""
+
+    Args:
+        address (str): Address to format.
+
+    Returns:
+        address (str): Formatted address.
+    """
 
     if (address is pd.NA) | (address is np.nan):
         return ""
@@ -213,17 +212,14 @@ def extract_token_set(address, postcode, max_token_length):
     - below a certain token_length (to remove long MPAN strings)
     - not the inward or outward code of the property's postcode
     - not the property's postcode with space removed
-    Parameters
-    ----------
-    address : string
-        String from which to extract tokens.
-    postcode : string
-        String used for removal of tokens corresponding to postcode parts.
-    Return
-    ----------
-    valid_token_set : set
-        Set of valid tokens.
-        Set chosen as the order does not matter for comparison purposes.
+
+    Args:
+        address (str): String from which to extract tokens.
+        postcode (str): String used for removal of tokens corresponding to postcode parts.
+
+    Returns:
+        valid_token_set (set): Set of valid tokens. Set chosen as the order does not matter
+        for comparison purposes.
     """
     # wonder if single-letter tokens should be in here too
     # for e.g. "Flat A" or whether this would give too many
