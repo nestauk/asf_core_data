@@ -48,12 +48,12 @@ This repository is the foundation for many projects in our work on sustainabilit
 
 Generally, both the EPC and MCS data will be updated every three months. Release dates can vary as we are not responsible for the release of the raw data.
 
-| Dataset                     | Content          | Last updated     |
-| --------------------------- | ---------------- | ---------------- |
-| EPC England/Wales           | up to Q4 2021    | March 14th, 2022 |
-| EPC Scotland                | up to Q2 2021    | March 14th, 2022 |
-| MCS Heat Pump Installations | up to Q4 2021    | February 25th, 2022 |
-| MCS HP Installer Data       | up to Q4 2021    | March 15th, 2022 |
+| Dataset                     | Content       | Last updated        |
+| --------------------------- | ------------- | ------------------- |
+| EPC England/Wales           | up to Q4 2021 | March 14th, 2022    |
+| EPC Scotland                | up to Q2 2021 | March 14th, 2022    |
+| MCS Heat Pump Installations | up to Q4 2021 | February 25th, 2022 |
+| MCS HP Installer Data       | up to Q4 2021 | March 15th, 2022    |
 
 <a href="#top">[back to top]</a>
 
@@ -210,34 +210,42 @@ Below we describe the necessary steps to download and update the data. Don't wor
 
 The MCS datasets contain information on MCS-certified heat pump **installations** and **installers**. These datasets are proprietary and cannot be shared outside of Nesta. Both datasets are provided quarterly by MCS and are stored in the **asf-core-data** bucket on S3.
 
+### How to use <a name="instructions"></a>
+
+To pull installation data into a project, first install this repo as a package then run
+
+    from asf_core_data.asf_core_data.pipeline.mcs.generate_mcs_data import get_mcs_installations
+
+    installation_data = get_mcs_installations(...)
+
 ### Installations <a name="mcs_installations"></a>
-  
+
 The MCS **installations** dataset contains one record for each MCS certificate. In almost all cases, each MCS certificate corresponds to a single heat pump system installation (which in some cases may feature multiple heat pumps). The dataset contains records of both domestic and non-domestic installations. Features in the dataset include
-  
-  - characteristics of the property: address, heat and water demand, alternative heating system
-  - characteristics of the installed heat pump: model, manufacturer, capacity, flow temperature, SCOP
-  - characteristics of the installation: commissioning date, overall cost, installer name, whether or not the installation is eligible for RHI
-  - characteristics of the certificate: version number, certification date
+
+- characteristics of the property: address, heat and water demand, alternative heating system
+- characteristics of the installed heat pump: model, manufacturer, capacity, flow temperature, SCOP
+- characteristics of the installation: commissioning date, overall cost, installer name, whether or not the installation is eligible for RHI
+- characteristics of the certificate: version number, certification date
 
 For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing). Further information about the fields included in this dataset can be found [here](https://docs.google.com/spreadsheets/d/1XaGDblbCIBTkStH3_RE7d6qzzKAWghRf/edit#gid=1260528248). (Access to these documents is provided only to Nesta employees)
 
 ### Installers <a name="mcs_installers"></a>
-  
+
 The MCS **installers** dataset contains one record for each MCS-certified installer. Features in the dataset include
-  
-  - name and address
-  - technologies installed
-  - locations in which the installer operates
+
+- name and address
+- technologies installed
+- locations in which the installer operates
 
 ### Merging with EPC <a name="mcs_epc_merging"></a>
-  
+
 **asf_core_data/pipeline/mcs** contains functions for processing the raw MCS data and joining it with EPC data. In particular, running **generate_mcs_data.py** will process and save four different versions of the data to S3:
-  
-  1. Cleaned MCS installation data, with one row for each **installation**, taking the most recent version of each certificate
-  2. As in 1., with EPC data fully joined: when a property also appears in EPC data, a row is included for each EPC (so the full EPC history of the property appears in the data)
-  3. As in 2., filtered only to the most recent EPC
-  4. As in 2., filtered to the "most relevant" EPC which aims to best reflect the status of the property at the time of the installation: the latest EPC before the installation if one exists, otherwise the earliest EPC after the installation
-  
+
+1. Cleaned MCS installation data, with one row for each **installation**, taking the most recent version of each certificate
+2. As in 1., with EPC data fully joined: when a property also appears in EPC data, a row is included for each EPC (so the full EPC history of the property appears in the data)
+3. As in 2., filtered only to the most recent EPC
+4. As in 2., filtered to the "most relevant" EPC which aims to best reflect the status of the property at the time of the installation: the latest EPC before the installation if one exists, otherwise the earliest EPC after the installation
+
 Further details about the processing and joining of the data are provided within asf_core_data/pipeline.
 
 <a href="#top">[back to top]</a>
