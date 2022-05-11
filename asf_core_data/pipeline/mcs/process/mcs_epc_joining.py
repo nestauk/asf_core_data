@@ -1,4 +1,4 @@
-# File: heat_pump_adoption_modelling/pipeline/preprocessing/mcs_epc_joining.py
+# File: heat_pump_adoption_modelling/pipeline/mcs/process/mcs_epc_joining.py
 """Joining the MCS and EPC datasets.
 Overall process is as follows:
 - Standardise address and postcode fields
@@ -7,34 +7,28 @@ Overall process is as follows:
 - Exact match on numeric tokens
 - Compare address using Jaro-Winkler score
 - Drop any match with score below a certain parameter
-- Of the remaining matches, take the one with highest score
+- Of the remaining matches, take the ones with highest score
 - Join datasets using this matching
 """
 
-import pandas as pd
-import numpy as np
-import re
 import recordlinkage as rl
-import time
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
-    get_processed_mcs_data,
+    get_processed_installations_data,
 )
-from asf_core_data.getters.epc.get_epc import load_preprocessed_epc_data
+from asf_core_data.getters.epc.epc_data import (
+    load_preprocessed_epc_data,
+)  # TODO: check this import succeeds when epc branch is merged
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,
 )
 
-config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
+config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
 max_token_length = config["MCS_EPC_MAX_TOKEN_LENGTH"]
-address_fields = config["MCS_EPC_ADDRESS_FIELDS"]
-characteristic_fields = config["MCS_EPC_CHARACTERISTIC_FIELDS"]
 matching_parameter = config["MCS_EPC_MATCHING_PARAMETER"]
-merged_path = config["MCS_EPC_MERGED_PATH"]
-supervised_model_features = config["EPC_PREPROC_FEAT_SELECTION"]  # needed?
 
 # ---------------------------------------------------------------------------------
 
@@ -44,17 +38,16 @@ supervised_model_features = config["EPC_PREPROC_FEAT_SELECTION"]  # needed?
 def prepare_hps(hps):
     """Prepare Dataframe of HP installations by adding
     standardised_postcode, standardised_address and numeric_tokens fields.
-    Parameters
-    ----------
-    dhps : pandas.Dataframe
-        Dataframe with postcode, address_1 and address_2 fields.
-    Return
-    ----------
-    dhps : pandas.Dataframe
-        Dataframe containing domestic HP records with added fields."""
+
+    Args:
+        hps (Dataframe): Dataframe with postcode, address_1 and address_2 fields.
+
+    Returns:
+        Dataframe: Domestic HP records with added fields.
+    """
 
     hps["standardised_postcode"] = (
-        hps["postcode"].fillna("unknown").str.upper().str.strip()
+        hps["postcode"].fillna("unknown").str.upper().str.replace(" ", "")
     )
 
     hps["standardised_address"] = [
@@ -79,27 +72,13 @@ def prepare_hps(hps):
 def prepare_epcs(epcs):
     """Prepare Dataframe of EPC records by adding
     standardised_postcode, standardised_address and numeric_tokens fields.
-    Parameters
-    ----------
-    epcs : pandas.Dataframe
-        Dataframe with POSTCODE, ADDRESS1 and ADDRESS2 fields.
-    Return
-    ----------
-    epcs : pandas.Dataframe
-        Dataframe containing EPC records with added fields."""
 
-    # Keep original EPC address
-    epcs["compressed_epc_address"] = (
-        epcs["ADDRESS1"] + epcs["ADDRESS2"] + epcs["POSTCODE"]
-    )
+    Args:
+        epcs (Dataframe): EPC records with POSTCODE, ADDRESS1 and ADDRESS2 fields.
 
-    # Remove white spaces
-    epcs["compressed_epc_address"] = (
-        epcs["compressed_epc_address"]
-        .str.strip()
-        .str.lower()
-        .replace(r"\s+", "", regex=True)
-    )
+    Returns:
+        Dataframe: EPC records with added fields.
+    """
 
     # Remove spaces, uppercase and strip whitespace from
     # postcodes in order to exact match on this field
@@ -114,7 +93,7 @@ def prepare_epcs(epcs):
     ]
 
     epcs["numeric_tokens"] = [
-        extract_token_set(address, postcode)
+        extract_token_set(address, postcode, max_token_length)
         for address, postcode in zip(
             epcs["standardised_address"].fillna(""), epcs["POSTCODE"].fillna("")
         )
@@ -142,20 +121,18 @@ def form_matching(df1, df2):
     This feels better suited than e.g. Levenshtein as to not
     excessively punish the inclusion of extra information at
     the end of the address field e.g. town, county.
-    Parameters
-    ----------
-    df1 : pandas.Dataframe
-        Dataframe with standardised_postcode, numeric_tokens
-        and standardised_address fields.
-    df2 : pandas.Dataframe
-        Dataframe with standardised_postcode, numeric_tokens
-        and standardised_address fields.
-    Return
-    ----------
-    matching : pandas.Dataframe
-        Dataframe giving indices of df1 and matched indices in df2
+
+    Args:
+        df1 (Dataframe): Dataframe with standardised_postcode,
+        numeric_tokens and standardised_address fields.
+        df2 (Dataframe): Dataframe with standardised_postcode,
+        numeric_tokens and standardised_address fields.
+
+    Returns:
+        Dataframe: Indices of df1 and matched indices in df2
         along with similarity scores for numeric tokens (value in {0, 1})
-        and address (continuous value in [0, 1])."""
+        and address (continuous value in [0, 1]).
+    """
 
     # Index
     print("- Forming an index...")
@@ -182,37 +159,31 @@ def form_matching(df1, df2):
 
 
 def join_prepared_mcs_epc_data(
-    hps=None,
-    epcs=None,
-    # save=True,
-    all_records=False,
+    hps,
+    epcs,
+    all_records=True,
     drop_epc_address=True,
     verbose=True,
 ):
     """Join prepared MCS and EPC data.
-    Parameters
-    ----------
-    hps : pandas.Dataframe
-        Dataframe with standardised_postcode, numeric_tokens
-        and standardised_address fields.
-        If None, HP data is loaded and augmented.
-    epcs : pandas.Dataframe
-        Dataframe with standardised_postcode, numeric_tokens
-        and standardised_address fields.
-        If None, EPC data is loaded and augmented.
-    all_records : bool
-        Whether all top matches should be kept, or just one.
-        Keeping all records allows for comparison of property
-        characteristics over time.
-    save : bool
-        Whether or not to save the output.
-    drop_epc_address : bool
-        Whether or not to drop addresses from the EPC records.
-        Useful to keep for determining whether matches are sensible.
-    Return
-    ----------
-    merged : pandas.Dataframe
-        Dataframe containing merged MCS and EPC records."""
+
+    Args:
+        hps (Dataframe): Dataframe with standardised_postcode,
+        numeric_tokens and standardised_address fields.
+        epcs (Dataframe): Dataframe with standardised_postcode,
+        numeric_tokens and standardised_address fields.
+        all_records (bool, optional): Whether all top matches should be kept,
+        or just one. Keeping all records allows for comparison of
+        property characteristics over time. Defaults to True.
+        drop_epc_address (bool, optional): Whether or not to drop addresses
+        from the EPC records. Useful to keep for determining whether
+        matches are sensible. Defaults to True.
+        verbose (bool, optional): Whether or not to print diagnostic information
+        about the matching, e.g. number of matched records. Defaults to True.
+
+    Returns:
+        Dataframe: Merged MCS and EPC records.
+    """
 
     print("Forming a matching...")
     matching = form_matching(df1=hps, df2=epcs)
@@ -259,13 +230,24 @@ def join_prepared_mcs_epc_data(
                 "standardised_address_x",
                 "numeric_tokens_x",
                 "ADDRESS1",
+                "ADDRESS2",
                 "POSTTOWN",
                 "POSTCODE",
                 "index_y",
+                "postcode_y",
                 "standardised_postcode_y",
                 "numeric_tokens_y",
-            ]
+                "level_0",
+            ],
+            errors="ignore",
         )
+    )
+    merged = merged.rename(
+        columns={
+            "index_x": "original_mcs_index",
+            "level_1": "original_epc_index",
+            "postcode_x": "postcode",
+        }
     )
 
     if drop_epc_address:
@@ -275,87 +257,61 @@ def join_prepared_mcs_epc_data(
 
     if verbose:
 
-        print("After joining:\n-----------------\n")
-        # print(merged["installation_type"].value_counts(dropna=False))
-        print(merged.shape)
-
+        print("After joining:\n-----------------")
+        print("Total records:", merged.shape[0])
         print(
-            "Matched with EPC",
-            merged.loc[~merged["compressed_epc_address"].isna()].shape,
+            "Number matched with EPC:",
+            merged.loc[~merged["original_epc_index"].isna()].shape[0],
         )
-        print(
-            "Not matched with EPC",
-            merged.loc[merged["compressed_epc_address"].isna()].shape,
-        )
-
-    merged["# records"] = merged["compressed_epc_address"].map(
-        dict(merged.groupby("compressed_epc_address").count()["date"])
-    )
-
-    if verbose:
-        pass
-        # print(
-        #     merged.loc[merged["compressed_epc_address"].isna()][
-        #         "installation_type"
-        #     ].value_counts(dropna=False)
-        # )
-
-        # print(
-        #     merged.loc[~merged["compressed_epc_address"].isna()][
-        #         "installation_type"
-        #     ].value_counts(dropna=False)
-        # )
-
-    if not all_records:
-        merged = merged.sort_values("date", ascending=True).drop_duplicates(
-            subset=["compressed_epc_address"], keep="first"
-        )
-        if verbose:
-            print(merged.shape)
-
-        merged = merged[merged["compressed_epc_address"].notna()]
-        if verbose:
-            print(merged.shape)
-
-            print("After removing duplicates:\n-----------------\n")
-            #  print(merged["installation_type"].value_counts(dropna=False))
-            print(merged.shape)
-
-            print(merged.loc[merged["compressed_epc_address"].isna()].shape)
-
-            print(merged.shape)
-
-    # if save:
-    #     merged.to_csv(str(PROJECT_DIR) + merged_path)
+        print("\n")
 
     return merged
 
 
-def join_mcs_epc_data(hps=None, epcs=None, all_records=False):
+def join_mcs_epc_data(
+    hps=None, epcs=None, all_records=True, drop_epc_address=True, verbose=True
+):
+    """Produce joined MCS-EPC dataframe.
 
+    Args:
+        hps (Dataframe, optional): MCS installation records.
+        If None, records are fetched automatically. Defaults to None.
+        epcs (Dataframe, optional): EPC records. If None, records
+        are fetched automatically. Defaults to None.
+        all_records (bool, optional): Whether or not to use all matching EPC
+        records or just take one. Defaults to True.
+        drop_epc_address (bool, optional): Whether or not to drop the address
+        from the EPC records used for matching. Defaults to True.
+        verbose (bool, optional): Whether or not to print diagnostic information.
+        Defaults to True.
+
+    Returns:
+        Dataframe: Matched MCS-EPC records.
+    """
     if hps is None:
         print("Getting HP data...")
-        hps = get_processed_mcs_data()
+        hps = get_processed_installations_data()
 
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        fields_of_interest = address_fields + characteristic_fields
-        epcs = load_preprocessed_epc_data(
-            version=epc_version, usecols=fields_of_interest, low_memory=True
-        )
+        epcs = load_preprocessed_epc_data(version=epc_version, low_memory=True)
 
     prepared_hps = prepare_hps(hps)
     prepared_epcs = prepare_epcs(epcs)
 
     joined = join_prepared_mcs_epc_data(
-        prepared_hps, prepared_epcs, all_records=all_records
+        prepared_hps,
+        prepared_epcs,
+        all_records=all_records,
+        drop_epc_address=drop_epc_address,
+        verbose=verbose,
     )
 
     return joined
 
 
-def select_most_relevant_epc(data):
+def select_most_relevant_epc(joined_df):
     """From a "fully joined" MCS-EPC dataset, chooses the "best"
     EPC for each HP installation record (i.e. the one that is assumed
     to best reflect the status of the property at the time of HP installation).
@@ -363,38 +319,40 @@ def select_most_relevant_epc(data):
     otherwise it is the earliest one after the installation.
 
     Args:
-        data ([type]): Joined MCS-EPC data. Assumed to
-        contain INSPECTION_DATE, date and index_x columns.
+        joined_df (Dataframe): Joined MCS-EPC data. Assumed to
+        contain INSPECTION_DATE, commission_date and original_mcs_index columns.
 
     Returns:
-        Dataframe: HP installation records attached to the
+        Dataframe: Most relevant MCS-EPC records.
     """
 
-    # Sort data by INSPECTION_DATE
-    data = data.sort_values("INSPECTION_DATE").reset_index(drop=True)
+    # Sort joined_df by INSPECTION_DATE
+    joined_df = joined_df.sort_values("INSPECTION_DATE").reset_index(drop=True)
 
     # Identify rows where the EPC data is before the MCS one
-    data["epc_before_mcs"] = data["INSPECTION_DATE"] <= data["date"]
+    joined_df["epc_before_mcs"] = (
+        joined_df["INSPECTION_DATE"] <= joined_df["commission_date"]
+    )
 
     # Identify indices of last EPC record before MCS
     last_epc_before_mcs_indices = (
-        data.reset_index()
-        .loc[data["epc_before_mcs"]]
-        .groupby("index_x")
+        joined_df.reset_index()
+        .loc[joined_df["epc_before_mcs"]]
+        .groupby("original_mcs_index")
         .tail(1)["index"]
         .values
     )
 
-    data["last_epc_before_mcs"] = False
-    data["last_epc_before_mcs"].iloc[last_epc_before_mcs_indices] = True
+    joined_df["last_epc_before_mcs"] = False
+    joined_df["last_epc_before_mcs"].iloc[last_epc_before_mcs_indices] = True
 
     # Filter to either "last EPC before MCS" or "EPC after MCS",
     # then group by installation and take first record -
     # this will be the last EPC before MCS
     # if it exists, otherwise the first EPC after MCS
     filtered_data = (
-        data.loc[data["last_epc_before_mcs"] | ~data["epc_before_mcs"]]
-        .groupby("index_x")
+        joined_df.loc[joined_df["last_epc_before_mcs"] | ~joined_df["epc_before_mcs"]]
+        .groupby("original_mcs_index")
         .head(1)
         .reset_index(drop=True)
         .drop(columns=["epc_before_mcs", "last_epc_before_mcs"])
@@ -403,26 +361,25 @@ def select_most_relevant_epc(data):
     return filtered_data
 
 
-# ---------------------------------------------------------------------------------
+#### For testing purposes:
 
+# import pandas as pd
 
-def main():
-    """Main function: Load and join MCS data to EPC data."""
+# test_mcs = pd.DataFrame({
+#     "postcode": ["A1 1AA", "A1 1AB", "A1 1AD"],
+#     "address_1": ["1 Main Street", "2 High Street", "4 Side Avenue"],
+#     "address_2": ["Townsville", "Cityburgh", "Townsville"],
+#     "cost": [10500, 8500, 9000],
+# })
 
-    start_time = time.time()
+# test_epc = pd.DataFrame({
+#     "POSTCODE": ["A1 1AB", "A1 1AA", "A1 1AC", "A1 1AB", "A1 1AA", "A1 1AA"],
+#     "ADDRESS1": ["2 High Street", "1 Main Street", "2 High Street", "3 High Street", "1 Main Street", "1 The House"],
+#     "ADDRESS2": ["Cityburgh", "Townsville", "Cityburgh", "Cityburgh", "Townsville", "Townsville"],
+#     "ENERGY_EFFICIENCY_RATING": ["D", "A", "C", "D", "B", "F"],
+# })
 
-    join_mcs_epc_data()
+# prepared_hps = prepare_hps(test_mcs)
+# prepared_epcs = prepare_epcs(test_epc)
 
-    end_time = time.time()
-    runtime = round((end_time - start_time) / 60)
-
-    print(
-        "Loading and joining MCS and EPC data took {} minutes.\n\nOutput saved in {}".format(
-            runtime, merged_path
-        )
-    )
-
-
-if __name__ == "__main__":
-    # Execute only if run as a script
-    main()
+# join_mcs_epc_data(hps=test_mcs, epcs=test_epc, all_records=False)

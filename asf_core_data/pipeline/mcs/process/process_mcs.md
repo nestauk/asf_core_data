@@ -5,7 +5,6 @@
 The code for cleaning MCS installation data is found in **process_mcs_installations.py**. The function **get_processed_mcs_data** does the following:
 
 - Fetches raw MCS installation data
-- Removes old records (i.e. groups records by address and installation date, then only keeps the record with maximum **version_number**)
 - Adds useful columns: splits **products** into **product_id**, **product_name**, **manufacturer**, **flow_temp** and **scop**, and adds **rhi** and **year** columns
 - Replaces any clearly incorrect values of cost, flow temperature or SCOP with NA
 - Flags installations that occurred as part of a "cluster" of installations in the same postcode within a certain time interval

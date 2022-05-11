@@ -8,7 +8,6 @@ installer company data.
 import pandas as pd
 import requests
 import time
-import string
 import re
 import numpy as np
 
@@ -17,7 +16,7 @@ import numpy as np
 colnames_dict = {
     "Version Number": "version",
     "Certificate Creation Date": "cert_date",
-    "Commissioning Date": "date",
+    "Commissioning Date": "commission_date",
     "Address Line 1": "address_1",
     "Address Line 2": "address_2",
     "Address Line 3": "address_3",
@@ -43,7 +42,7 @@ colnames_dict = {
     "RHI Metering Status": "rhi_status",
     "RHI Metering Not Ready Reason": "rhi_not_ready",
     "Number of MCS Certificates": "n_certificates",
-    "Heating System Type": "system_type",  # check - what's this?
+    "Heating System Type": "system_type",
     "Alternative Heating System Type": "alt_type",
     "Alternative Heating System Fuel Type": "alt_fuel",
     "Overall Cost": "cost",
