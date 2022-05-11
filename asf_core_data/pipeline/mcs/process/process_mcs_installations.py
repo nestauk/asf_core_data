@@ -124,11 +124,13 @@ def get_processed_installations_data(refresh=True):
         Dataframe: Processed MCS installations data.
     """
 
-    data = get_raw_installations_data(refresh=refresh)
+    installations_data = get_raw_installations_data(refresh=refresh)
 
-    data = add_columns(data)
-    data = mask_outliers(data)
-    data = identify_clusters(data)
-    data["installer_name"] = data["installer_name"].apply(clean_company_name)
+    installations_data = add_columns(installations_data)
+    installations_data = mask_outliers(installations_data)
+    installations_data = identify_clusters(installations_data)
+    installations_data["installer_name"] = installations_data["installer_name"].apply(
+        clean_company_name
+    )
 
-    return data
+    return installations_data

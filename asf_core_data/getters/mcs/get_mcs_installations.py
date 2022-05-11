@@ -7,7 +7,7 @@ import os
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 
-from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+from asf_core_data.getters.data_getters import s3, load_s3_data
 
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import colnames_dict
 
