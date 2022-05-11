@@ -6,7 +6,7 @@ import pandas as pd
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
-    get_processed_mcs_data,
+    get_processed_installations_data,
 )
 from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
     join_mcs_epc_data,
@@ -81,7 +81,7 @@ def generate_processed_mcs_installations(epc_version="none"):
             "epc_version should be one of 'none', 'full', 'newest' or 'most_relevant'"
         )
 
-    processed_mcs = get_processed_mcs_data()
+    processed_mcs = get_processed_installations_data()
 
     if epc_version == "none":
         return processed_mcs
@@ -154,7 +154,7 @@ def generate_and_save_mcs():
     today = date.today().strftime("%y%m%d")
 
     no_epc_path, full_epc_path, newest_epc_path, most_relevant_epc_path = [
-        (path_stem + "_" + today + ".csv")
+        path_stem.format(today)
         for path_stem in [
             mcs_installations_path,
             mcs_installations_epc_full_path,
@@ -165,7 +165,7 @@ def generate_and_save_mcs():
 
     concatenate_save_raw_installations()
 
-    processed_mcs = get_processed_mcs_data()
+    processed_mcs = get_processed_installations_data()
     save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
     print("Saved in S3: " + no_epc_path)
 
