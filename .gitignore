@@ -109,6 +109,11 @@ target/
 !/outputs/data/*.md
 /outputs/models/*
 !/outputs/models/*.md
+/outputs/figures/
+/outputs/EPC_data/preprocessed_data/Q2_2021/*
+!/outputs/EPC_data/preprocessed_data/Q2_2021/.gitkeep
+/outputs/EPC_data/preprocessed_data/Q4_2021/*
+!/outputs/EPC_data/preprocessed_data/Q4_2021/.gitkeep
 
 # Mac OS-specific storage files
 .DS_Store
