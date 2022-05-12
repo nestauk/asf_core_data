@@ -4,6 +4,8 @@
 from datetime import date
 import pandas as pd
 import warnings
+import re
+import datetime
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
@@ -39,15 +41,48 @@ def concatenate_save_raw_installations():
     """Generate concatenated installation csv from individual installation files.
     Takes all files in S3 raw data folder with "installations" in the filename,
     concatenates and saves the result in the top level MCS inputs folder.
+    While doing so, checks whether any records in the files are outside the
+    year and quarter stated in the filename, and flags if file columns differ.
     """
 
     bucket = s3.Bucket(bucket_name)
 
-    installations_dfs = [
-        load_s3_data(s3, bucket_name, object.key)
+    installations_keys_and_dfs = [
+        (object.key, load_s3_data(s3, bucket_name, object.key))
         for object in bucket.objects.filter(Prefix=raw_data_s3_folder)
         if "installations" in object.key
     ]
+
+    # check whether any records in the files are outside the quarter stated in the filename
+    for key_and_df in installations_keys_and_dfs:
+
+        year_quarter_search = re.search(r"20[0-9][0-9]_q[1-4]", key_and_df[0])
+
+        if year_quarter_search:  # ignore mcs_installations_2021.xlsx
+
+            year_quarter = year_quarter_search[0]  # get match
+            year, quarter = int(year_quarter[0:4]), int(year_quarter[-1])
+            end_month = quarter * 3
+            start_date = datetime.date(year, end_month - 2, 1)
+            end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(1)
+
+            if (
+                (
+                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
+                    < start_date
+                )
+                | (
+                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
+                    > end_date
+                )
+            ).any():
+                warnings.warn(
+                    "{} has some records outside its stated quarter.".format(
+                        key_and_df[0]
+                    )
+                )
+
+    installations_dfs = [key_and_df[1] for key_and_df in installations_keys_and_dfs]
 
     if len(set([tuple(df.columns) for df in installations_dfs])) > 1:
         warnings.warn("Not all installation file columns are the same.")
