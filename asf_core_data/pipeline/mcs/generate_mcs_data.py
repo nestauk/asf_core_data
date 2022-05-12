@@ -2,10 +2,14 @@
 """Generates MCS heat pump installation data."""
 
 from datetime import date
+import pandas as pd
+import warnings
+import re
+import datetime
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
-    get_processed_mcs_data,
+    get_processed_installations_data,
 )
 from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
     join_mcs_epc_data,
@@ -22,6 +26,8 @@ mcs_installations_epc_newest_path = config["MCS_INSTALLATIONS_EPC_NEWEST_PATH"]
 mcs_installations_epc_most_relevant_path = config[
     "MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH"
 ]
+installations_raw_s3_path = config["INSTALLATIONS_RAW_S3_PATH"]
+raw_data_s3_folder = config["RAW_DATA_S3_FOLDER"]
 
 keyword_to_path_dict = {
     "none": mcs_installations_path,
@@ -29,6 +35,64 @@ keyword_to_path_dict = {
     "newest": mcs_installations_epc_newest_path,
     "most_relevant": mcs_installations_epc_most_relevant_path,
 }
+
+
+def concatenate_save_raw_installations():
+    """Generate concatenated installation csv from individual installation files.
+    Takes all files in S3 raw data folder with "installations" in the filename,
+    concatenates and saves the result in the top level MCS inputs folder.
+    While doing so, checks whether any records in the files are outside the
+    year and quarter stated in the filename, and flags if file columns differ.
+    """
+
+    bucket = s3.Bucket(bucket_name)
+
+    installations_keys_and_dfs = [
+        (object.key, load_s3_data(s3, bucket_name, object.key))
+        for object in bucket.objects.filter(Prefix=raw_data_s3_folder)
+        if "installations" in object.key
+    ]
+
+    # check whether any records in the files are outside the quarter stated in the filename
+    for key_and_df in installations_keys_and_dfs:
+        year_quarter_search = re.search(r"20[0-9][0-9]_q[1-4]", key_and_df[0])
+        if year_quarter_search:  # ignore mcs_installations_2021.xlsx
+            year_quarter = year_quarter_search[0]  # get match
+            year, quarter = int(year_quarter[0:4]), int(year_quarter[-1])
+            end_month = quarter * 3
+            start_date = datetime.date(year, end_month - 2, 1)
+            end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(
+                days=1
+            )
+            if (
+                (
+                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
+                    < start_date
+                )
+                | (
+                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
+                    > end_date
+                )
+            ).any():
+                warnings.warn(
+                    "{} has some records outside its stated quarter.".format(
+                        key_and_df[0]
+                    )
+                )
+
+    installations_dfs = [key_and_df[1] for key_and_df in installations_keys_and_dfs]
+
+    if len(set([tuple(df.columns) for df in installations_dfs])) > 1:
+        warnings.warn("Not all installation file columns are the same.")
+
+    concat_installations = pd.concat(installations_dfs)
+    print(
+        "Number of records before removing duplicates:", concat_installations.shape[0]
+    )
+    concat_installations.drop_duplicates(inplace=True, ignore_index=True)
+    print("Number of records after removing duplicates:", concat_installations.shape[0])
+
+    save_to_s3(s3, bucket_name, concat_installations, installations_raw_s3_path)
 
 
 def generate_processed_mcs_installations(epc_version="none"):
@@ -54,7 +118,7 @@ def generate_processed_mcs_installations(epc_version="none"):
             "epc_version should be one of 'none', 'full', 'newest' or 'most_relevant'"
         )
 
-    processed_mcs = get_processed_mcs_data()
+    processed_mcs = get_processed_installations_data()
 
     if epc_version == "none":
         return processed_mcs
@@ -75,7 +139,7 @@ def generate_processed_mcs_installations(epc_version="none"):
 def get_mcs_installations(epc_version="none", refresh=False):
     """Gets MCS (+ EPC) data. Tries to get the most recent version
     from S3 if one exists. Otherwise generates the specified data from
-    the raw data.
+    the concatenated raw data.
 
     Args:
         epc_version (str, optional): One of "none", "full", "newest" or "most_relevant".
@@ -117,7 +181,7 @@ def get_mcs_installations(epc_version="none", refresh=False):
 
 
 def generate_and_save_mcs():
-    """Generates and saves the different versions of the MCS-EPC data to S3.
+    """Concatenates, generates and saves the different versions of the MCS-EPC data to S3.
     Different versions are a) just installation data, b) installation data with
     each property's entire EPC history attached, c) with the EPC corresponding
     to the most recent inspection and d) with the most recent EPC from before
@@ -127,7 +191,7 @@ def generate_and_save_mcs():
     today = date.today().strftime("%y%m%d")
 
     no_epc_path, full_epc_path, newest_epc_path, most_relevant_epc_path = [
-        (path_stem + "_" + today + ".csv")
+        path_stem.format(today)
         for path_stem in [
             mcs_installations_path,
             mcs_installations_epc_full_path,
@@ -136,7 +200,9 @@ def generate_and_save_mcs():
         ]
     ]
 
-    processed_mcs = get_processed_mcs_data(save=False)
+    concatenate_save_raw_installations()
+
+    processed_mcs = get_processed_installations_data()
     save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
     print("Saved in S3: " + no_epc_path)
 

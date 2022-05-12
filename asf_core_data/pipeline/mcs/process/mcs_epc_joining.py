@@ -19,7 +19,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
 )
 from asf_core_data.getters.epc.epc_data import (
     load_preprocessed_epc_data,
-)  # TODO: check this import succeeds when epc branch is merged
+)
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,
@@ -271,7 +271,7 @@ def join_prepared_mcs_epc_data(
 def join_mcs_epc_data(
     hps=None, epcs=None, all_records=True, drop_epc_address=True, verbose=True
 ):
-    """Produce joined MCS-EPC dataframe.
+    """Produce joined MCS-EPC dataframe from "unprepared" data.
 
     Args:
         hps (Dataframe, optional): MCS installation records.

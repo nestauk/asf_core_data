@@ -16,3 +16,4 @@ requests
 pandera
 pydrive2
 gdown
+h3
