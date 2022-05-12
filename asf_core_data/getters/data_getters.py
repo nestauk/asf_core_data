@@ -27,11 +27,17 @@ def load_s3_data(s3, bucket_name, file_name):
     bucket_name: The S3 bucket name
     file_name: S3 key to load
     """
+    obj = s3.Object(bucket_name, file_name)
     if fnmatch(file_name, "*.xlsx"):
-        return pd.read_excel(os.path.join("s3://" + bucket_name, file_name))
+        data = pd.read_excel(
+            os.path.join("s3://" + bucket_name, file_name), sheet_name=None
+        )
+        if len(data) > 1:
+            return data
+        else:
+            return data[list(data.keys())[0]]
     elif fnmatch(file_name, "*.csv"):
         return pd.read_csv(os.path.join("s3://" + bucket_name, file_name))
-
     else:
         print('Function not supported for file type other than "*.xlsx" and "*.csv"')
 

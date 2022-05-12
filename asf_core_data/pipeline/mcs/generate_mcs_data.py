@@ -27,6 +27,7 @@ mcs_installations_epc_most_relevant_path = config[
     "MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH"
 ]
 installations_raw_s3_path = config["INSTALLATIONS_RAW_S3_PATH"]
+installers_raw_s3_path = installers_raw_s3_path["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
 raw_data_s3_folder = config["RAW_DATA_S3_FOLDER"]
 
 keyword_to_path_dict = {
@@ -37,9 +38,11 @@ keyword_to_path_dict = {
 }
 
 
-def concatenate_save_raw_installations():
-    """Generate concatenated installation csv from individual installation files.
-    Takes all files in S3 raw data folder with "installations" in the filename,
+def concatenate_save_raw_mcs():
+    """Generate concatenated installation and installer csv from individual installation 
+    and installer files.
+
+    Takes all files in S3 raw data folder with "installations" or "installers" in the filename,
     concatenates and saves the result in the top level MCS inputs folder.
     While doing so, checks whether any records in the files are outside the
     year and quarter stated in the filename, and flags if file columns differ.
@@ -47,14 +50,18 @@ def concatenate_save_raw_installations():
 
     bucket = s3.Bucket(bucket_name)
 
-    installations_keys_and_dfs = [
+    keys_and_dfs = [
         (object.key, load_s3_data(s3, bucket_name, object.key))
         for object in bucket.objects.filter(Prefix=raw_data_s3_folder)
-        if "installations" in object.key
+        if "installations" or "installers" in object.key
     ]
 
-    # check whether any records in the files are outside the quarter stated in the filename
-    for key_and_df in installations_keys_and_dfs:
+    installer_dfs = []
+    for key_and_df in keys_and_dfs:
+        # get installers data
+        if "installer" in key_and_df[0]:
+            installer_dfs.append(key_and_df[1])
+        # get quarterly info
         year_quarter_search = re.search(r"20[0-9][0-9]_q[1-4]", key_and_df[0])
         if year_quarter_search:  # ignore mcs_installations_2021.xlsx
             year_quarter = year_quarter_search[0]  # get match
@@ -64,13 +71,32 @@ def concatenate_save_raw_installations():
             end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(
                 days=1
             )
+
+            installations_key = " ".join(
+                [
+                    key
+                    for key in (list(key_and_df[1].keys()))
+                    if "installs" in key.lower()
+                ]
+            )
+            installer_key = " ".join(
+                [key for key in (list(df.keys())) if "installer" in key.lower()]
+            )
+
+            # append quarterly installer data
+            installer_dfs.append(key_and_df[1][installer_key])
+
             if (
                 (
-                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
+                    pd.to_datetime(
+                        key_and_df[1][installations_key]["Commissioning Date"]
+                    ).dt.date
                     < start_date
                 )
                 | (
-                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
+                    pd.to_datetime(
+                        key_and_df[1][installations_key]["Commissioning Date"]
+                    ).dt.date
                     > end_date
                 )
             ).any():
@@ -80,19 +106,33 @@ def concatenate_save_raw_installations():
                     )
                 )
 
-    installations_dfs = [key_and_df[1] for key_and_df in installations_keys_and_dfs]
+    installations_dfs = []
+    for key, dfs in keys_and_dfs:
+        if key:
+            if type(dfs) == dict:
+                installations_dfs.append(dfs[installations_key])
+            elif type(dfs) == DataFrame:
+                if "installations" in key:
+                    installations_dfs.append(dfs)
 
     if len(set([tuple(df.columns) for df in installations_dfs])) > 1:
         warnings.warn("Not all installation file columns are the same.")
 
     concat_installations = pd.concat(installations_dfs)
+    concat_installers = pd.concat(installer_dfs)
+
     print(
-        "Number of records before removing duplicates:", concat_installations.shape[0]
+        "Number of installation records before removing duplicates:",
+        concat_installations.shape[0],
     )
     concat_installations.drop_duplicates(inplace=True, ignore_index=True)
-    print("Number of records after removing duplicates:", concat_installations.shape[0])
+    print(
+        "Number of installation records after removing duplicates:",
+        concat_installations.shape[0],
+    )
 
-    save_to_s3(s3, bucket_name, concat_installations, installations_raw_s3_path)
+    save_to_s3(s3, bucket_name, concat_installations, "/" + installations_raw_s3_path)
+    save_to_s3(s3, bucket_name, concat_installers, "/" + installers_raw_s3_path)
 
 
 def generate_processed_mcs_installations(epc_version="none"):
@@ -200,7 +240,7 @@ def generate_and_save_mcs():
         ]
     ]
 
-    concatenate_save_raw_installations()
+    concatenate_save_raw_mcs()
 
     processed_mcs = get_processed_installations_data()
     save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
