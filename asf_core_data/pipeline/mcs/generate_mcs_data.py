@@ -61,7 +61,9 @@ def concatenate_save_raw_installations():
             year, quarter = int(year_quarter[0:4]), int(year_quarter[-1])
             end_month = quarter * 3
             start_date = datetime.date(year, end_month - 2, 1)
-            end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(1)
+            end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(
+                days=1
+            )
             if (
                 (
                     pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
