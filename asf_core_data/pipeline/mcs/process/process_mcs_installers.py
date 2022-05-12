@@ -8,7 +8,7 @@ import argparse
 import pandas as pd
 
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
-    get_processed_mcs_data,
+    get_processed_installations_data,
 )
 
 from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
@@ -18,6 +18,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     clean_company_name,
     geocode_postcode,
     match_companies_house,
+    clean_concat_installers,
 )
 
 from asf_core_data import bucket_name, get_yaml_config, _base_config_path
@@ -102,7 +103,7 @@ def preprocess_installer_companies(installer_companies, installations_data, api_
 if __name__ == "__main__":
     # get config file with relevant paramenters
     config_info = get_yaml_config(_base_config_path)
-    installer_company_data_path = config_info["MCS_RAW_INSTALLER_S3_PATH"]
+    installer_company_data_path = config_info["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
     uk_geo_path = config_info["UK_GEO_PATH"]
     cleaned_installations_path = config_info["PREPROC_GEO_MCS_INSTALLATIONS_PATH"]
     cleaned_installer_company_path = config_info["PREPROC_MCS_INSTALLER_COMPANY_PATH"]
@@ -119,8 +120,10 @@ if __name__ == "__main__":
     uk_geo_data = load_s3_data(s3, bucket_name, uk_geo_path)
 
     ## load cleaned installations data
-    mcs_data = get_processed_mcs_data()
+    mcs_data = get_processed_installations_data(refresh=True)
 
+    ## preprocess different columns
+    installer_company_data = clean_concat_installers(installer_company_data)
     # PREPROCESS INSTALLER COMPANY DATA
     cleaned_installers_data = preprocess_installer_companies(
         installer_company_data, mcs_data, api_key

@@ -63,8 +63,8 @@ mcs_companies_dict = {
     "Biomass": "biomass",
     "Solar Photovoltaics": "solar_pv",
     "Micro CHP": "micro_chp",
-    "SolarAssistedHeatPump": "solar_assisted_hps",
-    "GasAbsorptionHeatPump": "gas_absorption_hps",
+    "Solar Assisted Heat Pump": "solar_assisted_hps",
+    "Gas Absorption Heat Pump": "gas_absorption_hps",
     "Ground/Water Source Heat Pump": "ground_water_hps",
     "Battery Storage": "battery_storage",
     "Eastern Region": "eastern_region",
@@ -103,6 +103,49 @@ def clean_company_name(company_name):
     ]
 
     return " ".join(company_name)
+
+
+def clean_concat_installers(data):
+    """Cleans concatenated installers data by:
+        - dropping duplicate company names;
+        - removing columns with identical values;
+        - merging similar columns.
+
+    Args:
+        data (pd.DataFrame): Concatenated installers data
+
+    Returns:
+        data (pd.DataFrame): Cleaned, concatenated installers data
+
+    """
+
+    keywords_to_merge = [
+        "Air Source",
+        "Exhaust Air",
+        "Assisted",
+        "Absorption",
+        "Ground/Water",
+    ]
+    # deduplicate
+    data = data.drop_duplicates(subset="Company Name")
+    # installation and design is the same; drop columns
+    data = data[[col for col in data.columns if "Design" not in col]]
+    # merge columns iteratively
+    for keyword in keywords_to_merge:
+        hp_types = data[[col for col in data.columns if keyword in col]]
+        data[hp_types.columns[0]] = (
+            hp_types.where(hp_types.ne(0), np.nan)
+            .bfill(axis=1)[hp_types.columns[0]]
+            .fillna(0)
+        )
+        data.drop(columns=hp_types.columns[1], axis=1, inplace=True)
+
+    data.columns = [
+        " ".join(c.split(" ")[:-1]) if "Installation" in c else c
+        for c in raw_installers_clean.columns
+    ]
+
+    return data
 
 
 def geocode_postcode(data, geodata):
