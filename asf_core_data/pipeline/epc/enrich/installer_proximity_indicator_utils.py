@@ -8,9 +8,8 @@ from geopy.distance import distance
 from collections import Counter
 from functools import partial
 from shapely.ops import transform
-
+import statistics
 ###############################################################
-
 
 def calculate_point_distance(long, lat, central_point):
     """Calculates distance between installation central point and a point.
@@ -67,9 +66,9 @@ def generate_distance_spread_buffers(
     company_install_shapes = dict()
     for company_name, installation_info in clean_installations.groupby(
         "installer_name"
-    ):
+    ): 
         if len(installation_info) > 1:
-            central_point = installation_info[["longitude", "latitude"]].mean()
+            central_point = cleaned_installer_companies[["longitude", "latitude"]].median()
         elif company_name in set(cleaned_installer_companies.installer_name):
             central_point = cleaned_installer_companies[
                 cleaned_installer_companies["installer_name"] == company_name
@@ -126,7 +125,7 @@ def calculate_buffer_distribution(company_install_shapes, epc_geo):
     return Counter(buffer_distribution)
 
 
-def calculate_weighted_installer_proximity(buffer_distb: Counter) -> int:
+def calculate_weighted_installer_proximity(buffer_count: Counter) -> int:
     """Calculates weighted installer closeness score based
     on distribution of companies in the min, 25th, 50th,
     75th and max buffer distances. Score is between 0 and 1, where
@@ -140,27 +139,13 @@ def calculate_weighted_installer_proximity(buffer_distb: Counter) -> int:
     Outputs:
         weighted_installer_closeness_score (int): weighted installer closeness score.
     """
-    weighted_installer_closeness_score = 0
-    for buffer_dist, buffer_count in buffer_distb.items():
-        if "min_" in buffer_dist:
-            weighted_installer_closeness_score += (1 * buffer_count) / buffer_distb[
-                "max_buffer"
-            ]
-        elif "25_" in buffer_dist:
-            weighted_installer_closeness_score += (
-                (1 - 0.25) * buffer_count / buffer_distb["max_buffer"]
-            )
-        elif "50_" in buffer_dist:
-            weighted_installer_closeness_score += (
-                (1 - 0.5) * buffer_count / buffer_distb["max_buffer"]
-            )
-        elif "75_" in buffer_dist:
-            weighted_installer_closeness_score += (
-                (1 - 0.75) * buffer_count / buffer_distb["max_buffer"]
-            )
+    min_score = (1 * buffer_count["min_buffer"]) / buffer_count["max_buffer"]
+    twentyfive_score = (1 - 0.25)* buffer_count["25_buffer"]/ buffer_count["max_buffer"]
+    fifty_score = (1 - 0.5) * buffer_count["50_buffer"]/ buffer_count["max_buffer"]
+    max_score = (1 - 0.75) * buffer_count["75_buffer"]/ buffer_count["max_buffer"]
 
     assert (
-        0 <= weighted_installer_closeness_score <= 1
+        0 <= statistics.mean([min_score, twentyfive_score, fifty_score, max_score]) <= 1
     ), f"weighted installer closeness score above 1 or below 0, got: {weighted_installer_closeness_score}"
 
-    return weighted_installer_closeness_score
+    return statistics.mean([min_score, twentyfive_score, fifty_score, max_score])

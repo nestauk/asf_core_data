@@ -23,6 +23,13 @@ class InstallerProximity(FlowSpec):
     - Save EPC data with associated installer proximity score.
     """
 
+    buffer_threshold = Parameter(
+        "buffer-threshold",
+        help="The company buffer area threshold",
+        type=int,
+        default=150,
+    )
+
     clean_installations_path = Parameter(
         "clean-installations",
         help="The s3 path to MCS clean installations data",
@@ -99,6 +106,19 @@ class InstallerProximity(FlowSpec):
 
         print("generated company buffers based on installation distance spread!")
 
+        self.next(self.prune_company_buffers)
+
+    @step
+    def prune_company_buffers(self):
+        """Remove companies with buffers above a maximum area threshold."""
+        buffer_areas = [max([buffer.area for buffer_size, buffer in buffers.items()]) for company, buffers in self.company_buffers.items()]
+        companies_to_remove = [i for i, buffer_area in enumerate(buffer_areas) if buffer_area > self.buffer_threshold]
+
+        for i, ele in enumerate(list(self.company_buffers)):
+            if i in companies_to_remove:
+                self.company_buffers.pop(ele)
+
+        print("pruned company buffers!")
         self.next(self.geocode_epc)
 
     @step
@@ -173,7 +193,6 @@ class InstallerProximity(FlowSpec):
             + self.epc_installer_prox_path
             + self.epc_installer_prox_name,
         )
-
 
 if __name__ == "__main__":
     InstallerProximity()
