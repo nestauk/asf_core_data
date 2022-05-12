@@ -3,6 +3,7 @@
 
 from datetime import date
 import pandas as pd
+import warnings
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
@@ -47,6 +48,9 @@ def concatenate_save_raw_installations():
         for object in bucket.objects.filter(Prefix=raw_data_s3_folder)
         if "installations" in object.key
     ]
+
+    if len(set([tuple(df.columns) for df in installations_dfs])) > 1:
+        warnings.warn("Not all installation file columns are the same.")
 
     concat_installations = pd.concat(installations_dfs)
     print(
