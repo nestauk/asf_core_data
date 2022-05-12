@@ -55,17 +55,13 @@ def concatenate_save_raw_installations():
 
     # check whether any records in the files are outside the quarter stated in the filename
     for key_and_df in installations_keys_and_dfs:
-
         year_quarter_search = re.search(r"20[0-9][0-9]_q[1-4]", key_and_df[0])
-
         if year_quarter_search:  # ignore mcs_installations_2021.xlsx
-
             year_quarter = year_quarter_search[0]  # get match
             year, quarter = int(year_quarter[0:4]), int(year_quarter[-1])
             end_month = quarter * 3
             start_date = datetime.date(year, end_month - 2, 1)
             end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(1)
-
             if (
                 (
                     pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
@@ -141,7 +137,7 @@ def generate_processed_mcs_installations(epc_version="none"):
 def get_mcs_installations(epc_version="none", refresh=False):
     """Gets MCS (+ EPC) data. Tries to get the most recent version
     from S3 if one exists. Otherwise generates the specified data from
-    the raw data.
+    the concatenated raw data.
 
     Args:
         epc_version (str, optional): One of "none", "full", "newest" or "most_relevant".
@@ -183,7 +179,7 @@ def get_mcs_installations(epc_version="none", refresh=False):
 
 
 def generate_and_save_mcs():
-    """Generates and saves the different versions of the MCS-EPC data to S3.
+    """Concatenates, generates and saves the different versions of the MCS-EPC data to S3.
     Different versions are a) just installation data, b) installation data with
     each property's entire EPC history attached, c) with the EPC corresponding
     to the most recent inspection and d) with the most recent EPC from before
