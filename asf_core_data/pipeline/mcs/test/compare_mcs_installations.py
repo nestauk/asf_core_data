@@ -3,41 +3,21 @@
 can provide different old_df, new_df and comp_df s3 directory paths directly when running script.
 defaults to paths in config/base.yaml
 
-python compare_mcs_installations.py --old_installations_df OLD_INSTALLATIONS_PATH --new_installations_df NEW_INSTALLATIONS_PATH --old_installers_df OLD_INSTALLERS_PATH --new_installers_df NEW_INSTALLERS_PATH
+python compare_mcs_installations.py --new_installations_df NEW_INSTALLATIONS_PATH --old_installers_df OLD_INSTALLERS_PATH --new_installers_df NEW_INSTALLERS_PATH
 """
 import datacompy
-from numpy import datetime64
-import pandas as pd
 import pandera as pa
 from datetime import datetime
-import time
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.getters.data_getters import s3, load_s3_data
 import sys
 import argparse
 
 
-config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
+config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
 bucket_name = config["BUCKET_NAME"]
-
-
-# def compare_mcs_installations(old_installations_data, new_installations_data):
-
-#     compare = datacompy.Compare(
-#         old_installations_data,
-#         new_installations_data,
-#         join_columns=[
-#             "Version Number",
-#             "Commissioning Date",
-#             "Address Line 1",
-#             "Postcode",
-#         ],
-#         df1_name="Old Installations Data",
-#         df2_name="New Installations Data",
-#     )
-#     print(compare.report())
 
 
 def compare_mcs_installers(old_installers_data, new_installers_data):
@@ -224,13 +204,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-old_installations_df",
-        "--old_installations_df",
-        nargs="?",
-        default="inputs/MCS/mcs_heat_pumps.xlsx",
-        help="directory of old_installations_df in s3",
-    )
-    parser.add_argument(
         "-new_installations_df",
         "--new_installations_df",
         nargs="?",
@@ -253,12 +226,10 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    old_installation_data_path = args.old_installations_df
     new_installation_data_path = args.new_installations_df
     old_installers_path = args.old_installers_df
     new_installers_path = args.new_installers_df
 
-    old_installation_data = load_s3_data(s3, bucket_name, old_installation_data_path)
     new_installation_data = load_s3_data(s3, bucket_name, new_installation_data_path)
     old_installers_data = load_s3_data(s3, bucket_name, old_installers_path)
     new_installers_data = load_s3_data(s3, bucket_name, new_installers_path)
@@ -270,11 +241,6 @@ if __name__ == "__main__":
 
     print(f"---- within installation check of {new_installation_data_path}----")
     within_mcs_installations_check(new_installation_data)
-
-    # print(
-    #     f"---- between installations check of {old_installation_data_path} and {new_installation_data_path}----"
-    # )
-    # compare_mcs_installations(old_installation_data, new_installation_data)
 
     print(
         f"---- between installations check of {old_installers_path} and {new_installers_path}----"
