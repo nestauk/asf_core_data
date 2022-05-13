@@ -9,109 +9,17 @@ from hashlib import new
 # from multiprocessing import _RLockType
 import os
 import re
-import random
 import pandas as pd
-
-# from regex import D
 import numpy as np
 from zipfile import ZipFile
 
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data import Path
+from asf_core_data.getters.epc import data_batches
 from asf_core_data.config import base_config
 
-import warnings
-
-import boto3
 
 # ---------------------------------------------------------------------------------
-
-
-def get_all_batch_names(data_path=None, rel_path=base_config.RAW_DATA_PATH):
-
-    if data_path == "S3":
-
-        client = boto3.client("s3")
-        bucket = "asf-core-data"
-        path = "inputs/EPC/raw_data/"
-
-        batches = [
-            Path(obj["Key"]).stem
-            for obj in client.list_objects(Bucket=bucket, Prefix=path, Delimiter="/")[
-                "Contents"
-            ]
-            if obj["Key"].endswith(".zip")
-        ]
-
-    else:
-
-        data_path = get_version_path(data_path / rel_path.parent, data_path=data_path)
-        batches = [p.name for p in data_path.glob("*/") if not p.name.startswith(".")]
-
-    return batches
-
-
-def get_most_recent_batch(data_path=None, rel_path=base_config.RAW_DATA_PATH):
-
-    if data_path == "S3":
-
-        batches = get_all_batch_names(data_path="S3")
-
-    else:
-        batches = get_all_batch_names(data_path=data_path, rel_path=rel_path)
-
-    return sorted(batches, reverse=True)[0]
-
-
-def check_for_newest_batch(
-    data_path=None, rel_path=base_config.RAW_DATA_PATH, verbose=False
-):
-
-    local_batch = get_most_recent_batch(data_path=data_path)
-    s3_batch = get_most_recent_batch(data_path="S3")
-
-    if local_batch == s3_batch:
-        if verbose:
-            print("Your local data is up to date with batch {}".format(local_batch))
-        return (True, local_batch)
-
-    else:
-        if verbose:
-            print(
-                "With batch {} your local data is not up to date. The newest batch {} is available on S3.".format(
-                    local_batch, s3_batch
-                )
-            )
-        return (False, s3_batch)
-
-
-def get_version_path(path, data_path, batch="newest"):
-
-    if not "{}" in str(path):
-        return path
-
-    if batch is None or batch.lower() in [
-        "newest",
-        "most recent",
-        "most_recent",
-        "latest",
-    ]:
-
-        newest_batch = get_most_recent_batch(data_path=data_path)
-        path = str(path).format(newest_batch)
-
-        is_newest, newest_s3_batch = check_for_newest_batch(data_path=data_path)
-        if not is_newest:
-            warnings.warn(
-                "You are loading the newest local batch - but a newer batch ({}) is available on S3.".format(
-                    newest_s3_batch
-                )
-            )
-
-    else:
-        path = str(path).format(batch.upper())
-
-    return Path(path)
 
 
 def load_england_wales_recommendations(
@@ -150,10 +58,10 @@ def load_england_wales_recommendations(
     EPC_certs : pandas.DateFrame
         England/Wales EPC certificate data for given features."""
 
-    RAW_ENG_WALES_DATA_PATH = get_version_path(
+    RAW_ENG_WALES_DATA_PATH = data_batches.get_version_path(
         data_path / rel_data_path, data_path=data_path, batch=batch
     )
-    RAW_ENG_WALES_DATA_ZIP = get_version_path(
+    RAW_ENG_WALES_DATA_ZIP = data_batches.get_version_path(
         data_path / base_config.RAW_ENG_WALES_DATA_ZIP, data_path=data_path, batch=batch
     )
 
@@ -256,10 +164,10 @@ def load_scotland_data(
     EPC_certs : pandas.DateFrame
         Scotland EPC certificate data for given features."""
 
-    RAW_SCOTLAND_DATA_PATH = get_version_path(
+    RAW_SCOTLAND_DATA_PATH = data_batches.get_version_path(
         Path(data_path) / rel_data_path, data_path=data_path, batch=batch
     )
-    RAW_SCOTLAND_DATA_ZIP = get_version_path(
+    RAW_SCOTLAND_DATA_ZIP = data_batches.get_version_path(
         Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP,
         data_path=data_path,
         batch=batch,
@@ -386,10 +294,10 @@ def load_england_wales_data(
 
         return epc_certs
 
-    RAW_ENG_WALES_DATA_PATH = get_version_path(
+    RAW_ENG_WALES_DATA_PATH = data_batches.get_version_path(
         Path(data_path) / rel_data_path, data_path=data_path, batch=batch
     )
-    RAW_ENG_WALES_DATA_ZIP = get_version_path(
+    RAW_ENG_WALES_DATA_ZIP = data_batches.get_version_path(
         Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP,
         data_path=data_path,
         batch=batch,
@@ -469,12 +377,16 @@ def load_raw_epc_data(
         but possibly mixed type inference.
         To ensure no mixed types either set False, or specify the type with the dtype parameter.
 
-    Return
+    Returns
     ---------
     EPC_certs : pandas.DateFrame
-        EPC certificate data for given area and features."""
+        EPC certificate data for given area and features.
 
-    RAW_DATA_PATH = get_version_path(Path(data_path), data_path=data_path, batch=batch)
+    """
+
+    RAW_DATA_PATH = data_batches.get_version_path(
+        Path(data_path), data_path=data_path, batch=batch
+    )
 
     if rel_data_path != base_config.RAW_DATA_PATH:
         wales_england_path = RAW_DATA_PATH / "England_Wales"
@@ -632,7 +544,6 @@ def load_preprocessed_epc_data(
     usecols=None,
     n_samples=None,
     snapshot_data=False,
-    dtype=base_config.dtypes,
     low_memory=True,
 ):
     """Load the EPC dataset including England, Wales and Scotland.
@@ -685,7 +596,9 @@ def load_preprocessed_epc_data(
         "preprocessed": base_config.SNAPSHOT_PREPROC_EPC_DATA_PATH.name,
     }
 
-    EPC_DATA_PATH = get_version_path(
+    dtype = base_config.dtypes if version == "raw" else base_config.dtypes_prepr
+
+    EPC_DATA_PATH = data_batches.get_version_path(
         Path(data_path) / rel_data_path / version_path_dict[version],
         data_path=data_path,
         batch=batch,
@@ -736,6 +649,65 @@ def get_epc_sample(full_df, sample_size):
     sample_df = full_df.iloc[rand_ints]
 
     return sample_df
+
+
+def filter_by_year(epc_df, building_reference, year, up_to=True, selection=None):
+    """Filter EPC dataset by year of inspection/entry.
+
+    Parameters
+    ----------
+    epc_df : pandas.DataFrame
+        Dataframe to which new features are added.
+
+    building_reference : str
+        Which building reference to use,
+        e.g. "BUILDING_REFERENCE_NUMBER" or "BUILDING_ID".
+
+    year : int, None, "all"
+        Year by which to filter data.
+        If None or "all", use all data.
+
+    up_to : bool, default=True
+        If True, get all samples up to given year.
+        If False, only get sample from given year.
+
+    selection : {"first entry", "latest entry"} or None, default=None
+        For duplicates, get only first or latest entry.
+        If None, do not remove any duplicates.
+
+    Return
+    ---------
+    df : pandas.DataFrame
+        Dataframe with new features."""
+
+    # If year is given for filtering
+    if year != "all" and year is not None:
+
+        if up_to:
+            epc_df = epc_df.loc[epc_df["INSPECTION_DATE"].dt.year <= year]
+        else:
+            epc_df = epc_df.loc[epc_df["INSPECTION_DATE"].dt.year == year]
+
+    # Filter by selection
+    selection_dict = {"first entry": "first", "latest entry": "last"}
+
+    if selection in ["first entry", "latest entry"]:
+
+        epc_df = (
+            epc_df.sort_values("INSPECTION_DATE", ascending=True)
+            .drop_duplicates(
+                subset=[building_reference], keep=selection_dict[selection]
+            )
+            .sort_index()
+        )
+
+    elif selection is None:
+        epc_df = epc_df
+
+    else:
+        raise IOError("{} not implemented.".format(selection))
+
+    return epc_df
 
 
 def main():

@@ -7,26 +7,19 @@ import re
 import time
 import os
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 
+import asf_core_data
 from asf_core_data.pipeline.preprocessing import (
     feature_engineering,
     data_cleaning,
 )
+
 from asf_core_data.getters.epc import epc_data
 from asf_core_data.config import base_config
 
 import warnings
 
 # ----------------------------------------------------------------------------------
-
-# # Load config file
-# config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
-
-# # Get paths
-# RAW_EPC_DATA_PATH = str(PROJECT_DIR) + config["RAW_EPC_DATA_PATH"]
-# PREPROC_EPC_DATA_PATH = str(PROJECT_DIR) + config["PREPROC_EPC_DATA_PATH"]
-# PREPROC_EPC_DATA_DEDUPL_PATH = str(PROJECT_DIR) + config["PREPROC_EPC_DATA_DEDUPL_PATH"]
 
 
 def preprocess_data(
@@ -217,17 +210,8 @@ def load_and_preprocess_epc_data(
 
         save_data = data_path / save_data
 
-    # if subset != "GB":
-
-    #     print(save_data)
-    #     warnings.warn(
-    #         "Careful! You're not loading the complete GB dataset. Are you sure you would like to save the output to '{}'?".format(
-    #             save_data
-    #         )
-    #     )
-    #     warning_input = input("Save to this directory?  yes/[no]")
-    #     if warning_input.lower in ["", "n", "no"]:
-    #         save_data = None
+        if subset != "GB":
+            warnings.warn("Careful! You're not loading the complete GB dataset.")
 
     epc_df = epc_data.load_raw_epc_data(
         subset=subset,
@@ -255,6 +239,8 @@ def load_and_preprocess_epc_data(
 def main():
     """Main function: Loads and preprocessed EPC data with default settings."""
 
+    ASF_CORE_DATA_DIR = "/Users/juliasuter/Documents/ASF_data"
+
     start_time = time.time()
 
     print("Loading and preprocessing EPC data... This will take a while.\n")
@@ -277,8 +263,9 @@ def main():
             "ADDRESS2",
             #  "LMK_KEY",
         ],
-        nrows=None,
+        n_samples=None,
         save_data=base_config.PREPROC_EPC_DATA_PATH,
+        data_path=ASF_CORE_DATA_DIR,
     )
 
     end_time = time.time()
