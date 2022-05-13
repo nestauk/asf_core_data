@@ -37,7 +37,7 @@ def short_hash(text):
     return int(short_code)
 
 
-def get_unique_building_id(df):
+def get_unique_building_id(df, short_code=False):
     """Add unique building ID column to dataframe.
 
     Parameters
@@ -58,8 +58,10 @@ def get_unique_building_id(df):
     df.dropna(subset=["ADDRESS1"], inplace=True)
 
     # Create unique address and building ID
-    df["UNIQUE_ADDRESS"] = df["ADDRESS1"].str.upper() + df["POSTCODE"].str.upper()
-    df["BUILDING_ID"] = df["UNIQUE_ADDRESS"].apply(short_hash)
+    df["BUILDING_ADDRESS_ID"] = df["ADDRESS1"].str.upper() + df["POSTCODE"].str.upper()
+
+    if short_code:
+        df["BUILDING_ADDRESS_ID"] = df["BUILDING_ADDRESS_ID"].apply(short_hash)
 
     return df
 
@@ -358,169 +360,6 @@ def get_heating_features(df, fine_grained_HP_types=False):
     return df
 
 
-def get_year(date):
-    """Year for given date.
-
-    Parameters
-    ----------
-    date : str
-        Given date in format year-month-day.
-
-    Return
-    ---------
-    year : int
-        Year derived from date."""
-
-    if date is np.nan or date == "unknown":
-        return np.nan
-
-    year = date.split("/")[0]
-
-    # If year format doesn't match
-    if len(year) != 4:
-        return np.nan
-
-    return int(year)
-
-
-def get_date_as_int(date):
-    """Transform date into integer to compute earliest/latest date.
-    Ideally used after reformatting date to year-month-date.
-
-    Parameters
-    ----------
-    date : str
-        Given date in format year-month-day or yearmonthday.
-
-    Return
-    ---------
-    date : int
-        Date as integer."""
-
-    # If already numeric, return that
-    if isinstance(date, float):
-        return date
-
-    # Handle unknown/NaN
-    if date is np.nan or date == "unknown":
-        return -1
-
-    # Remove delimiter
-    date = re.sub("/", "", date)
-
-    return int(date)
-
-
-def get_date_features(df):
-    """Get year of inspection and entry date as integer features.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Dataframe to which new features are added.
-
-    Return
-    ---------
-    df : pandas.DataFrame
-        Dataframe with new features."""
-
-    if "INSPECTION_DATE" not in df.columns:
-        return df
-
-    df["ENTRY_YEAR"] = df["INSPECTION_DATE"].apply(get_year)
-    df["ENTRY_YEAR_INT"] = df["ENTRY_YEAR"].apply(get_date_as_int)
-    df["INSPECTION_DATE_AS_NUM"] = df["INSPECTION_DATE"].apply(get_date_as_int)
-
-    return df
-
-
-def filter_by_year(df, building_reference, year, up_to=True, selection=None):
-    """Filter EPC dataset by year of inspection/entry.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Dataframe to which new features are added.
-
-    building_reference : str
-        Which building reference to use,
-        e.g. "BUILDING_REFERENCE_NUMBER" or "BUILDING_ID".
-
-    year : int, None, "all"
-        Year by which to filter data.
-        If None or "all", use all data.
-
-    up_to : bool, default=True
-        If True, get all samples up to given year.
-        If False, only get sample from given year.
-
-    selection : {"first entry", "latest entry"} or None, default=None
-        For duplicates, get only first or latest entry.
-        If None, do not remove any duplicates.
-
-    Return
-    ---------
-    df : pandas.DataFrame
-        Dataframe with new features."""
-
-    # If year is given for filtering
-    if year != "all" and year is not None:
-
-        if up_to:
-            df = df.loc[df["INSPECTION_DATE"].dt.year <= year]
-        else:
-            df = df.loc[df["INSPECTION_DATE"].dt.year == year]
-
-    # Filter by selection
-    selection_dict = {"first entry": "first", "latest entry": "last"}
-
-    if selection in ["first entry", "latest entry"]:
-
-        df = (
-            df.sort_values("INSPECTION_DATE", ascending=True)
-            .drop_duplicates(
-                subset=[building_reference], keep=selection_dict[selection]
-            )
-            .sort_index()
-        )
-
-    elif selection is None:
-        df = df
-
-    else:
-        raise IOError("{} not implemented.".format(selection))
-
-    return df
-
-
-def count_number_of_entries(row, feature, ref_counts):
-    """Count the number entries for given building based on
-    building reference number.
-
-    row : pandas.Series
-        EPC dataset row.
-
-    feature: str
-        Feature by which to count building entries.
-        e.g. "BUILDING_REFERNCE_NUMBER" or "BUILDING_ID" or "UPRN"
-
-    ref_counts : pandas.Series
-        Value counts for building reference number.
-
-    Return
-    ---------
-    counts : int
-        How many entries are there for given building."""
-
-    building_ref = row[feature]
-    try:
-        counts = ref_counts[building_ref]
-    except KeyError:
-        return building_ref
-
-    return counts
-
-
 def get_postcode_coordinates(df):
     """Add coordinates (longitude and latitude) to the dataframe
     based on the postcode.
@@ -581,29 +420,7 @@ def get_building_entry_feature(df, feature):
     # Get name of new feature
     new_feature_name = feature_name_dict[feature]
 
-    # Count IDs
-    counts = df[feature].value_counts()
-
-    # Create new feature representing how many entries there are for building
-    df[new_feature_name] = df.apply(
-        lambda row: count_number_of_entries(row, feature, counts), axis=1
-    )
-
-    df.loc[(df[new_feature_name] >= 5), new_feature_name] = "5.0+"
-
-    return df
-
-
-def get_building_entries(df):
-
-    if "BUILDING_REFERENCE_NUMBER" in df.columns:
-        df = get_building_entry_feature(df, "BUILDING_REFERENCE_NUMBER")
-
-    if "BUILDING_ID" in df.columns:
-        df = get_building_entry_feature(df, "BUILDING_ID")
-
-    if "UPRN" in df.columns:
-        df = get_building_entry_feature(df, "UPRN")
+    df[new_feature_name] = df[feature].map(dict(df.groupby(feature).size()))
 
     return df
 
@@ -626,7 +443,7 @@ def get_additional_features(df):
     # df = get_date_features(df)
 
     df = get_unique_building_id(df)
-    df = get_building_entries(df)
+    df = get_building_entry_feature(df, "UPRN")
 
     df = get_heating_features(df)
     df = get_new_epc_rating_features(df)
