@@ -290,7 +290,7 @@ def clean_EFF_SCORES(df):
     return df
 
 
-def cap_feature_values(df, feature, cap_n=10, as_cat=False):
+def cap_feature_values(df, feature, cap_value=10, as_cat=False):
     """Cap the values of a given feature, in order to reduce the
     effect of outliers.
     For example, set NUMBER_OF_HABITABLE_ROOMS values that are
@@ -313,8 +313,8 @@ def cap_feature_values(df, feature, cap_n=10, as_cat=False):
         Dataframe with capped values."""
 
     # Cap at given limit (i.e. 10)
-    cap_n = str(cap_n) + "+" if as_cat else cap_n
-    df.loc[(df[feature] >= cap_n), feature] = cap_n
+    cap_n = str(cap_n) + "+" if as_cat else cap_value
+    df.loc[(df[feature] >= cap_n), feature] = cap_value
 
     if as_cat:
         df[feature] = df[feature].astype(str)
@@ -325,6 +325,10 @@ def cap_feature_values(df, feature, cap_n=10, as_cat=False):
 def standardise_dates(
     df, date_features=["INSPECTION_DATE", "LODGEMENT_DATE", "LODGEMENT_DATETIME"]
 ):
+
+    date_features = [
+        date_feat for date_feat in date_features if date_feat in df.columns
+    ]
 
     for feature in date_features:
 
@@ -388,6 +392,39 @@ def remove_empty_features(df):
     return df
 
 
+def custom_clean_features(df):
+
+    column_to_function_dict = {
+        "POSTCODE": clean_POSTCODE,
+        "CONSTRUCTION_AGE_BAND": clean_CONSTRUCTION_AGE_BAND,
+        "LOCAL_AUTHORITY_LABEL": clean_LOCAL_AUTHORITY,
+        "FLOOR_LEVEL": clean_FLOOR_LEVEL,
+        "GLAZED_AREA": clean_GLAZED_AREA,
+    }
+
+    cap_value_dict = {
+        "NUMBER_HABITABLE_ROOMS": 10,
+        "NUMBER_HEATED_ROOMS": 10,
+    }
+
+    # Custom cleaning for specific features
+    for feat in df.columns:
+        if feat in column_to_function_dict.keys():
+            df[feat] = df[feat].apply(column_to_function_dict[feat])
+
+    # Categorical to numeric feature cleaning
+    df = clean_PHOTO_SUPPLY(df)
+    df = clean_EFF_SCORES(df)
+
+    # Cap features
+    for feat in df.columns:
+        if feat in cap_value_dict.keys():
+            cap_value = cap_value_dict[feat]
+            df = cap_feature_values(df, feat, cap_value=cap_value)
+
+    return df
+
+
 def clean_epc_data(df):
     """Standardise and clean EPC data.
     For example, reformat dates and standardise categories.
@@ -402,355 +439,19 @@ def clean_epc_data(df):
     df : pandas.DataFrame
         Standarised and cleaned EPC dataframe."""
 
-    column_to_function_dict = {
-        "POSTCODE": clean_POSTCODE,
-        "CONSTRUCTION_AGE_BAND": clean_CONSTRUCTION_AGE_BAND,
-        "LOCAL_AUTHORITY_LABEL": clean_LOCAL_AUTHORITY,
-        "FLOOR_LEVEL": clean_FLOOR_LEVEL,
-        "GLAZED_AREA": clean_GLAZED_AREA,
-    }
-
     df = remove_empty_features(df)
     df = standardise_unknowns(df)
     df = standardise_features(df)
     df = standardise_dates(df)
 
-    for feat in df.columns:
-        if feat in column_to_function_dict.keys():
-            print(feat)
-            df[feat] = df[feat].apply(column_to_function_dict[feat])
-
-    df = clean_PHOTO_SUPPLY(df)
-    df = clean_EFF_SCORES(df)
-
-    if "NUMBER_HABITABLE_ROOMS" in df.columns:
-        # Limit max value for NUMBER_HABITABLE_ROOMS
-        df = cap_feature_values(df, "NUMBER_HABITABLE_ROOMS", cap_n=10)
+    df = custom_clean_features(df)
 
     return df
 
 
-# def standardise_efficiency(efficiency):
-#     """Standardise efficiency types; one of the five categories:
-#     poor, very poor, average, good, very good
-
-#     Parameters
-#     ----------
-#     efficiency : str
-#         Raw efficiency type.
-
-#     Return
-#     ----------
-#     standardised efficiency : str
-#         Standardised efficiency type."""
-
-#     # Handle NaN
-#     if isinstance(efficiency, float):
-#         return "unknown"
-
-#     efficiency = efficiency.lower().strip()
-#     efficiency = efficiency.strip('"')
-#     efficiency = efficiency.strip()
-#     efficiency = efficiency.strip("|")
-#     efficiency = efficiency.strip()
-
-#     efficiency_mapping = {
-#         "poor |": "Poor",
-#         "very poor |": "Very Poor",
-#         "average |": "Average",
-#         "good |": "Good",
-#         "very good |": "Very Good",
-#         "poor": "Poor",
-#         "very poor": "Very Poor",
-#         "average": "Average",
-#         "good": "Good",
-#         "very good": "Very Good",
-#         "n/a": "unknown",
-#         "n/a |": "unknown",
-#         "n/a": "unknown",
-#         "n/a | n/a": "unknown",
-#         "n/a | n/a | n/a": "unknown",
-#         "n/a | n/a | n/a | n/a": "unknown",
-#         "no data!": "unknown",
-#         "unknown": "unknown",
-#     }
-
-#     return efficiency_mapping[efficiency
-
-
-# def standardise_tenure(tenure):
-#     """Standardise tenure types; one of the four categories:
-#     rental (social), rental (private), owner-occupied, unknown
-
-#     Parameters
-#     ----------
-#     tenure : str
-#         Raw tenure type.
-
-#     Return
-#     ----------
-#     standardised tenure : str
-#         Standardised tenure type."""
-
-#     # Catch NaN
-#     if isinstance(tenure, float):
-#         return "unknown"
-
-#     tenure = tenure.lower()
-#     tenure_mapping = {
-#         "owner-occupied": "owner-occupied",
-#         "rental (social)": "rental (social)",
-#         "rented (social)": "rental (social)",
-#         "rental (private)": "rental (private)",
-#         "rented (private)": "rental (private)",
-#         "unknown": "unknown",
-#         "no data!": "unknown",
-#         "not defined - use in the case of a new dwelling for which the intended tenure in not known. it is no": "unknown",
-#     }
-
-#     return tenure_mapping[tenure]
-
-
-# def standardise_solar_water_heating_flag(flag):
-
-#     flag_dict = {
-#         "N": "False",
-#         "unknown": "unknown",
-#         "Y": "True",
-#         "false": "False",
-#         "true": "True",
-#     }
-
-#     if flag not in flag_dict.keys():
-#         return "unknown"
-#     else:
-#         return flag_dict[flag]
-
-
-# def standardise_tenure(tenure):
-#     """Standardise tenure types; one of the four categories:
-#     rental (social), rental (private), owner-occupied, unknown
-
-#     Parameters
-#     ----------
-#     tenure : str
-#         Raw tenure type.
-
-#     Return
-#     ----------
-#     standardised tenure : str
-#         Standardised tenure type."""
-
-#     # Catch NaN
-#     if isinstance(tenure, float):
-#         return "unknown"
-
-#     tenure = tenure.lower()
-#     tenure_mapping = {
-#         "owner-occupied": "owner-occupied",
-#         "rental (social)": "rental (social)",
-#         "rented (social)": "rental (social)",
-#         "rental (private)": "rental (private)",
-#         "rented (private)": "rental (private)",
-#         "unknown": "unknown",
-#         "no data!": "unknown",
-#         "not defined - use in the case of a new dwelling for which the intended tenure in not known. it is no": "unknown",
-#     }
-
-#     return tenure_mapping[tenure]
-
-
-# def clean_local_authority(local_authority):
-#     """Clean local authority label.
-
-#     Paramters
-#     ----------
-#     local_authority : str
-#         Local authority label.
-
-#     Return
-#     ----------
-#     local_authority : str
-#         Cleaned local authority."""
-
-#     if local_authority in ["00EM", "16UD"]:
-#         return "unknown"
-#     else:
-#         return local_authority
-
-
-# def standardise_constr_age(age, adjust_age_bands=True):
-
-#     """Standardise construction age bands and if necessary adjust
-#     the age bands to combine the Scotland and England/Wales data.
-
-#     Parameters
-#     ----------
-#     age : str
-#         Raw construction age.
-
-#     merge_country_data : bool, default=True
-#         Whether to merge Scotland and England/Wales age bands.
-
-#     Return
-#     ----------
-#     Standardised age construction band : str
-#         Standardised age construction band."""
-
-#     # Handle NaN
-#     if isinstance(age, float):
-#         return "unknown"
-
-#     age = age.strip()
-
-#     age_mapping = {
-#         "England and Wales: before 1900": "England and Wales: before 1900",
-#         "England and Wales: 1900-1929": "England and Wales: 1900-1929",
-#         "England and Wales: 1930-1949": "England and Wales: 1930-1949",
-#         "England and Wales: 1950-1966": "England and Wales: 1950-1966",
-#         "England and Wales: 1967-1975": "England and Wales: 1967-1975",
-#         "England and Wales: 1976-1982": "England and Wales: 1976-1982",
-#         "England and Wales: 1983-1990": "England and Wales: 1983-1990",
-#         "England and Wales: 1991-1995": "England and Wales: 1991-1995",
-#         "England and Wales: 1996-2002": "England and Wales: 1996-2002",
-#         "England and Wales: 2003-2006": "England and Wales: 2003-2006",
-#         "England and Wales: 2007-2011": "England and Wales: 2007-2011",
-#         "England and Wales: 2007-2011": "England and Wales: 2007 onwards",
-#         "England and Wales: 2007 onwards": "England and Wales: 2007 onwards",
-#         "England and Wales: 2012 onwards": "England and Wales: 2012 onwards",
-#         "1900": "England and Wales: 1900-1929",
-#         "2021": "England and Wales: 2012 onwards",
-#         "2020": "England and Wales: 2012 onwards",
-#         "2019": "England and Wales: 2012 onwards",
-#         "2018": "England and Wales: 2012 onwards",
-#         "2017": "England and Wales: 2012 onwards",
-#         "2016": "England and Wales: 2012 onwards",
-#         "2015": "England and Wales: 2012 onwards",
-#         "2014": "England and Wales: 2012 onwards",
-#         "2013": "England and Wales: 2012 onwards",
-#         "2012": "England and Wales: 2012 onwards",
-#         "2011": "England and Wales: 2007 onwards",
-#         "2010": "England and Wales: 2007 onwards",
-#         "2009": "England and Wales: 2007 onwards",
-#         "2008": "England and Wales: 2007 onwards",
-#         "2007": "England and Wales: 2007 onwards",
-#         "before 1919": "Scotland: before 1919",
-#         "1919-1929": "Scotland: 1919-1929",
-#         "1930-1949": "Scotland: 1930-1949",
-#         "1950-1964": "Scotland: 1950-1964",
-#         "1965-1975": "Scotland: 1965-1975",
-#         "1976-1983": "Scotland: 1976-1983",
-#         "1984-1991": "Scotland: 1984-1991",
-#         "1992-1998": "Scotland: 1992-1998",
-#         "1999-2002": "Scotland: 1999-2002",
-#         "2003-2007": "Scotland: 2003-2007",
-#         "2008 onwards": "Scotland: 2008 onwards",
-#     }
-
-#     age_mapping_adjust_age_bands = {
-#         "England and Wales: before 1900": "England and Wales: before 1900",
-#         "England and Wales: 1900-1929": "1900-1929",
-#         "England and Wales: 1930-1949": "1930-1949",
-#         "England and Wales: 1950-1966": "1950-1966",
-#         "England and Wales: 1967-1975": "1965-1975",
-#         "England and Wales: 1976-1982": "1976-1983",
-#         "England and Wales: 1983-1990": "1983-1991",
-#         "England and Wales: 1991-1995": "1991-1998",
-#         "England and Wales: 1996-2002": "1996-2002",
-#         "England and Wales: 2003-2006": "2003-2007",
-#         "England and Wales: 2007-2011": "2007 onwards",
-#         "England and Wales: 2007 onwards": "2007 onwards",
-#         "England and Wales: 2012 onwards": "2007 onwards",
-#         "2021": "2007 onwards",
-#         "2020": "2007 onwards",
-#         "2019": "2007 onwards",
-#         "2018": "2007 onwards",
-#         "2017": "2007 onwards",
-#         "2016": "2007 onwards",
-#         "2015": "2007 onwards",
-#         "2015": "2007 onwards",
-#         "2014": "2007 onwards",
-#         "2013": "2007 onwards",
-#         "2013": "2007 onwards",
-#         "2012": "2007 onwards",
-#         "2011": "2007 onwards",
-#         "2010": "2007 onwards",
-#         "2009": "2007 onwards",
-#         "2008": "2007 onwards",
-#         "2007": "2007 onwards",
-#         "1900": "1900-1929",
-#         "before 1919": "Scotland: before 1919",
-#         "1919-1929": "1900-1929",
-#         "1930-1949": "1930-1949",
-#         "1950-1964": "1950-1966",
-#         "1965-1975": "1965-1975",
-#         "1976-1983": "1976-1983",
-#         "1984-1991": "1983-1991",
-#         "1992-1998": "1991-1998",
-#         "1999-2002": "1996-2002",
-#         "2003-2007": "2003-2007",
-#         "2008 onwards": "2007 onwards",
-#         "unknown": "unknown",
-#         "NO DATA!": "unknown",
-#         "INVALID!": "unknown",
-#         "Not applicable": "unknown",
-#     }
-
-#     if adjust_age_bands:
-
-#         if age not in age_mapping_adjust_age_bands:
-#             return "unknown"
-#         else:
-#             return age_mapping_adjust_age_bands[age]
-#     else:
-#         if age not in age_mapping:
-#             return "unknown"
-#         else:
-#             return age_mapping[age]
-
-
-# def clean_epc_data(df):
-#     """Standardise and clean EPC data.
-#     For example, reformat dates and standardise categories.
-
-#     Parameters
-#     ----------
-#     df : pandas.DataFrame
-#         Raw/original EPC dataframe.
-
-#     Return
-#     ----------
-#     df : pandas.DataFrame
-#         Standarised and cleaned EPC dataframe."""
-
-#     make_numeric = [
-#         "WIND_TURBINE_COUNT",
-#         "MAIN_HEATING_CONTROLS",
-#         "MULTI_GLAZE_PROPORTION",
-#         "FLOOR_HEIGHT",
-#         "EXTENSION_COUNT",
-#         "NUMBER_HEATED_ROOMS",
-#         "NUMBER_HABITABLE_ROOMS",
-#     ]
-
-#     # Replace values such as INVALID! or NODATA!
-#     for column in df.columns:
-#         if column in numeric_features:
-#             df[column] = df[column].replace(invalid_values, np.nan)
-
-#             if column not in ["WIND_TURBINE_COUNT", "FLOOR_LEVEL"] + make_numeric:
-#                 df[column] = df[column].mask(df[column] < 0.0)
-#         else:
-#             df[column] = df[column].replace(invalid_values, "unknown")
+# Integrate at later point:
 
 #     for column in df.columns:
 #         if column in make_numeric:
 #             df[column] = pd.to_numeric(df[column])
 #             df[column] = df[column].mask(df[column] < 0.0)
-
-#     df = standardise_dates(df, date_features)
-
-#     if "CONSTRUCTION_AGE_BAND" in df.columns:
-#         df["CONSTRUCTION_AGE_BAND_ORIGINAL"] = df["CONSTRUCTION_AGE_BAND"].apply(
-#             standardise_constr_age_original
-#         )

@@ -217,8 +217,7 @@ def load_scotland_data(
         }
     )
 
-    if "UPRN" in epc_certs.columns:
-        epc_certs["UPRN"] = epc_certs["BUILDING_REFERENCE_NUMBER"]
+    epc_certs["UPRN"] = epc_certs["BUILDING_REFERENCE_NUMBER"]
     if n_samples is not None:
         epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]
 

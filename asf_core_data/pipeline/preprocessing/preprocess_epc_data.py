@@ -8,13 +8,8 @@ import time
 import os
 
 
-import asf_core_data
-from asf_core_data.pipeline.preprocessing import (
-    feature_engineering,
-    data_cleaning,
-)
-
-from asf_core_data.getters.epc import epc_data
+from asf_core_data.pipeline.preprocessing import data_cleaning, feature_engineering
+from asf_core_data.getters.epc import epc_data, data_batches
 from asf_core_data.config import base_config
 
 import warnings
@@ -69,7 +64,7 @@ def preprocess_data(
     # --------------------------------
 
     if save_data is not None:
-        file_path = epc_data.get_version_path(
+        file_path = data_batches.get_version_path(
             data_path / base_config.RAW_EPC_DATA_PATH,
             data_path=data_path,
             batch=batch,
@@ -101,7 +96,7 @@ def preprocess_data(
 
     if save_data is not None:
 
-        file_path = epc_data.get_version_path(
+        file_path = data_batches.get_version_path(
             data_path / base_config.PREPROC_EPC_DATA_PATH,
             data_path=data_path,
             batch=batch,
@@ -125,15 +120,13 @@ def preprocess_data(
 
     if remove_duplicates:
 
-        df = feature_engineering.filter_by_year(
-            df, "UPRN", None, selection="latest entry"
-        )
+        df = epc_data.filter_by_year(df, "UPRN", None, selection="latest entry")
 
         processing_steps.append(("After removing duplicates", df.shape[0], df.shape[1]))
 
         if save_data is not None:
 
-            file_path = epc_data.get_version_path(
+            file_path = data_batches.get_version_path(
                 data_path / base_config.PREPROC_EPC_DATA_DEDUPL_PATH,
                 data_path=data_path,
                 batch=batch,

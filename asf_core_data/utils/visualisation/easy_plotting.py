@@ -16,9 +16,10 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from asf_core_data import Path
 from asf_core_data.utils.visualisation import feature_settings
+from asf_core_data import PROJECT_DIR
 
 import re
-
+import os
 
 import warnings
 
@@ -29,8 +30,8 @@ warnings.simplefilter("ignore", category=UserWarning)
 
 def save_figure(
     plt,
+    fig_path,
     plot_title=None,
-    fig_path=None,
     file_extension=".png",
     dpi=1000,
 ):
@@ -63,6 +64,9 @@ def save_figure(
 
     # Tight layout
     # plt.tight_layout()
+
+    if fig_path is None:
+        fig_path = PROJECT_DIR / "outputs/figures/"
 
     # Automatically generate filename
     if plot_title is not None:
@@ -151,10 +155,10 @@ def get_readable_tick_labels(plt, ticklabel_type, axis):
 def plot_subcategory_distribution(
     df,
     category,
+    fig_save_path,
     normalize=False,
     color="lightseagreen",
     plot_title=None,
-    fig_save_path=None,
     y_label="",
     x_label="",
     y_ticklabel_type=None,
@@ -265,9 +269,9 @@ def plot_feature_by_subcategories(
     df,
     feature_of_interest,
     category,
+    fig_save_path,
     subcategory=None,
     plot_title=None,
-    fig_save_path=None,
     y_label="",
     x_label="",
     plot_kind="hist",
@@ -356,11 +360,11 @@ def plot_subcats_by_other_subcats(
     df,
     feature_1,
     feature_2,
+    fig_save_path,
     feature_1_order=None,
     feature_2_order=None,
     normalize=True,
     plot_title=None,
-    fig_save_path=None,
     y_label="",
     x_label="",
     plot_kind="bar",
@@ -517,6 +521,10 @@ def plot_subcats_by_other_subcats(
 
     if legend_loc == "outside":
         leg = plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        leg.set_draggable(state=True)
+
+    if legend_loc == "middle":
+        leg = plt.legend(bbox_to_anchor=(1.05, 1), loc="upper center")
 
         leg.set_draggable(state=True)
 
@@ -525,9 +533,6 @@ def plot_subcats_by_other_subcats(
 
         labels = [str(round(l)) + "%" for l in labels]
         rects = ax.patches
-
-        # Make some labels.
-        #  labels = [f"label{i}" for i in range(len(rects))]
 
         for rect, label in zip(rects, labels):
             height = rect.get_height()
@@ -551,10 +556,10 @@ def plot_correlation(
     df,
     feature_1,
     feature_2,
+    fig_save_path,
     with_hist_subplots=True,
     ylim_max=100,
     plot_title=None,
-    fig_save_path=None,
     y_label="",
     x_label="",
     x_tick_rotation=0,
@@ -666,186 +671,186 @@ def plot_correlation(
     plt.show()
 
 
-def plot_subcats_by_other_subcats_with_label(
-    df,
-    feature_1,
-    feature_2,
-    feature_1_order=None,
-    feature_2_order=None,
-    normalize=True,
-    plot_title=None,
-    fig_save_path=None,
-    y_label="",
-    x_label="",
-    plot_kind="bar",
-    plotting_colors=None,
-    y_ticklabel_type=None,
-    x_tick_rotation=0,
-    legend_loc="inside",
-    figsize=None,
-):
-    """Plot subcategories of given feature by subcategories of another feature.
-     For example, plot and color-code the distribution of heating types (feature 2)
-     on the different tenure types (feature 1).
+# def plot_subcats_by_other_subcats_with_label(
+#     df,
+#     feature_1,
+#     feature_2,
+#     fig_save_path,
+#     feature_1_order=None,
+#     feature_2_order=None,
+#     normalize=True,
+#     plot_title=None,
+#     y_label="",
+#     x_label="",
+#     plot_kind="bar",
+#     plotting_colors=None,
+#     y_ticklabel_type=None,
+#     x_tick_rotation=0,
+#     legend_loc="inside",
+#     figsize=None,
+# ):
+#     """Plot subcategories of given feature by subcategories of another feature.
+#      For example, plot and color-code the distribution of heating types (feature 2)
+#      on the different tenure types (feature 1).
 
-     Parameters
-     ----------
+#      Parameters
+#      ----------
 
-     df : pd.DataFrame
-         Dataframe to analyse and plot.
+#      df : pd.DataFrame
+#          Dataframe to analyse and plot.
 
-     feature_1 : str
-         Feature for which subcategories are plotted on x-axis.
+#      feature_1 : str
+#          Feature for which subcategories are plotted on x-axis.
 
-     feature_2 : str
-         Feature for which distribution is shown split per subcategory
-         of feature 1. Feature 2 subcategories are represented with differnet colors,
-         explained with a color legend.
+#      feature_2 : str
+#          Feature for which distribution is shown split per subcategory
+#          of feature 1. Feature 2 subcategories are represented with differnet colors,
+#          explained with a color legend.
 
-     feature_1_subcat_order : list, None, default=None
-         The order in which feature 1 subcategories are displayed.
+#      feature_1_subcat_order : list, None, default=None
+#          The order in which feature 1 subcategories are displayed.
 
-     feature_2_subcat_order : list, None, default=None
-         The order in which feature 2 subcategories are displayed.
+#      feature_2_subcat_order : list, None, default=None
+#          The order in which feature 2 subcategories are displayed.
 
-    normalize : bool, default=True
-        If True, relative numbers (percentage) instead of absolute numbers.
+#     normalize : bool, default=True
+#         If True, relative numbers (percentage) instead of absolute numbers.
 
-     plot_title : str, None, default=None
-         Title to display above plot.
-         If None, title is created automatically.
-         Plot title is also used when saving file.
+#      plot_title : str, None, default=None
+#          Title to display above plot.
+#          If None, title is created automatically.
+#          Plot title is also used when saving file.
 
-    fig_save_path : str, None, default=None
-        Location where to save plot.
+#     fig_save_path : str, None, default=None
+#         Location where to save plot.
 
-     y_label : str, default=""
-         Label for y-axis.
+#      y_label : str, default=""
+#          Label for y-axis.
 
-     x_label : str, default=""
-         Label for x-axis
+#      x_label : str, default=""
+#          Label for x-axis
 
-     plot_kind : {"hist", "bar"}, default="hist"
-         Type of plot.
+#      plot_kind : {"hist", "bar"}, default="hist"
+#          Type of plot.
 
-     plotting_colors : list, str, None, default=None
-         Ordered list of colors or color map to use when plotting feature 2.
-         If list, use list of colors.
-         If str, use corresponding matplotlib color map.
-         If None, use default color list.
+#      plotting_colors : list, str, None, default=None
+#          Ordered list of colors or color map to use when plotting feature 2.
+#          If list, use list of colors.
+#          If str, use corresponding matplotlib color map.
+#          If None, use default color list.
 
-     y_ticklabel_type : {'', 'm', 'k' or '%'}, default=None
-         Label for yticklabel, e.g. 'k' when displaying numbers
-         in more compact way for easier readability (50000 --> 50k).
+#      y_ticklabel_type : {'', 'm', 'k' or '%'}, default=None
+#          Label for yticklabel, e.g. 'k' when displaying numbers
+#          in more compact way for easier readability (50000 --> 50k).
 
-    x_tick_rotation : int, default=0
-         Rotation of x-tick labels.
-         If rotation set to 45, make end of label align with tick (ha="right")."""
+#     x_tick_rotation : int, default=0
+#          Rotation of x-tick labels.
+#          If rotation set to 45, make end of label align with tick (ha="right")."""
 
-    # Remove all samples for which feature 1 or feature 2 is NaN.
-    # df = df[df[feature_1].notna()]
-    # df = df[df[feature_2].notna()]
+#     # Remove all samples for which feature 1 or feature 2 is NaN.
+#     # df = df[df[feature_1].notna()]
+#     # df = df[df[feature_2].notna()]
 
-    # Get set of values/subcategories for features.
-    feature_1_values = list(set(df[feature_1].sort_index()))
-    feature_2_values = list(set(df[feature_2].sort_index()))
+#     # Get set of values/subcategories for features.
+#     feature_1_values = list(set(df[feature_1].sort_index()))
+#     feature_2_values = list(set(df[feature_2].sort_index()))
 
-    # Set order for feature 1 values/subcategories
-    if feature_1_order is not None:
-        feature_1_values = feature_1_order
-    else:
-        if feature_1 in feature_settings.map_dict.keys():
-            feature_1_values = feature_settings.map_dict[feature_1]
+#     # Set order for feature 1 values/subcategories
+#     if feature_1_order is not None:
+#         feature_1_values = feature_1_order
+#     else:
+#         if feature_1 in feature_settings.map_dict.keys():
+#             feature_1_values = feature_settings.map_dict[feature_1]
 
-    # Create a feature-bar dict
-    feat_bar_dict = {}
+#     # Create a feature-bar dict
+#     feat_bar_dict = {}
 
-    # Get totals for noramlisation
-    totals = df[feature_1].value_counts(dropna=False)
+#     # Get totals for noramlisation
+#     totals = df[feature_1].value_counts(dropna=False)
 
-    # For every feature 2 value/subcategory, get feature 1 values
-    # e.g. for every tenure type, get windows energy efficiencies
-    for feat2 in feature_2_values:
-        dataset_of_interest = df.loc[df[feature_2] == feat2][feature_1]
-        data_of_interest = dataset_of_interest.value_counts(dropna=False)
+#     # For every feature 2 value/subcategory, get feature 1 values
+#     # e.g. for every tenure type, get windows energy efficiencies
+#     for feat2 in feature_2_values:
+#         dataset_of_interest = df.loc[df[feature_2] == feat2][feature_1]
+#         data_of_interest = dataset_of_interest.value_counts(dropna=False)
 
-        if normalize:
-            feat_bar_dict[feat2] = data_of_interest / totals * 100
-        else:
-            feat_bar_dict[feat2] = data_of_interest
+#         if normalize:
+#             feat_bar_dict[feat2] = data_of_interest / totals * 100
+#         else:
+#             feat_bar_dict[feat2] = data_of_interest
 
-    # Save feature 2 subcategories by feature 1 subcategories as dataframe
-    subcat_by_subcat = pd.DataFrame(feat_bar_dict, index=feature_1_values)
+#     # Save feature 2 subcategories by feature 1 subcategories as dataframe
+#     subcat_by_subcat = pd.DataFrame(feat_bar_dict, index=feature_1_values)
 
-    # If feature 2 order is given, rearrange
-    if feature_2_order is not None:
-        subcat_by_subcat = subcat_by_subcat[feature_2_order]
-    else:
-        if feature_2 in feature_settings.map_dict.keys():
-            feature_2_values = feature_settings.map_dict[feature_2]
+#     # If feature 2 order is given, rearrange
+#     if feature_2_order is not None:
+#         subcat_by_subcat = subcat_by_subcat[feature_2_order]
+#     else:
+#         if feature_2 in feature_settings.map_dict.keys():
+#             feature_2_values = feature_settings.map_dict[feature_2]
 
-    labels = subcat_by_subcat.to_numpy().flatten()
+#     labels = subcat_by_subcat.to_numpy().flatten()
 
-    # If not defined, set default colors for plotting
-    if plotting_colors is None:
-        plotting_colors = ["green", "greenyellow", "yellow", "orange", "red"]
+#     # If not defined, set default colors for plotting
+#     if plotting_colors is None:
+#         plotting_colors = ["green", "greenyellow", "yellow", "orange", "red"]
 
-    # Use given colormap
-    if isinstance(plotting_colors, str):
-        cmap = plotting_colors
-        subcat_by_subcat.plot(kind=plot_kind, cmap=cmap)  # recommended RdYlGn
+#     # Use given colormap
+#     if isinstance(plotting_colors, str):
+#         cmap = plotting_colors
+#         subcat_by_subcat.plot(kind=plot_kind, cmap=cmap)  # recommended RdYlGn
 
-    # or: use given color list
-    elif isinstance(plotting_colors, list):
-        subcat_by_subcat.plot(kind=plot_kind, color=plotting_colors)
+#     # or: use given color list
+#     elif isinstance(plotting_colors, list):
+#         subcat_by_subcat.plot(kind=plot_kind, color=plotting_colors)
 
-    else:
-        raise IOError("Invalid plotting_colors '{}'.".format(plotting_colors))
+#     else:
+#         raise IOError("Invalid plotting_colors '{}'.".format(plotting_colors))
 
-    # Adjust figsize
-    if figsize is not None:
-        fig = plt.gcf()
-        fig.set_size_inches(figsize[0], figsize[1])
+#     # Adjust figsize
+#     if figsize is not None:
+#         fig = plt.gcf()
+#         fig.set_size_inches(figsize[0], figsize[1])
 
-    # Get updated yticklabels
-    ax = plt.gca()
-    yticklabels, ax, _, _ = get_readable_tick_labels(plt, y_ticklabel_type, "y")
-    ax.set_yticklabels(yticklabels)
+#     # Get updated yticklabels
+#     ax = plt.gca()
+#     yticklabels, ax, _, _ = get_readable_tick_labels(plt, y_ticklabel_type, "y")
+#     ax.set_yticklabels(yticklabels)
 
-    # Set plot title
-    if plot_title is None:
-        plot_title = feature_2 + " by " + feature_1
+#     # Set plot title
+#     if plot_title is None:
+#         plot_title = feature_2 + " by " + feature_1
 
-    # Describe plot with title and axes
-    plt.title(plot_title)
-    plt.ylabel(y_label)
-    plt.xlabel(x_label)
-    plt.xticks(
-        rotation=x_tick_rotation, ha="right"
-    ) if x_tick_rotation == 45 else plt.xticks(rotation=x_tick_rotation)
+#     # Describe plot with title and axes
+#     plt.title(plot_title)
+#     plt.ylabel(y_label)
+#     plt.xlabel(x_label)
+#     plt.xticks(
+#         rotation=x_tick_rotation, ha="right"
+#     ) if x_tick_rotation == 45 else plt.xticks(rotation=x_tick_rotation)
 
-    if legend_loc == "outside":
-        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    if legend_loc == "middle":
-        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper center")
+#     if legend_loc == "outside":
+#         plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+#     if legend_loc == "middle":
+#         plt.legend(bbox_to_anchor=(1.05, 1), loc="upper center")
 
-    rects = ax.patches
+#     rects = ax.patches
 
-    # Make some labels.
-    #  labels = [f"label{i}" for i in range(len(rects))]
+#     # Make some labels.
+#     #  labels = [f"label{i}" for i in range(len(rects))]
 
-    for rect, label in zip(rects, labels):
-        height = rect.get_height()
-        ax.text(
-            rect.get_x() + rect.get_width() / 2,
-            height + 3,
-            label,
-            ha="center",
-            va="bottom",
-        )
+#     for rect, label in zip(rects, labels):
+#         height = rect.get_height()
+#         ax.text(
+#             rect.get_x() + rect.get_width() / 2,
+#             height + 3,
+#             label,
+#             ha="center",
+#             va="bottom",
+#         )
 
-    # Save figure
-    save_figure(plt, plot_title, fig_path=fig_save_path)
+#     # Save figure
+#     save_figure(plt, plot_title, fig_path=fig_save_path)
 
-    # Show plot
-    plt.show()
+#     # Show plot
+#     plt.show()

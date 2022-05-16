@@ -10,6 +10,7 @@ LATEST_V = "most_recent"
 OTHER_V = "older_versions"
 
 ROOT_DATA_PATH = "."
+BUCKET_NAME = "asf-core-data"
 
 # Cleaning settings
 MERGED_AGE_BANDS = True
@@ -462,7 +463,7 @@ MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
 INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
 MCS_EPC_MATCHING_PARAMETER = 0.7
-MCS_EPC_MERGED_PATH = Path("/outputs/mcs_epc.csv")
+MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_epc.csv")
 MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 parse_dates = [
