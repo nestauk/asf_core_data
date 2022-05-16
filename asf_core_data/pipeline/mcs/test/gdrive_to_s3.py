@@ -19,6 +19,13 @@ drive = GoogleDrive(gauth)
 
 
 def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
+    """Pulls MCS data dumps from Google Drive to a local dir and s3.
+    
+    Inputs:
+        local_data_dump_dir (str): local path to store MCS data dumps.
+        s3_data_dump_dir (str): path in s3 to store MCS data dumps. 
+
+    """
     # get all folder names
     all_folders_list = drive.ListFile(
         {"q": "'root' in parents and trashed=false"}

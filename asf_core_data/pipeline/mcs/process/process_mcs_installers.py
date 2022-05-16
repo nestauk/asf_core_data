@@ -124,9 +124,14 @@ if __name__ == "__main__":
 
     ## preprocess different columns
     installer_company_data = clean_concat_installers(installer_company_data)
+
     # PREPROCESS INSTALLER COMPANY DATA
     cleaned_installers_data = preprocess_installer_companies(
         installer_company_data, mcs_data, api_key
+    )
+
+    cleaned_installers_data = cleaned_installers_data.drop_duplicates(
+        subset=["address_1", "postcode"]
     )
 
     # geocode data
