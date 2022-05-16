@@ -1,29 +1,31 @@
-import re
-from xml.sax import default_parser_list
-import h3
+# File: asf_core_data/utils/geospatial/data_agglomeration.py
+"""Agglomerate data for given areas, e.g. local authorities or hex areas.
+"""
+
+# ---------------------------------------------------------------------------------
+# Imports
+
 import pandas as pd
+import h3
 
 from asf_core_data import PROJECT_DIR
 from asf_core_data.getters.supplementary_data.geospatial import coordinates
 from asf_core_data.pipeline.preprocessing import data_cleaning
 from asf_core_data.config import base_config
 
+# ---------------------------------------------------------------------------------
+
 
 def add_hex_id(df, resolution=7.5):
     """Get H3 hex ID based on coordinates.
 
-     Parameters
-     ----------
-    row : pandas.Series
-        Dataframe row.
+    Args:
+        df (pandas.DataFrame): Dataframe.
+        resolution (float, optional):  H3 resolution. Defaults to 7.5.
 
-    resolution : int, default=7
-        H3 resolution.
-
-    Return
-    ---------
-
-        H3 index: int"""
+    Returns:
+        df (pandas.DataFrame): Dataframe with new column "hex_id".
+    """
 
     df["hex_id"] = df.apply(
         lambda row: h3.geo_to_h3(row["LATITUDE"], row["LONGITUDE"], resolution), axis=1
@@ -38,13 +40,14 @@ def get_postcode_coordinates(
     """Add coordinates (longitude and latitude) to the dataframe
     based on the postcode.
 
-    df : pandas.DataFrame
-        EPC dataframe.
+    Args:
+        df (pandas.DataFrame): Dataframet o which to add coordinates.
+        data_path (str/Path, optional): Location to ASF core data. Defaults to PROJECT_DIR.
+        rel_data_path (str/Path, optional): Relative location. Defaults to base_config.POSTCODE_TO_COORD_PATH.
 
-    Return
-    ---------
-    df : pandas.DataFrame
-        Same dataframe with longitude and latitude columns added."""
+    Returns:
+        df (pandas.DataFrame): Same dataframe with longitude and latitude columns added
+    """
 
     # Get postcode/coordinates
     postcode_coordinates_df = coordinates.get_postcode_coordinates(
@@ -66,6 +69,17 @@ def get_postcode_coordinates(
 
 
 def get_cat_distr_grouped_by_agglo_f(df, feature, agglo_feature="hex_id"):
+    """For a given feature, group its categories/values by the agglomeration feature (e.g. area)
+    and compute the percentage of each value and the most frequent one.
+
+    Args:
+        df (pandas.DataFrame): Dataframe of interest.
+        feature (str): Feature of interest: its categories/values are processed.
+        agglo_feature (str, optional): Feature by which to group/agglomerate. Defaults to "hex_id".
+
+    Returns:
+        pandas.DataFrame: Dataframe with category percentages agglomerated by agglo feature.
+    """ """"""
 
     # Group the data by agglomeration feature (e.g. hex id)
     grouped_by_agglo_f = df.groupby(agglo_feature)
@@ -96,13 +110,19 @@ def get_cat_distr_grouped_by_agglo_f(df, feature, agglo_feature="hex_id"):
 
 
 def map_hex_to_feature(df, feature):
+    """Get most frequent feature value for each hex_id,
+    e.g. the most common local authority label for a hex area.
+
+    Args:
+        df (pd.DataFrame): Dataframe which includes both 'hex_id' and feature.
+        feature (str): Feature to use for mapping.
+
+    Returns:
+        pd.DataFrame: 'hex_id' and most frequent feature value
+    """
 
     hex_to_feature = get_cat_distr_grouped_by_agglo_f(
         df, feature, agglo_feature="hex_id"
-    )[["hex_id", "MOST_FREQUENT_LOCAL_AUTHORITY_LABEL"]]
-
-    # hex_to_feature = hex_to_feature.rename(
-    #     columns={"MOST_FREQUENT_" + feature: feature}
-    # )
+    )[["hex_id", "MOST_FREQUENT_{}".format(feature)]]
 
     return hex_to_feature

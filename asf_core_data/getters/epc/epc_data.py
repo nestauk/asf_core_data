@@ -1,27 +1,48 @@
-# File: getters/epc_data.py
+# File: asf_core_data/getters/epc/epc_data.py
 """Extracting and loading the EPC data."""
 
 # ---------------------------------------------------------------------------------
 
-from email.mime import base
-from hashlib import new
-
-# from multiprocessing import _RLockType
 import os
 import re
-import pandas as pd
-import numpy as np
 from zipfile import ZipFile
 
+import pandas as pd
+import numpy as np
 
 from asf_core_data import Path
 from asf_core_data.getters.epc import data_batches
 from asf_core_data.config import base_config
 
-
 # ---------------------------------------------------------------------------------
 
 
+def extract_data(file_path):
+    """Extract data from zip file.
+
+    Args:
+        file_path (str): Path to the file to unzip.
+
+    Returns:
+        None
+    """
+
+    # Check whether file exists
+    if not Path(file_path).is_file():
+        raise IOError("The file '{}' does not exist.".format(file_path))
+
+    # Get directory
+    zip_dir = file_path.parent
+
+    # Unzip the data
+    with ZipFile(file_path, "r") as zip:
+
+        print("Extracting...\n{}".format(zip.filename))
+        zip.extractall(zip_dir)
+        print("Done!")
+
+
+# TO DO: add way to get directly from S3
 def load_england_wales_recommendations(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
@@ -32,36 +53,29 @@ def load_england_wales_recommendations(
     dtype=base_config.dtypes,
     low_memory=True,
 ):
-
     """Load the England and/or Wales EPC data.
 
-    Parameters
-    ----------
-    subset : {'England', 'Wales', None}, default=None
-        EPC certificate area subset.
-        If None, then the data for both England and Wales will be loaded.
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_ENG_WALES_DATA_PATH.
+        batch (str, optional): Data batch to load. Defaults to None.
+        subset (str, optional): Nation subset: "England", "Wales". Defaults to None, loading both England and Wales data.
+        usecols (list, optional): List of features/columns to load from EPC dataset. Defaults to None, loading all features.
+        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        dtype (dict, optional): Dict with dtypes for easier loading. Defaults to base_config.dtypes.
+        low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
+            If True, internally process the file in chunks, resulting in lower memory use while parsing,
+            but possibly mixed type inference.
+            To ensure no mixed types either set False, or specify the type with the dtype parameter.
 
-    usecols : list, default=None
-        List of features/columns to load from EPC dataset.
-        If None, then all features will be loaded.
+    Returns:
+        pd.DataFrame: England/Wales EPC recommendations.
+    """
 
-    n_samples : int, default=None
-        Number of rows of file to read.
-
-    low_memory : bool, default=False
-        Internally process the file in chunks, resulting in lower memory use while parsing,
-        but possibly mixed type inference.
-        To ensure no mixed types either set False, or specify the type with the dtype parameter.
-
-    Return
-    ---------
-    EPC_certs : pandas.DateFrame
-        England/Wales EPC certificate data for given features."""
-
-    RAW_ENG_WALES_DATA_PATH = data_batches.get_version_path(
+    RAW_ENG_WALES_DATA_PATH = data_batches.get_batch_path(
         data_path / rel_data_path, data_path=data_path, batch=batch
     )
-    RAW_ENG_WALES_DATA_ZIP = data_batches.get_version_path(
+    RAW_ENG_WALES_DATA_ZIP = data_batches.get_batch_path(
         data_path / base_config.RAW_ENG_WALES_DATA_ZIP, data_path=data_path, batch=batch
     )
 
@@ -109,31 +123,6 @@ def load_england_wales_recommendations(
     return epc_certs
 
 
-def extract_data(file_path):
-    """Extract data from zip file.
-
-    Parameters
-    ----------
-    file_path : str
-        Path to the file to unzip.
-
-    Return: None"""
-
-    # Check whether file exists
-    if not Path(file_path).is_file():
-        raise IOError("The file '{}' does not exist.".format(file_path))
-
-    # Get directory
-    zip_dir = file_path.parent
-
-    # Unzip the data
-    with ZipFile(file_path, "r") as zip:
-
-        print("Extracting...\n{}".format(zip.filename))
-        zip.extractall(zip_dir)
-        print("Done!")
-
-
 def load_scotland_data(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_SCOTLAND_DATA_PATH,
@@ -145,29 +134,25 @@ def load_scotland_data(
 ):
     """Load the Scotland EPC data.
 
-    Parameters
-    ----------
-    usecols : list, default=None
-        List of features/columns to load from EPC dataset.
-        If None, then all features will be loaded.
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_SCOTLAND_DATA_PATH.
+        batch (str, optional): Data batch to load. Defaults to None.
+        usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
+        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        dtype (dict, optional): Dict with dtypes for easier loading.. Defaults to base_config.dtypes.
+        low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
+            If True, internally process the file in chunks, resulting in lower memory use while parsing,
+            but possibly mixed type inference.
+            To ensure no mixed types either set False, or specify the type with the dtype parameter.
 
-    n_samples : int, default=None
-        Number of rows of file to read.
+    Returns:
+        pd.DataFrame: Scotland EPC certificate data for given features."""
 
-    low_memory : bool, default=False
-        Internally process the file in chunks, resulting in lower memory use while parsing,
-        but possibly mixed type inference.
-        To ensure no mixed types either set False, or specify the type with the dtype parameter.
-
-    Return
-    ---------
-    EPC_certs : pandas.DateFrame
-        Scotland EPC certificate data for given features."""
-
-    RAW_SCOTLAND_DATA_PATH = data_batches.get_version_path(
+    RAW_SCOTLAND_DATA_PATH = data_batches.get_batch_path(
         Path(data_path) / rel_data_path, data_path=data_path, batch=batch
     )
-    RAW_SCOTLAND_DATA_ZIP = data_batches.get_version_path(
+    RAW_SCOTLAND_DATA_ZIP = data_batches.get_batch_path(
         Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP,
         data_path=data_path,
         batch=batch,
@@ -185,7 +170,18 @@ def load_scotland_data(
         # Fix columns ("WALLS" features are labeled differently here)
         usecols = [re.sub("WALLS_", "WALL_", col) for col in usecols]
         usecols = [re.sub("POSTTOWN", "POST_TOWN", col) for col in usecols]
-        usecols = [col for col in usecols if col not in ["UPRN"]]
+
+        if "UPRN" in usecols:
+            usecols.remove("UPRN")
+            usecols.append("BUILDING_REFERENCE_NUMBER")
+
+        if "LMK_KEY" in usecols:
+            usecols.remove("LMK_KEY")
+            usecols.append("OSG_REFERENCE_NUMBER")
+
+        usecols = [
+            col for col in usecols if col not in base_config.england_wales_only_features
+        ]
 
     # Get all directories
     all_directories = os.listdir(RAW_SCOTLAND_DATA_PATH)
@@ -236,33 +232,27 @@ def load_england_wales_data(
 ):
     """Load the England and/or Wales EPC data.
 
-    Parameters
-    ----------
-    subset : {'England', 'Wales', None}, default=None
-        EPC certificate area subset.
-        If None, then the data for both England and Wales will be loaded.
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_ENG_WALES_DATA_PATH.
+        batch (str, optional): Data batch to load. Defaults to None.
+        subset (str, optional): Nation subset: 'GB', 'Wales', 'England'. Defaults to None, loading all nation's data.
+        usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
+        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        dtype (dict, optional): Dict with dtypes for easier loading.. Defaults to base_config.dtypes.
+        low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
+            If True, internally process the file in chunks, resulting in lower memory use while parsing,
+            but possibly mixed type inference.
+            To ensure no mixed types either set False, or specify the type with the dtype parameter.
 
-    usecols : list, default=None
-        List of features/columns to load from EPC dataset.
-        If None, then all features will be loaded.
-
-    n_samples : int, default=None
-        Number of rows of file to read.
-
-    low_memory : bool, default=False
-        Internally process the file in chunks, resulting in lower memory use while parsing,
-        but possibly mixed type inference.
-        To ensure no mixed types either set False, or specify the type with the dtype parameter.
-
-    Return
-    ---------
-    EPC_certs : pandas.DateFrame
-        England/Wales EPC certificate data for given features."""
+    Returns:
+        pd.DataFrame:  England/Wales EPC certificate data for given features."""
 
     if subset in [None, "GB", "all"]:
 
         additional_samples = 0
 
+        # Splitting samples across nations
         if n_samples is not None:
             additional_samples = n_samples % 2
             n_samples = n_samples // 2
@@ -293,10 +283,10 @@ def load_england_wales_data(
 
         return epc_certs
 
-    RAW_ENG_WALES_DATA_PATH = data_batches.get_version_path(
+    RAW_ENG_WALES_DATA_PATH = data_batches.get_batch_path(
         Path(data_path) / rel_data_path, data_path=data_path, batch=batch
     )
-    RAW_ENG_WALES_DATA_ZIP = data_batches.get_version_path(
+    RAW_ENG_WALES_DATA_ZIP = data_batches.get_batch_path(
         Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP,
         data_path=data_path,
         batch=batch,
@@ -321,6 +311,11 @@ def load_england_wales_data(
     directories = [
         dir for dir in directories if dir.startswith(start_with_dict[subset])
     ]
+
+    if usecols is not None:
+        usecols = [
+            col for col in usecols if col not in base_config.scotland_only_features
+        ]
 
     # Load EPC certificates for given subset
     # Only load columns of interest (if given)
@@ -359,31 +354,23 @@ def load_raw_epc_data(
 ):
     """Load and return EPC dataset, or specific subset, as pandas dataframe.
 
-    Parameters
-    ----------
-    subset : {'GB', 'Wales', 'England', 'Scotland', None}, default='GB'
-        EPC certificate area subset.
-
-    usecols : list, default=None
-        List of features/columns to load from EPC dataset.
-        If None, then all features will be loaded.
-
-    n_samples : int, default=None
-        Number of rows of file to read.
-
-    low_memory : bool, default=False
-        Internally process the file in chunks, resulting in lower memory use while parsing,
-        but possibly mixed type inference.
-        To ensure no mixed types either set False, or specify the type with the dtype parameter.
-
-    Returns
-    ---------
-    EPC_certs : pandas.DateFrame
-        EPC certificate data for given area and features.
-
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_DATA_PATH.
+        batch (str, optional): Data batch to load. Defaults to None.
+        subset (str, optional): Nation subset: 'GB', 'Wales', 'England', 'Scotland'. Defaults to "GB", loading all nation's data.
+        usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
+        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        dtype (dict, optional): Dict with dtypes for easier loading.. Defaults to base_config.dtypes.
+        low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
+            If True, internally process the file in chunks, resulting in lower memory use while parsing,
+            but possibly mixed type inference.
+            To ensure no mixed types either set False, or specify the type with the dtype parameter.
+    Returns:
+        pd.DataFrame: EPC certificate data for given area and features.
     """
 
-    RAW_DATA_PATH = data_batches.get_version_path(
+    RAW_DATA_PATH = data_batches.get_batch_path(
         Path(data_path), data_path=data_path, batch=batch
     )
 
@@ -464,22 +451,17 @@ def load_cleansed_epc(
     """Load the cleansed EPC dataset (provided by EST)
     with the option of excluding/including duplicates.
 
-    Parameters
-    ----------
-    remove_duplicates : bool, default=True.
-        Whether or not to remove duplicates.
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH.
+        remove_duplicates (bool, optional): Whether or not to remove duplicate property records. Defaults to True.
+        usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
+        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
 
-    usecols : list, default=None
-        List of features/columns to load from EPC dataset.
-        If None, then all features will be loaded.
+    Returns:
+        pd.DataFrame:  Cleansed EPC datast as dataframe.
 
-    nrows : int, default=None
-        Number of rows of file to read.
-
-    Return
-    ----------
-    cleansed_epc : pandas.DataFrame
-        Cleansed EPC datast as dataframe."""
+    """
 
     EST_CLEANSED_PATH = data_path / rel_data_path
 
@@ -557,31 +539,22 @@ def load_preprocessed_epc_data(
         - preprocessed_dedupl:
         Same as 'preprocessed' but without duplicates
 
-    Parameters
-    ----------
-    version : str, {'raw', 'preprocessed', 'preprocessed_dedupl'}, default='preprocessed_dedupl'
-        The version of the EPC data to load.
 
-    usecols : list, default=None
-        List of features/columns to load from EPC dataset.
-        If None, then all features will be loaded.
-
-    n_samples : int, default=None
-        Number of rows of file to read.
-
-    snapshot_data : bool, default=False
-        If True, load the snapshot version of the preprocessed EPC data saved in /inputs
-        instead of the most recent version in /outputs.
-
-    low_memory : bool, default=False
-        Internally process the file in chunks, resulting in lower memory use while parsing,
-        but possibly mixed type inference.
-        To ensure no mixed types either set False, or specify the type with the dtype parameter.
-
-    Return
-    ----------
-    epc_df : pandas.DataFrame
-        EPC data in the given version."""
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_EPC_DATA_PATH.parent.
+        batch (str, optional): Data batch to load. Defaults to None.
+        version (str, optional): Data version to use. Defaults to "preprocessed_dedupl".
+        usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
+        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        snapshot_data (bool, optional): Use snapshot data, which might not be up-to-date [legacy]. Defaults to False.
+        low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
+            If True, internally process the file in chunks, resulting in lower memory use while parsing,
+            but possibly mixed type inference.
+            To ensure no mixed types either set False, or specify the type with the dtype parameter.
+    Returns:
+        pd.DataFrame: EPC data in the given version
+    """
 
     version_path_dict = {
         "raw": base_config.RAW_EPC_DATA_PATH.name,
@@ -597,7 +570,7 @@ def load_preprocessed_epc_data(
 
     dtype = base_config.dtypes if version == "raw" else base_config.dtypes_prepr
 
-    EPC_DATA_PATH = data_batches.get_version_path(
+    EPC_DATA_PATH = data_batches.get_batch_path(
         Path(data_path) / rel_data_path / version_path_dict[version],
         data_path=data_path,
         batch=batch,
@@ -631,18 +604,13 @@ def load_preprocessed_epc_data(
 def get_epc_sample(full_df, sample_size):
     """Randomly sample a subset of the full data.
 
-    Parameters
-    ----------
-    full_df : pandas.DataFrame
-        Full dataframe from which to extract a subset.
+    Args:
+        full_df (pandas.DataFrame): Full dataframe from which to extract a subset.
+        sample_size (int): Number of samples (size of subset).
 
-    sample_size: int
-        Size of subset / number of samples.
-
-    Return
-    ----------
-    sample_df : pandas.DataFrame
-        Randomly sampled subset of full dataframe."""
+    Returns:
+        pandas.DataFrame: Randomly sampled subset of full dataframe
+    """
 
     rand_ints = np.random.choice(len(full_df), size=sample_size)
     sample_df = full_df.iloc[rand_ints]
@@ -650,34 +618,24 @@ def get_epc_sample(full_df, sample_size):
     return sample_df
 
 
-def filter_by_year(epc_df, building_reference, year, up_to=True, selection=None):
+def filter_by_year(
+    epc_df, year, building_identifier="UPRN", up_to=True, selection=None
+):
     """Filter EPC dataset by year of inspection/entry.
 
-    Parameters
-    ----------
-    epc_df : pandas.DataFrame
-        Dataframe to which new features are added.
+    Args:
+        epc_df (pandas.DataFrame): Dataframe to which new features are added.
+        year (int): Year by which to filter data.
+        building_identifier (str): Building identifier, e.g. UPRN or BUILDING_REFERENCE_NUMBER. Defaults to "UPRN".
+        up_to (bool, optional):  If True, get all samples up to given year.
+            If False, only get sample from given year. Defaults to True.
+            If False, only given year data will be loaded.
+        selection (str, optional): For duplicates, get only "first entry" or "latest entry".
+            If None, do not remove any duplicates. Defaults to None.
 
-    building_reference : str
-        Which building reference to use,
-        e.g. "BUILDING_REFERENCE_NUMBER" or "BUILDING_ID".
-
-    year : int, None, "all"
-        Year by which to filter data.
-        If None or "all", use all data.
-
-    up_to : bool, default=True
-        If True, get all samples up to given year.
-        If False, only get sample from given year.
-
-    selection : {"first entry", "latest entry"} or None, default=None
-        For duplicates, get only first or latest entry.
-        If None, do not remove any duplicates.
-
-    Return
-    ---------
-    df : pandas.DataFrame
-        Dataframe with new features."""
+    Returns:
+        pandas.DataFrame: Reduced data with only years of interest.
+    """
 
     # If year is given for filtering
     if year != "all" and year is not None:
@@ -695,7 +653,7 @@ def filter_by_year(epc_df, building_reference, year, up_to=True, selection=None)
         epc_df = (
             epc_df.sort_values("INSPECTION_DATE", ascending=True)
             .drop_duplicates(
-                subset=[building_reference], keep=selection_dict[selection]
+                subset=[building_identifier], keep=selection_dict[selection]
             )
             .sort_index()
         )

@@ -1,6 +1,14 @@
-# File: heat_pump_adoption_modelling/pipeline/preprocessing/feature_engineering.py
+# File: asf_core_data/pipeline/preprocessing/feature_engineering.py
 """
 Adding new features to EPC dataset.
+
+FEATURE ENGINEERING GUIDELINES
+------------------------------
+
+Feel free to add any functions for engineering new features.
+Make sure to group similar new featues within one function and
+to get_additional_features() in order to take effect in the next run.
+
 """
 
 # ----------------------------------------------------------------------------------
@@ -8,7 +16,7 @@ Adding new features to EPC dataset.
 # Import
 import pandas as pd
 import numpy as np
-import re
+
 from hashlib import md5
 
 from asf_core_data.getters.supplementary_data.geospatial import coordinates
@@ -20,16 +28,12 @@ from asf_core_data.pipeline.preprocessing import data_cleaning
 def short_hash(text):
     """Generate a unique short hash for given string.
 
-    Parameters
-    ----------
-    text: str
-        String for which to get ID.
+    Args:
+        text (str):  String for which to get ID.
 
-    Return
-    ---------
-
-    short_code: int
-        Unique ID."""
+    Returns:
+        int: Unique ID.
+    """
 
     hx_code = md5(text.encode()).hexdigest()
     int_code = int(hx_code, 16)
@@ -40,16 +44,13 @@ def short_hash(text):
 def get_unique_building_id(df, short_code=False):
     """Add unique building ID column to dataframe.
 
-    Parameters
-    ----------
-    text: str
-        String for which to get ID.
+    Args:
+        df (str): String for which to get ID.
+        short_code (bool, optional): Whether to add additional feature with short unique code. Defaults to False.
 
-    Return
-    ---------
-
-    short_code: int
-        Unique ID."""
+    Returns:
+        str: Unique ID.
+    """
 
     if ("ADDRESS1" not in df.columns) or ("POSTCODE" not in df.columns):
         return df
@@ -67,7 +68,7 @@ def get_unique_building_id(df, short_code=False):
 
 
 def get_new_epc_rating_features(df):
-    """Get new EPC rating features related to EPC ratings.
+    """Get new EPC rating features related to EPC ratings
 
         CURR_ENERGY_RATING_NUM: EPC rating representeed as number
         high number = high rating.
@@ -78,16 +79,12 @@ def get_new_epc_rating_features(df):
         DIFF_POT_ENERGY_RATING: Difference potential and current
         energy rating.
 
+    Args:
+            df (pandas.DataFrame): EPC dataframe.
 
-    Parameters
-    ----------
-    df : pandas.Dataframe
-        EPC dataframe.
-
-    Return
-    ---------
-    df : pandas.DateFrame
-        Updated EPC dataframe with new EPC rating features."""
+        Returns:
+            pandas.DataFrame: Updated EPC dataframe with new EPC rating features.
+    """
 
     # EPC rating dict
     rating_dict = {
@@ -140,18 +137,14 @@ def get_new_epc_rating_features(df):
 def map_quality_to_score(df, list_of_features):
     """Map quality string tag (e.g. 'very good') to score and add it as a new feature.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Dataframe to update.
+    Args:
+        df ( pandas.DataFrame): Dataframe to update with quality score.
+        list_of_features (list): A list of dataframe features to update.
 
-    list_of_features: list
-        A list of dataframe features to update.
 
-    Return
-    ---------
-    df : pandas.DataFrame:
-        Updated dataframe with new score features."""
+    Returns:
+        pandas.DataFrame:  Updated dataframe with new score features.
+    """
 
     quality_to_score_dict = {
         "Very Good": 5.0,
@@ -170,14 +163,12 @@ def map_quality_to_score(df, list_of_features):
 def map_rating_to_cat(rating):
     """Map EPC rating in numbers (between 1.0 and 7.0) to EPC category range.
 
-    Parameters
-    ----------
-    rating : float
-        EPC rating - usually average scores.
+    Args:
+        rating (float): EPC rating - usually average scores.
 
-    Return
-    ---------
-    EPC category range, e.g. A-B."""
+    Returns:
+        str: EPC category range, e.g. A-B.
+    """
 
     if rating < 2.0:
         return "F-G"
@@ -198,19 +189,15 @@ def get_heating_features(df, fine_grained_HP_types=False):
     heating_system: heat pump, boiler, community scheme etc.
     heating_source: oil, gas, LPC, electric.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Dataframe that is updated with heating features.
+    Args:
+        df (pandas.DataFrame): Dataframe that is updated with heating features.
+        fine_grained_HP_types (bool, optional):
+            If True, get different heat pump types (air sourced, ground sourced etc.).
+            If False, return "heat pump" as heating type category. Defaults to False.
 
-    fine_grained_HP_types : bool, default=False
-        If True, get different heat pump types (air sourced, ground sourced etc.).
-        If False, return "heat pump" as heating type category.
-
-    Return
-    ---------
-    df : pandas.DataFrame
-        Updated dataframe with heating system and source."""
+    Returns:
+        pandas.DataFrame: Updated dataframe with heating system and source.
+    """
 
     if "MAINHEAT_DESCRIPTION" not in df.columns:
         return df
@@ -364,13 +351,12 @@ def get_postcode_coordinates(df):
     """Add coordinates (longitude and latitude) to the dataframe
     based on the postcode.
 
-    df : pandas.DataFrame
-        EPC dataframe.
+    Args:
+        df (pandas.DataFrame): EPC dataframe.
 
-    Return
-    ---------
-    df : pandas.DataFrame
-        Same dataframe with longitude and latitude columns added."""
+    Returns:
+        pandas.DataFrame: Same dataframe with longitude and latitude columns added.
+    """
 
     # Get postcode/coordinates
     postcode_coordinates_df = coordinates.get_postcode_coordinates()
@@ -395,17 +381,14 @@ def get_building_entry_feature(df, feature):
     """Create feature that shows number of entries for any given building
     based on BUILDING_REFERENCE_NUMBER or BUILDING_ID.
 
-    df : pandas.DataFrame
-        EPC dataframe.
+    Args:
+        df (pandas.DataFrame): EPC dataframe.
+        feature (str): Feature by which to count building entries.
+            Needs to be "BUILDING_REFERNCE_NUMBER" or "BUILDING_ID" or "UPRN".
 
-    feature: str
-        Feature by which to count building entries.
-        Has to be "BUILDING_REFERNCE_NUMBER" or "BUILDING_ID".
-
-    Return
-    ---------
-    df : pandas.DataFrame
-        EPC dataframe with # entry feature."""
+    Returns:
+        pandas.DataFrame: EPC dataframe with # entry feature.
+    """
 
     # Catch invalid inputs
     if feature not in ["BUILDING_REFERENCE_NUMBER", "BUILDING_ID", "UPRN"]:
@@ -430,17 +413,12 @@ def get_additional_features(df):
     The new features include information about the inspection and entry date,
     building references, fine-grained heating system features and differences in EPC ratings.
 
-    Parameters
-    ---------
-    df : pandas.DataFrame
-        EPC dataframe.
+    Args:
+        df (pandas.DataFrame): EPC dataframe.
 
-    Return
-    ---------
-    df : pandas.DataFrame
-        Updated dataframe with new features."""
-
-    # df = get_date_features(df)
+    Returns:
+        pandas.DataFrame: Updated dataframe with new features.
+    """
 
     df = get_unique_building_id(df)
     df = get_building_entry_feature(df, "UPRN")

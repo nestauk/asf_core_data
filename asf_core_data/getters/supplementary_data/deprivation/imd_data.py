@@ -24,18 +24,14 @@ country_path_dict = {
 def get_country_imd_data(country, data_path=PROJECT_DIR, usecols=None):
     """Get deprivation data for specific country.
 
-    Parameters
-    ----------
-    country : {'England', 'Scotland', 'Wales'}, str
-        Country for which to load IMD.
+    Args:
+        country (str): Country for which to load IMD: 'England', 'Scotland', 'Wales'.
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to PROJECT_DIR.
+        usecols (list, optional): List of features/columns to load. Defaults to None, loading all features.
 
-    usecols : list, default=None
-        List of features to include.
-
-    Return
-    ----------
-    imd_df : pandas.DataFrame
-        Deprivation data."""
+    Returns:
+        pandas.DataFrame: Deprivation data.
+    """
 
     file_path = data_path / country_path_dict[country]
 
@@ -57,16 +53,14 @@ def get_gb_imd_data(
 ):
     """Get deprivation data for England, Wales and Scotland.
 
-    Parameters
-    ----------
-    usecols : ['IMD Rank', 'IMD Decile', 'Postcode', 'Income Score', 'Employment Score']
-        Features to include.
-        Above selection works for all countries.
+    Args:
+        usecols (list, optional):  List of features/columns to load.
+            Defaults to ["IMD Rank", "IMD Decile", "Postcode", "Income Score", "Employment Score", "Country"].
+            This selection works for all countries. None will load all features.
 
-    Return
-    ----------
-    imd_df : pandas.DataFrame
-        Deprivation data for all countries."""
+    Returns:
+        pandas.DataFrame:  Deprivation data for all countries.
+    """
 
     england_imd = get_country_imd_data("England", usecols=usecols)
     wales_imd = get_country_imd_data("Wales", usecols=usecols)
@@ -80,18 +74,14 @@ def get_gb_imd_data(
 def merge_imd_with_other_set(imd_df, other_df, postcode_label="Postcode"):
     """Merge IMD data with other data based on postcode.
 
-    Parameters
-    ----------
-    imd_df : pandas.DataFrame
-        Deprivation data
+    Args:
+        imd_df (pandas.DataFrame): Deprivation data.
+        other_df (pandas.DataFrame): Other data.
+        postcode_label (str, optional):  How to rename postcode label. Defaults to "Postcode".
 
-    other_df : pandas.DataFrame
-        Other data
-
-    Return
-    ----------
-    merged_df : pandas.DataFrame
-        Two datasets merged on postcode."""
+    Returns:
+        pandas.DataFrame:  Two datasets merged on postcode.
+    """
 
     if "POSTCODE" in other_df.columns:
         other_df = other_df.rename(columns={"POSTCODE": "Postcode"})

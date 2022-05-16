@@ -1,19 +1,28 @@
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+# File: asf_core_data/getters/epc/data_batches.py
+"""Look up and integrate batch names."""
+
+# ---------------------------------------------------------------------------------
+
+# Imports
+from asf_core_data import Path
 from asf_core_data.config import base_config
 
 import warnings
 import boto3
 
+# ---------------------------------------------------------------------------------
+
 
 def get_all_batch_names(data_path=None, rel_path=base_config.RAW_DATA_PATH):
-    """_summary_
+    """Get all batch names for EPC versions stored on the S3 bucket 'asf-core-data'
+    or in a specific directory.
 
     Args:
-        data_path (_type_, optional): _description_. Defaults to None.
-        rel_path (_type_, optional): _description_. Defaults to base_config.RAW_DATA_PATH.
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to None.
+        rel_path (str/Path, optional): Relative path to EPC data. Defaults to base_config.RAW_DATA_PATH.
 
     Returns:
-        _type_: _description_
+        list: All EPC batches.
     """
 
     if data_path == "S3":
@@ -32,16 +41,24 @@ def get_all_batch_names(data_path=None, rel_path=base_config.RAW_DATA_PATH):
 
     else:
 
-        data_path = get_version_path(data_path / rel_path.parent, data_path=data_path)
+        data_path = get_batch_path(data_path / rel_path.parent, data_path=data_path)
         batches = [p.name for p in data_path.glob("*/") if not p.name.startswith(".")]
 
     return batches
 
 
 def get_most_recent_batch(data_path=None, rel_path=base_config.RAW_DATA_PATH):
+    """Get the most recent EPC data batch from ASF data directory or S3 bucket.
+
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to None.
+        rel_path (str/Path, optional): Relative path to EPC data. Defaults to base_config.RAW_DATA_PATH.
+
+    Returns:
+        str: Most recent batch name.
+    """
 
     if data_path == "S3":
-
         batches = get_all_batch_names(data_path="S3")
 
     else:
@@ -50,17 +67,25 @@ def get_most_recent_batch(data_path=None, rel_path=base_config.RAW_DATA_PATH):
     return sorted(batches, reverse=True)[0]
 
 
-def check_for_newest_batch(
-    data_path=None, rel_path=base_config.RAW_DATA_PATH, verbose=False
-):
+def check_for_newest_batch(data_path=None, verbose=False):
+    """Check whether the local data dir is up-to-date and includes the newest EPC data batch.
 
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory. Defaults to None.
+        verbose (bool, optional): Whether to print results. Defaults to True.
+
+    Returns:
+        (bool, str): Whether or not local dir is up-to-date, newest batch name.
+    """
+
+    # Get the latest batches on the local dir and S3
     local_batch = get_most_recent_batch(data_path=data_path)
     s3_batch = get_most_recent_batch(data_path="S3")
 
     if local_batch == s3_batch:
         if verbose:
             print("Your local data is up to date with batch {}".format(local_batch))
-        return (True, local_batch)
+        return (True, s3_batch)
 
     else:
         if verbose:
@@ -72,11 +97,23 @@ def check_for_newest_batch(
         return (False, s3_batch)
 
 
-def get_version_path(path, data_path, batch="newest"):
+def get_batch_path(path, data_path, batch="newest"):
+    """Create path to specific batch, e.g. to the newest batch.
 
+    Args:
+        path (str/Path): Path that needs to be updated with batch name.
+        data_path (str/Path, optional): Path to ASF core data directory. Defaults to None.
+        batch (str, optional): Which batch to use, either specific batch name or relative indicator. Defaults to "newest".
+
+    Returns:
+        Path: Path with specific batch name integrated.
+    """
+
+    # If batch does not need to be filled in
     if not "{}" in str(path):
         return path
 
+    # Get most recent batch
     if batch is None or batch.lower() in [
         "newest",
         "most recent",
@@ -87,6 +124,7 @@ def get_version_path(path, data_path, batch="newest"):
         newest_batch = get_most_recent_batch(data_path=data_path)
         path = str(path).format(newest_batch)
 
+        # Warn if not the newest batch
         is_newest, newest_s3_batch = check_for_newest_batch(data_path=data_path)
         if not is_newest:
             warnings.warn(

@@ -1,27 +1,30 @@
-from gettext import npgettext
+# File: asf_core_data/pipeline/data_joining/merge_install_dates.py
+"""Merge HP install date information from EPC and MCS."""
+
+# ---------------------------------------------------------------------------------
+
 from asf_core_data.getters import data_getters
 from asf_core_data.config import base_config
 
 import numpy as np
 import pandas as pd
 
+# ---------------------------------------------------------------------------------
+
 
 def get_mcs_install_dates(epc_df, additional_features=False):
-    """Get MCS install dates and them to the EPC data.
+    """Get MCS install dates and add them to the EPC data.
 
-    Parameters
-    ----------
-    epc_df : pandas.DataFrame
-        EPC dataset.
+    Args:
+        epc_df (pandas.DataFrame): EPC dataset.
+        additional_features (bool, optional): Whether to add additional MCS features. Defaults to False.
 
+    Returns:
+        pandas.DataFrame: EPC dataset with added MCS install dates.
+    """
 
-    Return
-    ---------
-    epc_df : pandas.DataFrame:
-        EPC dataset with added MCS install dates."""
-
-    # Note:
-    # This will be simplified shortly to work with UPRN instead of address
+    # Note
+    # TO DO:  This will be simplified shortly to work with UPRN instead of address
 
     # Get original address from EPC
     epc_df["original_address"] = (
@@ -52,25 +55,6 @@ def get_mcs_install_dates(epc_df, additional_features=False):
             "# records",
         ],
     )
-
-    # mcs_data = pd.read_csv(
-    #     base_config.MERGED_MCS_EPC,
-    #     usecols=[
-    #         "date",
-    #         "tech_type",
-    #         "compressed_epc_address",
-    #         "address_1",
-    #         "address_2",
-    #         "address_3",
-    #         "postcode",
-    #         "version",
-    #         "new",
-    #         "n_certificates",
-    #         "alt_type",
-    #         "installation_type",
-    #         "# records",
-    #     ],
-    # )
 
     mcs_data.fillna({"address_1": "", "address_2": "", "address_3": ""}, inplace=True)
 
@@ -148,18 +132,17 @@ def get_mcs_install_dates(epc_df, additional_features=False):
     return epc_df
 
 
-def manage_hp_install_dates(df, IDENTIFIER="UPRN", verbose=True):
+def manage_hp_install_dates(df, identifier="UPRN", verbose=True):
     """Manage heat pump install dates given by EPC and MCS.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Dataframe with EPC data and MCS install dates.
+    Args:
+        df (pd.DataFrame): Dataframe with EPC data and MCS install dates.
+        identifier (str, optional): Unique identifier for properties. Defaults to "UPRN".
+        verbose (bool, optional): Print some diagnostics. Defaults to True.
 
-    Return
-    ---------
-    df : pandas.DataFrame:
-        Dataframe with updated install dates."""
+    Returns:
+        pd.DataFrame: Dataframe with updated install dates.
+    """
 
     # Get the MCS install dates for EPC properties
     df = get_mcs_install_dates(df)
@@ -168,24 +151,24 @@ def manage_hp_install_dates(df, IDENTIFIER="UPRN", verbose=True):
 
     # Get the first heat pump mention for each property
     first_hp_mention = (
-        df.loc[df["HP_INSTALLED"]].groupby(IDENTIFIER)["INSPECTION_DATE"].min()
+        df.loc[df["HP_INSTALLED"]].groupby(identifier)["INSPECTION_DATE"].min()
     )
 
-    df["FIRST_HP_MENTION"] = df[IDENTIFIER].map(dict(first_hp_mention))
+    df["FIRST_HP_MENTION"] = df[identifier].map(dict(first_hp_mention))
 
-    df["ANY_HP"] = df[IDENTIFIER].map(
-        dict(df.groupby(IDENTIFIER)["HP_INSTALLED"].max())
+    df["ANY_HP"] = df[identifier].map(
+        dict(df.groupby(identifier)["HP_INSTALLED"].max())
     )
 
-    df["HP_AT_FIRST"] = df[IDENTIFIER].map(
-        df.loc[df.groupby(IDENTIFIER)["INSPECTION_DATE"].idxmin()]
-        .set_index(IDENTIFIER)
+    df["HP_AT_FIRST"] = df[identifier].map(
+        df.loc[df.groupby(identifier)["INSPECTION_DATE"].idxmin()]
+        .set_index(identifier)
         .to_dict()["HP_INSTALLED"]
     )
 
-    df["HP_AT_LAST"] = df[IDENTIFIER].map(
-        df.loc[df.groupby(IDENTIFIER)["INSPECTION_DATE"].idxmax()]
-        .set_index(IDENTIFIER)
+    df["HP_AT_LAST"] = df[identifier].map(
+        df.loc[df.groupby(identifier)["INSPECTION_DATE"].idxmax()]
+        .set_index(identifier)
         .to_dict()["HP_INSTALLED"]
     )
     print(df["HP_AT_FIRST"].shape)

@@ -1,17 +1,83 @@
-# File: heat_pump_adoption_modelling/pipeline/preprocessing/data_cleaning.py
-"""Cleaning and standardising the EPC dataset."""
+# File: asf_core_data/pipeline/preprocessing/data_cleaning.py
+"""Cleaning and standardising the EPC dataset.
+
+
+DATA CLEANING GUIDELINES
+------------------------
+
+If you would like to clean an additional feature from the EPC or MCS dataset,
+please stick to the following guidelines.
+
+---
+A) Simple mapping from a set of values to a standardised set of values
+
+If you want to standardise values using a dict, add a respective dict entry in the
+feature_cleaning_dict in data_cleaning_utils.py and add the feature name to the list
+features_to_standardise.
+
+Note that all values not found in the dict will be mapped to np.nan/unknown.
+
+For example:
+
+...
+{"FEATURE_TO_CLEAN"  :  {'undesired value 1":"desired value A",
+                         'undesired value 2":"desired value A",
+                         'undesired value 3":"desired valye B"}
+}
+
+features_to_standardise = [...,..., "FEATURE_TO_CLEAN"]
+
+---
+B) Custom function for standardising and cleaning features
+
+If a simple dict mapping is not sufficient, e.g. because you need to apply regular expression,
+create a custom function in data_cleaning.py and name it clean_FEATURE_TO_CLEAN().
+
+The function can either take B1) a single value or B2) the entire dataframe as input.
+
+Examples for B1) cases are clean_POSTCODE() and clean_FLOOR_LEVEL().
+Examples for B2) cases are clean_PHOTO_SUPPLY() and clean_EFF_SCORES().
+
+Make sure to add B1 cases to the custom_cleaning_dict in custom_clean_features().
+Make sure to add B2 cases to custom_clean_features() above the line  # [Additional cleaning functions here].
+Note that the function must contain a check whether the feature is even present in the given dataframe.
+
+---
+C) Add values that should be standardised to np.nan or "unknown"
+
+Add the values to the list 'invalid_values' in data_cleaning_utils.py
+
+---
+D) Set a max value for features
+
+Add the feature to the dict in custom_clean_features(). For example:
+
+cap_value_dict = {
+    "NUMBER_HABITABLE_ROOMS": 10,
+    "NUMBER_HEATED_ROOMS": 10,
+    "FEATURE_TO_CLEAN": 50
+}
+
+
+E) Any other way of cleaning data
+
+Make sure it doesn't disrupt the current pipeline and feel free to add these guidelines here.
+
+"""
+# ---------------------------------------------------------------------------------
 
 
 import re
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
-from asf_core_data.config import base_config
-from numpy.core import numeric
 import pandas as pd
 import numpy as np
 
+
+from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data.config import base_config
 from asf_core_data.pipeline.preprocessing import data_cleaning_utils
 
+# ---------------------------------------------------------------------------------
 
 # Load config file
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
@@ -21,32 +87,13 @@ def clean_POSTCODE(postcode, level="unit", with_space=True):
     """Get POSTCODE as unit, district, sector or area.
 
     Args:
-        postcode (str): Raw postcode
-        level (str): Desired postcode level, defaults to "unit".
-            Options: district, area, sector, unit
-        with_space (bool): Whether to add space after district, defaults to True.
+        postcode (str):  Raw postcode
+        level (str, optional): Desired postcode level.
+            Options: district, area, sector, unit. Defaults to "unit".
+        with_space (bool, optional): Whether to add space after district. Defaults to True.
 
     Returns:
-        level: Specific postcode level.
-    """
-
-    """Get POSTCODE as unit, district, sector or area.
-
-    Parameters:
-    ----------
-    postcode : str
-        Raw postcode.
-
-    level : str, {'district', 'area', 'sector', 'unit'}, optional
-        Desired postcode level, defaults to 'unit'.
-
-    with_space : bool, optional
-        Whether to add space after district, defaults to True.
-
-    Returns
-    -------
-        level: str
-            Specific postcode level.
+        str: Specific postcode level.
     """
 
     postcode = postcode.strip()
@@ -81,19 +128,14 @@ def clean_FLOOR_LEVEL(floor_level, as_numeric=base_config.FLOOR_LEVEL_AS_NUM):
     Alternatively, the floor level can be returned as one of the following categories:
     -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10+
 
-    Parameters
-    ----------
-    floor_level : str
-        Floor level.
+    Args:
+        floor_level (str):  Floor level.
+        as_numeric (bool, optional): Whehter to return floor level as numeric value. Defaults to base_config.FLOOR_LEVEL_AS_NUM.
+            If set to False, return value as category.
 
-    as_numeric : bool, default=True
-        Return floor level as numeric value.
-        If set to False, return value as category.
-
-    Return
-    ----------
-    standardised floor level : int, or str
-        Standardised floor level."""
+    Returns:
+        int/str: Standardised floor level
+    """
 
     # floor_level = floor_level.strip()
     floor_level_dict = data_cleaning_utils.feature_cleaning_dict["FLOOR_LEVEL"]
@@ -111,22 +153,16 @@ def clean_FLOOR_LEVEL(floor_level, as_numeric=base_config.FLOOR_LEVEL_AS_NUM):
 
 
 def clean_CONSTRUCTION_AGE_BAND(age_band, merged_bands=base_config.MERGED_AGE_BANDS):
-
     """Standardise construction age bands and if necessary adjust
     the age bands to combine the Scotland and England/Wales data.
 
-    Parameters
-    ----------
-    age : str
-        Raw construction age.
+    Args:
+        age_band (str): Raw construction age.
+        merged_bands (bool, optional):  Whether to merge Scotland and England/Wales age bands. Defaults to base_config.MERGED_AGE_BANDS.
 
-    merge_country_data : bool, default=True
-        Whether to merge Scotland and England/Wales age bands.
-
-    Return
-    ----------
-    Standardised age construction band : str
-        Standardised age construction band."""
+    Returns:
+        str: Standardised age construction band.
+    """
 
     age_band = age_band.strip()
 
@@ -148,15 +184,12 @@ def clean_CONSTRUCTION_AGE_BAND(age_band, merged_bands=base_config.MERGED_AGE_BA
 def clean_LOCAL_AUTHORITY(local_authority):
     """Clean local authority label.
 
-    Paramters
-    ----------
-    local_authority : str
-        Local authority label.
+    Args:
+        local_authority (str): Local authority label.
 
-    Return
-    ----------
-    local_authority : str
-        Cleaned local authority."""
+    Returns:
+        str:  Cleaned local authority.
+    """
 
     if local_authority in ["00EM", "16UD"]:
         return "unknown"
@@ -170,19 +203,15 @@ def clean_GLAZED_AREA(area, as_numeric=base_config.GLAZED_AREA_AS_NUM):
     Alternatively, the glazed area can be returned as one of the following categories:
     Normal, More Than Typical, Much More Than Typical, Less Than Typical, Much Less Than Typical, unknown.
 
-    Parameters
-    ----------
-    area : str
-        Glazed area type.
+    Args:
+        area (str): Glazed area type.
+        as_numeric (bool, optional):  Return glazed area as numeric value.
+            If set to False, return value as category.
+            Defaults to base_config.GLAZED_AREA_AS_NUM.
 
-    as_numeric : bool, default=True
-        Return glazed area as numeric value.
-        If set to False, return value as category.
-
-    Return
-    ----------
-    standardised glazed area : int, or str
-        Standardised glazed area."""
+    Returns:
+        str: Standardised glazed area.
+    """
 
     glazed_area_cat = data_cleaning_utils.feature_cleaning_dict["GLAZED_AREA_CAT"]
     glazed_area_num = data_cleaning_utils.feature_cleaning_dict["GLAZED_AREA_NUM"]
@@ -203,15 +232,12 @@ def clean_GLAZED_AREA(area, as_numeric=base_config.GLAZED_AREA_AS_NUM):
 def clean_PHOTO_SUPPLY(df):
     """Extract photo supply area from length descriptions.
 
-    Paramters
-    ----------
-    df : pandas.DataFrame
-        Given dataframe.
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
 
-    Return
-    ---------
-     df : pandas.DataFrame
-        Dataframe with fixed photo supply column."""
+    Returns:
+        pd.DateFrame: Dataframe with fixed photo supply column.
+    """
 
     if "PHOTO_SUPPLY" not in df.columns:
         return df
@@ -229,15 +255,14 @@ def clean_PHOTO_SUPPLY(df):
 def create_efficiency_mapping(efficiency_set, only_first=base_config.ONLY_FIRST_EFF):
     """Create dict to map efficiency label(s) to numeric value.
 
-    Parameters
-    ----------
-    efficiency_set : list
-        List of efficiencies as encoded as strings.
+    Args:
+        efficiency_set (list): List of efficiencies as encoded as strings.
+        only_first (bool, optional): Only consider first efficiency entry if where are multiple.
+            Defaults to base_config.ONLY_FIRST_EFF.
 
-    Return
-    ---------
-    efficiency_map : dict
-        Dict to map efficiency labels to numeric values."""
+    Returns:
+        dict: Map efficiency labels to numeric values.
+    """
 
     efficiency_map = {}
 
@@ -273,6 +298,18 @@ def create_efficiency_mapping(efficiency_set, only_first=base_config.ONLY_FIRST_
 
 
 def clean_EFF_SCORES(df):
+    """Clean and modify energy efficiency and environment ratings and scores for different categories,
+    e.g. WINDOWS_ENVIRONMENT_EFF.
+
+    Standardise ratings and get average value if several values given.
+    Capture both as categorical feature (very poor to very good) and as numeric features (1.0 to 5.0), ending with "_SCORE".
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe with updated efficiency score features.
+    """
 
     for feat in df.columns:
         # If efficiency feature, get respective mapping
@@ -296,21 +333,16 @@ def cap_feature_values(df, feature, cap_value=10, as_cat=False):
     For example, set NUMBER_OF_HABITABLE_ROOMS values that are
     greater/equal to 10 to "10+".
 
-    Paramters
-    ----------
-    df : pandas.DataFrame
-        Given dataframe.
 
-    feature : str
-        Feature for which values are capped.
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+        feature (str):  Feature for which values are capped.
+        cap_value (int, optional): Max value / where to cap. Defaults to 10.
+        as_cat (bool, optional): Save as category instead of numeric feature. Defaults to False.
 
-    cap_n : int, default=10
-        At which value to cap.
-
-    Return
-    ---------
-     df : pandas.DataFrame
-        Dataframe with capped values."""
+    Returns:
+        pandas.DataFrame: Dataframe with capped values.
+    """
 
     # Cap at given limit (i.e. 10)
     cap_n = str(cap_n) + "+" if as_cat else cap_value
@@ -325,6 +357,16 @@ def cap_feature_values(df, feature, cap_value=10, as_cat=False):
 def standardise_dates(
     df, date_features=["INSPECTION_DATE", "LODGEMENT_DATE", "LODGEMENT_DATETIME"]
 ):
+    """Standardise date features and transform to datetime values for easier handling.
+    Test for unreasonable dates and fix years starting with 00.
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+        date_features (list, optional): Date features to modify. Defaults to ["INSPECTION_DATE", "LODGEMENT_DATE", "LODGEMENT_DATETIME"].
+
+    Returns:
+        pandas.DataFrame: Dataframe with standardises date features.
+    """
 
     date_features = [
         date_feat for date_feat in date_features if date_feat in df.columns
@@ -332,8 +374,8 @@ def standardise_dates(
 
     for feature in date_features:
 
+        # Fix years starting with 00 -> 20..
         df[feature] = df[feature].str.replace(r"00(\d\d)", r"20\1", regex=True)
-
         df[feature] = pd.to_datetime(df[feature], errors="coerce")
 
         df.loc[
@@ -346,7 +388,16 @@ def standardise_dates(
 
 
 def standardise_unknowns(df):
+    """Standardise unknown and invalid values.
+    For numeric features, change invalid values to NaN.
+    For categorical features, change invalid values to "unknown".
 
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe with cleaned up unknown values.
+    """
     for feat in df.columns:
 
         if feat in data_cleaning_utils.numeric_features:
@@ -358,16 +409,18 @@ def standardise_unknowns(df):
 
 
 def standardise_features(df):
+    """Standardise features using a mapping dict.
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe with stanardised features.
+    """
 
     for feat in df.columns:
 
-        if feat in [
-            "TENURE",
-            "SOLAR_WATER_HEATING_FLAG",
-            "TRANSACTION_TYPE",
-            "GLAZED_TYPE",
-            "ENERGY_TARIFF",
-        ]:
+        if feat in data_cleaning_utils.features_to_standardise:
 
             df[feat] = df[feat].str.strip()
             feat_clean_dict = data_cleaning_utils.feature_cleaning_dict[feat]
@@ -380,7 +433,14 @@ def standardise_features(df):
 
 
 def remove_empty_features(df):
+    """Remove empty features, i.e. features/columns that only have one unique value.
 
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe with removed empty features.
+    """
     # Remove all columns with only NaN
     df.dropna(axis=1, how="all", inplace=True)
 
@@ -393,8 +453,17 @@ def remove_empty_features(df):
 
 
 def custom_clean_features(df):
+    """Custom clean features.
+    For instances, standardise values and cap at max value.
 
-    column_to_function_dict = {
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe after custom cleaning features.
+    """
+
+    custom_cleaning_dict = {
         "POSTCODE": clean_POSTCODE,
         "CONSTRUCTION_AGE_BAND": clean_CONSTRUCTION_AGE_BAND,
         "LOCAL_AUTHORITY_LABEL": clean_LOCAL_AUTHORITY,
@@ -407,14 +476,15 @@ def custom_clean_features(df):
         "NUMBER_HEATED_ROOMS": 10,
     }
 
-    # Custom cleaning for specific features
+    # Custom cleaning by value (B1)
     for feat in df.columns:
-        if feat in column_to_function_dict.keys():
-            df[feat] = df[feat].apply(column_to_function_dict[feat])
+        if feat in custom_cleaning_dict.keys():
+            df[feat] = df[feat].apply(custom_cleaning_dict[feat])
 
-    # Categorical to numeric feature cleaning
+    # Custom cleaning by df (B2) - usually categorical to numeric feature cleaning
     df = clean_PHOTO_SUPPLY(df)
     df = clean_EFF_SCORES(df)
+    # [Additional cleaning functions here]
 
     # Cap features
     for feat in df.columns:
@@ -429,29 +499,17 @@ def clean_epc_data(df):
     """Standardise and clean EPC data.
     For example, reformat dates and standardise categories.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Raw/original EPC dataframe.
+    Args:
+        df (pandas.DataFrame): Raw/original EPC dataframe.
 
-    Return
-    ----------
-    df : pandas.DataFrame
-        Standarised and cleaned EPC dataframe."""
+    Returns:
+        pandas.DataFram: Standarised and cleaned EPC dataframe.
+    """
 
     df = remove_empty_features(df)
     df = standardise_unknowns(df)
     df = standardise_features(df)
     df = standardise_dates(df)
-
     df = custom_clean_features(df)
 
     return df
-
-
-# Integrate at later point:
-
-#     for column in df.columns:
-#         if column in make_numeric:
-#             df[column] = pd.to_numeric(df[column])
-#             df[column] = df[column].mask(df[column] < 0.0)
