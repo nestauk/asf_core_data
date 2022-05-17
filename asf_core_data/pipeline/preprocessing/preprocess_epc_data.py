@@ -191,7 +191,7 @@ def load_and_preprocess_epc_data(
 
         save_data = None
         warnings.warn(
-            "You're not loading the all samples so the processed data will not be saved."
+            "You're not loading all samples so the processed data will not be saved."
         )
 
     if save_data or (save_data is not None and not os.path.isabs(save_data)):
