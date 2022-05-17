@@ -114,6 +114,7 @@ def get_mcs_install_dates(epc_df, additional_features=False):
     original_address_dict = mcs_data.set_index("compressed_epc_address").to_dict()[
         "MCS_ADDRESS"
     ]
+
     epc_df["HP_INSTALL_DATE"] = epc_df["original_address"].map(date_dict)
     epc_df["MCS address"] = epc_df["original_address"].map(original_address_dict)
 
