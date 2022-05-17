@@ -522,7 +522,7 @@ def load_preprocessed_epc_data(
     rel_data_path=base_config.RAW_EPC_DATA_PATH.parent,
     batch=None,
     version="preprocessed_dedupl",
-    usecols=None,
+    usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
     n_samples=None,
     snapshot_data=False,
     low_memory=True,
@@ -597,6 +597,9 @@ def load_preprocessed_epc_data(
     for col in base_config.parse_dates:
         if col in epc_df.columns:
             epc_df[col] = pd.to_datetime(epc_df[col])
+
+    # if subset is not None and subset != "GB":
+    #     epc_df = epc_df.loc[epc_df["COUNTRY"] == subset]
 
     return epc_df
 

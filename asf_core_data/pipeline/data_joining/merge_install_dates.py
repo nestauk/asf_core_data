@@ -132,7 +132,7 @@ def get_mcs_install_dates(epc_df, additional_features=False):
     return epc_df
 
 
-def manage_hp_install_dates(df, identifier="UPRN", verbose=True):
+def manage_hp_install_dates(df, identifier="UPRN", verbose=False):
     """Manage heat pump install dates given by EPC and MCS.
 
     Args:
@@ -171,7 +171,6 @@ def manage_hp_install_dates(df, identifier="UPRN", verbose=True):
         .set_index(identifier)
         .to_dict()["HP_INSTALLED"]
     )
-    print(df["HP_AT_FIRST"].shape)
 
     df["HP_LOST"] = df["HP_AT_FIRST"] & ~df["HP_AT_LAST"]
     df["HP_ADDED"] = ~df["HP_AT_FIRST"] & df["HP_AT_LAST"]

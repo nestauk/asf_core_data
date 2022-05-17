@@ -187,6 +187,13 @@ def load_and_preprocess_epc_data(
     # Do not save/overwrite the preprocessed data when not loading entire GB dataset
     # in order to prevent confusion.
 
+    if n_samples is not None:
+
+        save_data = None
+        warnings.warn(
+            "You're not loading the entire EPC dataset so the results will not be saved."
+        )
+
     if save_data or not os.path.isabs(save_data):
 
         save_data = data_path / save_data
@@ -217,8 +224,10 @@ def load_and_preprocess_epc_data(
 # ---------------------------------------------------------------------------------
 
 
-def main(ASF_CORE_DATA_DIR="/Users/juliasuter/Documents/ASF_data", usecols=None):
+def main():
     """Main function: Loads and preprocessed EPC data with default settings."""
+
+    ASF_CORE_DATA_DIR = "/Users/juliasuter/Documents/ASF_data"
 
     start_time = time.time()
 

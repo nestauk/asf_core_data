@@ -64,6 +64,7 @@ RAW_DATA_PATH = Path("inputs/EPC/raw_data/{}/")
 RAW_ENG_WALES_DATA_PATH = Path("inputs/EPC/raw_data/{}/England_Wales/")
 RAW_SCOTLAND_DATA_PATH = Path("inputs/EPC/raw_data/{}/Scotland/")
 
+IMD_PATH = Path("inputs/supplementary_data/IMD/")
 IMD_ENGLAND_PATH = Path("inputs/supplementary_data/IMD/England_IMD.csv")
 IMD_WALES_PATH = Path("inputs/supplementary_data/IMD/Wales_IMD.csv")
 IMD_SCOTLAND_PATH = Path("inputs/supplementary_data/IMD/Scotland_IMD.csv")

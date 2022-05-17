@@ -15,25 +15,28 @@ config = get_yaml_config(
 )
 
 country_path_dict = {
-    "England": base_config.IMD_ENGLAND_PATH,
-    "Wales": base_config.IMD_WALES_PATH,
-    "Scotland": base_config.IMD_SCOTLAND_PATH,
+    "England": base_config.IMD_ENGLAND_PATH.name,
+    "Wales": base_config.IMD_WALES_PATH.name,
+    "Scotland": base_config.IMD_SCOTLAND_PATH.name,
 }
 
 
-def get_country_imd_data(country, data_path=PROJECT_DIR, usecols=None):
+def get_country_imd_data(
+    country, data_path="", rel_path=base_config.IMD_PATH, usecols=None
+):
     """Get deprivation data for specific country.
 
     Args:
         country (str): Country for which to load IMD: 'England', 'Scotland', 'Wales'.
-        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to PROJECT_DIR.
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_data_path (str/Path, optional): Relative path to IMD data. Defaults to base_config.IMD_PATH.
         usecols (list, optional): List of features/columns to load. Defaults to None, loading all features.
 
     Returns:
         pandas.DataFrame: Deprivation data.
     """
 
-    file_path = data_path / country_path_dict[country]
+    file_path = data_path / rel_path / country_path_dict[country]
 
     imd_df = pd.read_csv(file_path, usecols=usecols)
     imd_df["Country"] = country
@@ -42,6 +45,8 @@ def get_country_imd_data(country, data_path=PROJECT_DIR, usecols=None):
 
 
 def get_gb_imd_data(
+    data_path=base_config.ROOT_DATA_PATH,
+    rel_data_path=base_config.IMD_PATH,
     usecols=[
         "IMD Rank",
         "IMD Decile",
@@ -49,11 +54,13 @@ def get_gb_imd_data(
         "Income Score",
         "Employment Score",
         "Country",
-    ]
+    ],
 ):
     """Get deprivation data for England, Wales and Scotland.
 
     Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_data_path (str/Path, optional): Relative path to IMD data. Defaults to base_config.IMD_PATH.
         usecols (list, optional):  List of features/columns to load.
             Defaults to ["IMD Rank", "IMD Decile", "Postcode", "Income Score", "Employment Score", "Country"].
             This selection works for all countries. None will load all features.
@@ -62,9 +69,11 @@ def get_gb_imd_data(
         pandas.DataFrame:  Deprivation data for all countries.
     """
 
-    england_imd = get_country_imd_data("England", usecols=usecols)
-    wales_imd = get_country_imd_data("Wales", usecols=usecols)
-    scotland_imd = get_country_imd_data("Scotland", usecols=usecols)
+    imd_path = Path(data_path) / rel_data_path
+
+    england_imd = get_country_imd_data("England", data_path=imd_path, usecols=usecols)
+    wales_imd = get_country_imd_data("Wales", data_path=imd_path, usecols=usecols)
+    scotland_imd = get_country_imd_data("Scotland", data_path=imd_path, usecols=usecols)
 
     imd_df = pd.concat([england_imd, wales_imd, scotland_imd], axis=0)
 
