@@ -224,7 +224,7 @@ def main(ASF_CORE_DATA_DIR="/Users/juliasuter/Documents/ASF_data", usecols=None)
 
     print("Loading and preprocessing EPC data... This will take a while.\n")
     epc_df = load_and_preprocess_epc_data(
-        usecols=usecols,  # base_config.EPC_FEAT_SELECTION,
+        usecols=base_config.EPC_FEAT_SELECTION,
         n_samples=None,
         save_data=base_config.PREPROC_EPC_DATA_PATH,
         data_path=ASF_CORE_DATA_DIR,
