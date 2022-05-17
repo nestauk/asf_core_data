@@ -203,7 +203,7 @@ def plot_subcategory_distribution(
     ax.set_ylim([0.0, int(highest_count + highest_count / 8)])
 
     # Save figure
-    save_figure(plt, plot_title, fig_path=fig_save_path)
+    save_figure(plt, fig_save_path, plot_title=plot_title)
 
     # Show plot
     plt.show()
@@ -272,7 +272,7 @@ def plot_feature_by_subcategories(
     ) if x_tick_rotation == 45 else plt.xticks(rotation=x_tick_rotation)
 
     # Save figure
-    save_figure(plt, plot_title, fig_path=fig_save_path)
+    save_figure(plt, fig_save_path, plot_title=plot_title)
 
     # Show plot
     plt.show()
@@ -453,7 +453,7 @@ def plot_subcats_by_other_subcats(
             )
 
     # Save figure
-    save_figure(plt, plot_title, fig_path=fig_save_path)
+    save_figure(plt, fig_save_path, plot_title=plot_title)
 
     # Show plot
     plt.show()
@@ -552,7 +552,7 @@ def plot_correlation(
         ) if x_tick_rotation == 45 else plt.xticks(rotation=x_tick_rotation)
 
     # Save figure
-    save_figure(plt, plot_title, fig_save=fig_save_path)
+    save_figure(plt, fig_save_path, plot_title=plot_title)
 
     # Show plot
     plt.show()
