@@ -22,21 +22,20 @@ country_path_dict = {
 
 
 def get_country_imd_data(
-    country, data_path="", rel_path=base_config.IMD_PATH, usecols=None
+    country, data_path=PROJECT_DIR / base_config.IMD_PATH, usecols=None
 ):
     """Get deprivation data for specific country.
 
     Args:
         country (str): Country for which to load IMD: 'England', 'Scotland', 'Wales'.
-        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
-        rel_data_path (str/Path, optional): Relative path to IMD data. Defaults to base_config.IMD_PATH.
+        data_path (str/Path, optional): Path to IMD data in local dir or 'S3'. Defaults to PROJECT_DIR / base_config.IMD_PATH.
         usecols (list, optional): List of features/columns to load. Defaults to None, loading all features.
 
     Returns:
         pandas.DataFrame: Deprivation data.
     """
 
-    file_path = data_path / rel_path / country_path_dict[country]
+    file_path = data_path / country_path_dict[country]
 
     imd_df = pd.read_csv(file_path, usecols=usecols)
     imd_df["Country"] = country
