@@ -6,7 +6,7 @@
 import re
 import time
 import os
-import sys
+import logging
 import warnings
 
 from asf_core_data.pipeline.preprocessing import data_cleaning, feature_engineering
@@ -190,8 +190,8 @@ def load_and_preprocess_epc_data(
     if n_samples is not None:
 
         save_data = None
-        warnings.warn(
-            "You're not loading all samples so the processed data will not be saved."
+        logging.warning(
+            "You're not loading all samples so the processed data will not be saved!"
         )
 
     if save_data or (save_data is not None and not os.path.isabs(save_data)):
@@ -199,7 +199,7 @@ def load_and_preprocess_epc_data(
         save_data = data_path / save_data
 
         if subset != "GB":
-            warnings.warn("Careful! You're not loading the complete GB dataset.")
+            logging.warning("Careful! You're not loading the complete GB dataset.")
 
     epc_df = epc_data.load_raw_epc_data(
         subset=subset,

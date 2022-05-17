@@ -349,6 +349,10 @@ def plot_subcats_by_other_subcats(
         if feature_1 in feature_settings.map_dict.keys():
             feature_1_values = feature_settings.map_dict[feature_1]
 
+            for value in feature_1_values:
+                if value not in df[feature_1].unique():
+                    feature_1_values.remove(value)
+
     # Create a feature-bar dict
     feat_bar_dict = {}
 
@@ -376,6 +380,10 @@ def plot_subcats_by_other_subcats(
 
         if feature_2 in feature_settings.map_dict.keys():
             feature_2_values = feature_settings.map_dict[feature_2]
+            for value in feature_2_values:
+                if value not in df[feature_2].unique():
+                    feature_2_values.remove(value)
+
             subcat_by_subcat = subcat_by_subcat[feature_2_values]
 
     # If not defined, set default colors for plotting
