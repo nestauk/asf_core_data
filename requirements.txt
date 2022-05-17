@@ -11,3 +11,5 @@ sh
 openpyxl
 boto3
 h3
+s3fs
+fsspec

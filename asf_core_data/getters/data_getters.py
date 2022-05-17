@@ -43,16 +43,17 @@ def load_s3_data(bucket_name, file_name, usecols=True):
     file_name: S3 key to load
     """
 
-    obj = s3.Object(bucket_name, file_name)
     if fnmatch(file_name, "*.xlsx"):
         return pd.read_excel(os.path.join("s3://" + bucket_name, file_name))
     elif fnmatch(file_name, "*.csv"):
+        print(os.path.join("s3://" + bucket_name, file_name))
         return pd.read_csv(
             os.path.join("s3://" + bucket_name, file_name),
             encoding="latin-1",
             usecols=usecols,
         )
     elif fnmatch(file_name, "*.pickle") or fnmatch(file_name, "*.pkl"):
+        obj = s3.Object(bucket_name, file_name)
         file = obj.get()["Body"].read()
         return pickle.loads(file)
 
