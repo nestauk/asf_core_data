@@ -2,7 +2,6 @@
 """Getting MCS heat pump data."""
 
 import pandas as pd
-import datetime as dt
 import os
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
