@@ -1,73 +1,57 @@
-# File: getters/easy_plotting.py
+# File: asf_core_data/utils/visualisation/easy_plotting.py
 """Functions to help plot and analyse dataframe.
-
-Created May 2021
-@author: Julia Suter
-Last updated on 13/07/2021
 """
 
 # ---------------------------------------------------------------------------------
 
 # Imports
-from turtle import settiltangle
-from xml.sax.handler import feature_external_ges, feature_string_interning
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-from asf_core_data import Path
-from asf_core_data.utils.visualisation import feature_settings
 
 import re
-
-
 import warnings
 
 warnings.simplefilter("ignore", category=UserWarning)
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+
+from asf_core_data import Path
+from asf_core_data.utils.visualisation import feature_settings
+from asf_core_data import PROJECT_DIR
+
 
 # ---------------------------------------------------------------------------------
 
 
 def save_figure(
     plt,
+    fig_path,
     plot_title=None,
-    fig_path=None,
     file_extension=".png",
     dpi=1000,
 ):
     """Create filename and save figure.
 
-    Parameters
-    ----------
+    Args:
+        plt (matplotlib.pyplot): Plot to save.
+        fig_path (str): Location to save the plot.
+        plot_title (str, optional): Use plot title to generate filename. If None, use "figure.png" as filename.
+        file_extension (str, optional): File extension, file format to save. Defaults to ".png".
+        dpi (int, optional):  Dots per inches (dpi) determines how many pixels the figure comprises. Defaults to 1000.
 
-    plt : matplotlib.pyplot
-        Plot to save.
-
-    plot_title: str, None, default=None
-        Use plot title to generate filename.
-        If None, use "figure" as filename.
-
-    fig_path: str, None, default=None
-        Where to save the plot.
-        If not specified, use FIG_PATH given by config file.
-
-    file_extension: str, default=".png"
-        File extension, file format to save.
-
-    dpi: int, default=500
-        Dots per inches (dpi) determines how many pixels the figure comprises.
-
-
-    Return
-    ----------
-        None"""
+    """
 
     # Tight layout
     # plt.tight_layout()
+
+    if fig_path is None:
+        fig_path = PROJECT_DIR / "outputs/figures/"
 
     # Automatically generate filename
     if plot_title is not None:
         save_filename = plot_title
         save_filename = re.sub(" ", "_", save_filename)
+        save_filename = save_filename + file_extension
 
     # Use "figure" as filename as default
     else:
@@ -80,33 +64,19 @@ def save_figure(
 def get_readable_tick_labels(plt, ticklabel_type, axis):
     """Get more readable tick labels, e.g. 50k for 50000.
 
-    Parameters
-    ----------
+    Args:
+        plt (matplotlib.pyplot): Plot from which to get axes.
+        ticklabel_type (str): Label type for ticklabel (y-axis or x-axis).
+            Options: '', 'm', 'k' or '%', defaults to None.
+        axis (str): For which axis to update the labels. Options: 'x', 'y'.
 
-    plt : matplotlib.pyplot
-        Plot from which to get axes.
-
-    ticklabel_type : {'', 'm', 'k' or '%'}, default=None
-        Label type for ticklabel (y-axis or x-axis).
-
-    axis : {'y', 'x'}
-        For which axis to update the labels.
-
-    Return
-    ---------
-
-    labels : list
-        Updated tick labels for x or y axis.
-
-    ax : plt.gca
-        Current axes for plt.
-
-    division_int : int
-        By which number to divide values to match new tick labels.
-
-    division_type : str
-        Same as ticklabel_type, except for None (--> ""),
-        representing string to display after updated tick values."""
+    Returns:
+        labels (list): Updated tick labels for x or y axis.
+        ax (plt.gca): Current axes for plt.
+        division_int (int): By which number to divide values to match new tick labels.
+        division_type (str): Same as ticklabel_type, except for None (--> ""),
+            representing string to display after updated tick values.
+    """
 
     # Depending on ticklabel adjust display of numbers
     # e.g. (50000 --> 50k)
@@ -151,10 +121,10 @@ def get_readable_tick_labels(plt, ticklabel_type, axis):
 def plot_subcategory_distribution(
     df,
     category,
+    fig_save_path,
     normalize=False,
     color="lightseagreen",
     plot_title=None,
-    fig_save_path=None,
     y_label="",
     x_label="",
     y_ticklabel_type=None,
@@ -162,46 +132,24 @@ def plot_subcategory_distribution(
 ):
     """Plot distribution of subcategories/values of specific category/feature.
 
-    Parameters
-    ----------
-
-    df : pd.DataFrame
-        Dataframe to analyse and plot.
-
-    category : str
-        Category/column of interest for which distribution is plotted.
-
-    normalize : bool, default=False
-        If True, relative numbers (percentage) instead of absolute numbers.
-
-    color : str
-        Color of bars in plot.
-
-    plot_title : str, None, default=None
-        Title to display above plot.
-        If None, title is created automatically.
-        Plot title is also used when saving file.
-
-    fig_save_path : str, None, default=None
-        Location where to save plot.
-
-    y_label : str, default=""
-        Label for y-axis.
-
-    x_label : str, default=""
-        Label for x-axis.
-
-    y_ticklabel_type : {'', 'm', 'k' or '%'}, default=None
-        Label for yticklabel, e.g. 'k' when displaying numbers
-        in more compact way for easier readability (50000 --> 50k).
-
-    x_tick_rotation : int, default=0
-        Rotation of x-tick labels.
-        If rotation set to 45, make end of label align with tick (ha="right").
-
-    Return
-    ---------
-    None"""
+    Args:
+        df (pd.DataFrame): Dataframe to analyse and plot.
+        category (str): Category/column of interest for which distribution is plotted.
+        fig_save_path (str): Location where to save plot.
+        normalize (bool, optional): If True, relative numbers (percentage) instead of absolute numbers.
+            Defaults to False.
+        color (str, optional): Color of bars in plot. Defaults to "lightseagreen".
+        plot_title (str, optional): Title to display above plot.
+            If None, title is created automatically.
+            Plot title is also used when saving file. Defaults to None.
+        y_label (str, optional): Label for y-axis. Defaults to "".
+        x_label (str, optional): Label for x-axis. Defaults to "".
+        y_ticklabel_type (str, optional): Label for yticklabel, e.g. 'k' when displaying numbers
+            in more compact way for easier readability (50000 --> 50k).
+            Options: {'', 'm', 'k' or '%'}. Defaults to None.
+        x_tick_rotation (int, optional): Rotation of x-tick labels.
+            If rotation set to 45, make end of label align with tick (ha="right"). Defaults to 0.
+    """
 
     # Get relative numbers (percentage) instead of absolute numbers
     if normalize:
@@ -255,7 +203,7 @@ def plot_subcategory_distribution(
     ax.set_ylim([0.0, int(highest_count + highest_count / 8)])
 
     # Save figure
-    save_figure(plt, plot_title, fig_path=fig_save_path)
+    save_figure(plt, fig_save_path, plot_title=plot_title)
 
     # Show plot
     plt.show()
@@ -265,9 +213,9 @@ def plot_feature_by_subcategories(
     df,
     feature_of_interest,
     category,
+    fig_save_path,
     subcategory=None,
     plot_title=None,
-    fig_save_path=None,
     y_label="",
     x_label="",
     plot_kind="hist",
@@ -277,42 +225,20 @@ def plot_feature_by_subcategories(
      For example, plot the energy efficiency (feature of interest) on y-axis
      by different tenure types (category) or specific tenure type (subcategory) on x-axis.
 
-     Parameters
-     ----------
+    Args:
+        df (pd.DataFrame): Dataframe to analyse and plot.
+        feature_of_interest (str): Feature to plot on y-axis.
+        category (str): Category to plot on x-axis. Show all subcategories/values.
+        fig_save_path (str): Location where to save plot.
+        subcategory (str, optional): Only plot subcategories/values of given subcategory.. Defaults to None.
+        plot_title (str, optional):  Type of plot: "hist", "bar". Defaults to None.
+        y_label (str, optional):  Label for y-axis. Defaults to "".
+        x_label (str, optional):  Label for x-axis. Defaults to "".
+        plot_kind (str, optional): Type of plot: "hist", "bar". Defaults to "hist".
+        x_tick_rotation (int, optional): Rotation of x-tick labels.
+            If rotation set to 45, make end of label align with tick (ha="right"). Defaults to 0.
 
-     df : pd.DataFrame
-         Dataframe to analyse and plot.
-
-     feature_of_interest : str
-         Feature to plot on y-axis.
-
-     category : str
-         Category to plot on x-axis.
-         Show all subcategories/values.
-
-     subcategory : str, default=None
-         Only plot subcategories/values of given subcategory.
-
-     plot_title : str, None, default=None
-         Title to display above plot.
-         If None, title is created automatically.
-         Plot title is also used when saving file.
-
-    fig_save_path : str, None, default=None
-        Location where to save plot.
-
-     y_label : str, default=""
-         Label for y-axis.
-
-     x_label : str, default=""
-         Label for x-axis
-
-     plot_kind : {"hist", "bar"}, default="hist"
-         Type of plot.
-
-    x_tick_rotation : int, default=0
-         Rotation of x-tick labels.
-         If rotation set to 45, make end of label align with tick (ha="right")."""
+    """
 
     # Tag for title
     tag = ""
@@ -346,7 +272,7 @@ def plot_feature_by_subcategories(
     ) if x_tick_rotation == 45 else plt.xticks(rotation=x_tick_rotation)
 
     # Save figure
-    save_figure(plt, plot_title, fig_path=fig_save_path)
+    save_figure(plt, fig_save_path, plot_title=plot_title)
 
     # Show plot
     plt.show()
@@ -356,11 +282,11 @@ def plot_subcats_by_other_subcats(
     df,
     feature_1,
     feature_2,
+    fig_save_path,
     feature_1_order=None,
     feature_2_order=None,
     normalize=True,
     plot_title=None,
-    fig_save_path=None,
     y_label="",
     x_label="",
     plot_kind="bar",
@@ -376,63 +302,40 @@ def plot_subcats_by_other_subcats(
      For example, plot and color-code the distribution of heating types (feature 2)
      on the different tenure types (feature 1).
 
-     Parameters
-     ----------
+    Args:
+        df (pd.DataFrame): Dataframe to analyse and plot.
+        feature_1 (str):  Feature for which subcategories are plotted on x-axis.
+        feature_2 (str): Feature for which distribution is shown split
+            per subcategory of feature 1. Feature 2 subcategories are represented
+            with differnet colors, explained with a color legend.
+        fig_save_path (str): Location where to save plot.
+        feature_1_order (str, optional): The order in which feature 1 subcategories are displayed.
+            Defaults to None.
+        feature_2_order (str, optional): The order in which feature 2 subcategories are displayed.
+            Defaults to None.
+        normalize (bool, optional): If True, relative numbers (percentage) instead of absolute numbers. Defaults to None.
+        plot_title (str, optional):  Title to display above plot.
+            If None, title is created automatically.
+            Plot title is also used when saving file. Defaults to None.
+        y_label (str, optional):  Label for y-axis. Defaults to "".
+        x_label (str, optional):  Label for x-axis. Defaults to "".
+        plot_kind (str, optional): Type of plot: "hist", "bar". Defaults to "hist".
+        plotting_colors (str/list, optional): Ordered list of colors or color map to use when plotting feature 2.
+            If list, use list of colors.
+            If str, use corresponding matplotlib color map.
+            If None, use default color list. Defaults to None.
+        y_ticklabel_type (str, optional): Label for yticklabel, e.g. 'k' when displaying numbers
+            in more compact way for easier readability (50000 --> 50k).
+            Options: {'', 'm', 'k' or '%'}. Defaults to None.
+        x_tick_rotation (int, optional): Rotation of x-tick labels.
+            If rotation set to 45, make end of label align with tick (ha="right"). Defaults to 0.
+        legend_loc (str, optional): "inside", "outside" or in the "middle" of the plot box.
+            Defaults to "inside".
+        with_labels (bool, optional): Add labels to plot. Defaults to False.
+        width (float, optional): Bar width. Defaults to 0.8.
+        figsize (tuple, optional): Fig size of the plot. Defaults to None.
 
-     df : pd.DataFrame
-         Dataframe to analyse and plot.
-
-     feature_1 : str
-         Feature for which subcategories are plotted on x-axis.
-
-     feature_2 : str
-         Feature for which distribution is shown split per subcategory
-         of feature 1. Feature 2 subcategories are represented with differnet colors,
-         explained with a color legend.
-
-     feature_1_subcat_order : list, None, default=None
-         The order in which feature 1 subcategories are displayed.
-
-     feature_2_subcat_order : list, None, default=None
-         The order in which feature 2 subcategories are displayed.
-
-    normalize : bool, default=True
-        If True, relative numbers (percentage) instead of absolute numbers.
-
-     plot_title : str, None, default=None
-         Title to display above plot.
-         If None, title is created automatically.
-         Plot title is also used when saving file.
-
-    fig_save_path : str, None, default=None
-        Location where to save plot.
-
-     y_label : str, default=""
-         Label for y-axis.
-
-     x_label : str, default=""
-         Label for x-axis
-
-     plot_kind : {"hist", "bar"}, default="hist"
-         Type of plot.
-
-     plotting_colors : list, str, None, default=None
-         Ordered list of colors or color map to use when plotting feature 2.
-         If list, use list of colors.
-         If str, use corresponding matplotlib color map.
-         If None, use default color list.
-
-     y_ticklabel_type : {'', 'm', 'k' or '%'}, default=None
-         Label for yticklabel, e.g. 'k' when displaying numbers
-         in more compact way for easier readability (50000 --> 50k).
-
-    x_tick_rotation : int, default=0
-         Rotation of x-tick labels.
-         If rotation set to 45, make end of label align with tick (ha="right")."""
-
-    # Remove all samples for which feature 1 or feature 2 is NaN.
-    # df = df[df[feature_1].notna()]
-    # df = df[df[feature_2].notna()]
+    """
 
     # Get set of values/subcategories for features.
     feature_1_values = list(set(df[feature_1].sort_index()))
@@ -445,6 +348,10 @@ def plot_subcats_by_other_subcats(
 
         if feature_1 in feature_settings.map_dict.keys():
             feature_1_values = feature_settings.map_dict[feature_1]
+
+            for value in feature_1_values:
+                if value not in df[feature_1].unique():
+                    feature_1_values.remove(value)
 
     # Create a feature-bar dict
     feat_bar_dict = {}
@@ -473,6 +380,10 @@ def plot_subcats_by_other_subcats(
 
         if feature_2 in feature_settings.map_dict.keys():
             feature_2_values = feature_settings.map_dict[feature_2]
+            for value in feature_2_values:
+                if value not in df[feature_2].unique():
+                    feature_2_values.remove(value)
+
             subcat_by_subcat = subcat_by_subcat[feature_2_values]
 
     # If not defined, set default colors for plotting
@@ -517,6 +428,10 @@ def plot_subcats_by_other_subcats(
 
     if legend_loc == "outside":
         leg = plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        leg.set_draggable(state=True)
+
+    if legend_loc == "middle":
+        leg = plt.legend(bbox_to_anchor=(1.05, 1), loc="upper center")
 
         leg.set_draggable(state=True)
 
@@ -525,9 +440,6 @@ def plot_subcats_by_other_subcats(
 
         labels = [str(round(l)) + "%" for l in labels]
         rects = ax.patches
-
-        # Make some labels.
-        #  labels = [f"label{i}" for i in range(len(rects))]
 
         for rect, label in zip(rects, labels):
             height = rect.get_height()
@@ -541,7 +453,7 @@ def plot_subcats_by_other_subcats(
             )
 
     # Save figure
-    save_figure(plt, plot_title, fig_path=fig_save_path)
+    save_figure(plt, fig_save_path, plot_title=plot_title)
 
     # Show plot
     plt.show()
@@ -551,50 +463,30 @@ def plot_correlation(
     df,
     feature_1,
     feature_2,
+    fig_save_path,
     with_hist_subplots=True,
     ylim_max=100,
     plot_title=None,
-    fig_save_path=None,
     y_label="",
     x_label="",
     x_tick_rotation=0,
 ):
+    """Plot the correlation of two features.
+
+    Args:
+        df (pandas.DataFrame): Dataframe which holds features for which to plot correlation.
+        feature_1 (str): Feature to plot on x-axis.
+        feature_2 (str): Feature to plot on y-axis.
+        fig_save_path (str): Location where to save plot.
+        with_hist_subplots (bool, optional): Plot histogram subplots above and besides correlation plot
+            for both features. Defaults to True.
+        ylim_max (int, optional):  Limit for y-axis for better readbility. Defaults to 100.
+        plot_title (_type_, optional): Title to display above plot.
+            If None, title is created automatically.
+            Plot title is also used when saving file. Defaults to None.
+        x_tick_rotation (int, optional): Rotation of x-tick labels.
+            If rotation set to 45, make end of label align with tick (ha="right"). Defaults to 0.
     """
-     Parameters
-     ----------
-     df : pandas.DataFrame
-      Dataframe which holds features for which to plot correlation.
-
-     feature_1 : str
-         Feature to plot on x-axis.
-
-     feature_2 : str
-         Feature to plot on y-axis.
-
-     with_hist_subplots: bool, default=True
-         Plot histogram subplots above and besides correlation plot
-         for both features.
-
-     ylim_max : int, default=100
-         Limit for y-axis for better readbility
-
-     plot_title : str, None, default=None
-         Title to display above plot.
-         If None, title is created automatically.
-         Plot title is also used when saving file.
-
-    fig_save_path : str, None, default=None
-        Location where to save plot.
-
-     y_label : str, default=""
-         Label for y-axis.
-
-     x_label : str, default=""
-         Label for x-axis.
-
-    x_tick_rotation : int, default=0
-         Rotation of x-tick labels.
-         If rotation set to 45, make end of label align with tick (ha="right")."""
 
     # Set plot title
     tag = " with hist subplots" if with_hist_subplots else ""
@@ -660,192 +552,7 @@ def plot_correlation(
         ) if x_tick_rotation == 45 else plt.xticks(rotation=x_tick_rotation)
 
     # Save figure
-    save_figure(plt, plot_title, fig_save=fig_save_path)
-
-    # Show plot
-    plt.show()
-
-
-def plot_subcats_by_other_subcats_with_label(
-    df,
-    feature_1,
-    feature_2,
-    feature_1_order=None,
-    feature_2_order=None,
-    normalize=True,
-    plot_title=None,
-    fig_save_path=None,
-    y_label="",
-    x_label="",
-    plot_kind="bar",
-    plotting_colors=None,
-    y_ticklabel_type=None,
-    x_tick_rotation=0,
-    legend_loc="inside",
-    figsize=None,
-):
-    """Plot subcategories of given feature by subcategories of another feature.
-     For example, plot and color-code the distribution of heating types (feature 2)
-     on the different tenure types (feature 1).
-
-     Parameters
-     ----------
-
-     df : pd.DataFrame
-         Dataframe to analyse and plot.
-
-     feature_1 : str
-         Feature for which subcategories are plotted on x-axis.
-
-     feature_2 : str
-         Feature for which distribution is shown split per subcategory
-         of feature 1. Feature 2 subcategories are represented with differnet colors,
-         explained with a color legend.
-
-     feature_1_subcat_order : list, None, default=None
-         The order in which feature 1 subcategories are displayed.
-
-     feature_2_subcat_order : list, None, default=None
-         The order in which feature 2 subcategories are displayed.
-
-    normalize : bool, default=True
-        If True, relative numbers (percentage) instead of absolute numbers.
-
-     plot_title : str, None, default=None
-         Title to display above plot.
-         If None, title is created automatically.
-         Plot title is also used when saving file.
-
-    fig_save_path : str, None, default=None
-        Location where to save plot.
-
-     y_label : str, default=""
-         Label for y-axis.
-
-     x_label : str, default=""
-         Label for x-axis
-
-     plot_kind : {"hist", "bar"}, default="hist"
-         Type of plot.
-
-     plotting_colors : list, str, None, default=None
-         Ordered list of colors or color map to use when plotting feature 2.
-         If list, use list of colors.
-         If str, use corresponding matplotlib color map.
-         If None, use default color list.
-
-     y_ticklabel_type : {'', 'm', 'k' or '%'}, default=None
-         Label for yticklabel, e.g. 'k' when displaying numbers
-         in more compact way for easier readability (50000 --> 50k).
-
-    x_tick_rotation : int, default=0
-         Rotation of x-tick labels.
-         If rotation set to 45, make end of label align with tick (ha="right")."""
-
-    # Remove all samples for which feature 1 or feature 2 is NaN.
-    # df = df[df[feature_1].notna()]
-    # df = df[df[feature_2].notna()]
-
-    # Get set of values/subcategories for features.
-    feature_1_values = list(set(df[feature_1].sort_index()))
-    feature_2_values = list(set(df[feature_2].sort_index()))
-
-    # Set order for feature 1 values/subcategories
-    if feature_1_order is not None:
-        feature_1_values = feature_1_order
-    else:
-        if feature_1 in feature_settings.map_dict.keys():
-            feature_1_values = feature_settings.map_dict[feature_1]
-
-    # Create a feature-bar dict
-    feat_bar_dict = {}
-
-    # Get totals for noramlisation
-    totals = df[feature_1].value_counts(dropna=False)
-
-    # For every feature 2 value/subcategory, get feature 1 values
-    # e.g. for every tenure type, get windows energy efficiencies
-    for feat2 in feature_2_values:
-        dataset_of_interest = df.loc[df[feature_2] == feat2][feature_1]
-        data_of_interest = dataset_of_interest.value_counts(dropna=False)
-
-        if normalize:
-            feat_bar_dict[feat2] = data_of_interest / totals * 100
-        else:
-            feat_bar_dict[feat2] = data_of_interest
-
-    # Save feature 2 subcategories by feature 1 subcategories as dataframe
-    subcat_by_subcat = pd.DataFrame(feat_bar_dict, index=feature_1_values)
-
-    # If feature 2 order is given, rearrange
-    if feature_2_order is not None:
-        subcat_by_subcat = subcat_by_subcat[feature_2_order]
-    else:
-        if feature_2 in feature_settings.map_dict.keys():
-            feature_2_values = feature_settings.map_dict[feature_2]
-
-    labels = subcat_by_subcat.to_numpy().flatten()
-
-    # If not defined, set default colors for plotting
-    if plotting_colors is None:
-        plotting_colors = ["green", "greenyellow", "yellow", "orange", "red"]
-
-    # Use given colormap
-    if isinstance(plotting_colors, str):
-        cmap = plotting_colors
-        subcat_by_subcat.plot(kind=plot_kind, cmap=cmap)  # recommended RdYlGn
-
-    # or: use given color list
-    elif isinstance(plotting_colors, list):
-        subcat_by_subcat.plot(kind=plot_kind, color=plotting_colors)
-
-    else:
-        raise IOError("Invalid plotting_colors '{}'.".format(plotting_colors))
-
-    # Adjust figsize
-    if figsize is not None:
-        fig = plt.gcf()
-        fig.set_size_inches(figsize[0], figsize[1])
-
-    # Get updated yticklabels
-    ax = plt.gca()
-    yticklabels, ax, _, _ = get_readable_tick_labels(plt, y_ticklabel_type, "y")
-    ax.set_yticklabels(yticklabels)
-
-    # Set plot title
-    if plot_title is None:
-        plot_title = feature_2 + " by " + feature_1
-
-    # Describe plot with title and axes
-    plt.title(plot_title)
-    plt.ylabel(y_label)
-    plt.xlabel(x_label)
-    plt.xticks(
-        rotation=x_tick_rotation, ha="right"
-    ) if x_tick_rotation == 45 else plt.xticks(rotation=x_tick_rotation)
-
-    if legend_loc == "outside":
-        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    if legend_loc == "middle":
-        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper center")
-
-    rects = ax.patches
-
-    # Make some labels.
-    #  labels = [f"label{i}" for i in range(len(rects))]
-
-    for rect, label in zip(rects, labels):
-        height = rect.get_height()
-        ax.text(
-            rect.get_x() + rect.get_width() / 2,
-            height + 3,
-            label,
-            ha="center",
-            va="bottom",
-        )
-
-    # Save figure
-    save_figure(plt, plot_title, fig_path=fig_save_path)
+    save_figure(plt, fig_save_path, plot_title=plot_title)
 
     # Show plot
     plt.show()

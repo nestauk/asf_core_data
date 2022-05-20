@@ -15,3 +15,5 @@ recordlinkage
 requests
 pandera
 h3
+s3fs
+fsspec

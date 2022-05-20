@@ -15,27 +15,25 @@ config = get_yaml_config(
 )
 
 country_path_dict = {
-    "England": base_config.IMD_ENGLAND_PATH,
-    "Wales": base_config.IMD_WALES_PATH,
-    "Scotland": base_config.IMD_SCOTLAND_PATH,
+    "England": base_config.IMD_ENGLAND_PATH.name,
+    "Wales": base_config.IMD_WALES_PATH.name,
+    "Scotland": base_config.IMD_SCOTLAND_PATH.name,
 }
 
 
-def get_country_imd_data(country, data_path=PROJECT_DIR, usecols=None):
+def get_country_imd_data(
+    country, data_path=PROJECT_DIR / base_config.IMD_PATH, usecols=None
+):
     """Get deprivation data for specific country.
 
-    Parameters
-    ----------
-    country : {'England', 'Scotland', 'Wales'}, str
-        Country for which to load IMD.
+    Args:
+        country (str): Country for which to load IMD: 'England', 'Scotland', 'Wales'.
+        data_path (str/Path, optional): Path to IMD data in local dir or 'S3'. Defaults to PROJECT_DIR / base_config.IMD_PATH.
+        usecols (list, optional): List of features/columns to load. Defaults to None, loading all features.
 
-    usecols : list, default=None
-        List of features to include.
-
-    Return
-    ----------
-    imd_df : pandas.DataFrame
-        Deprivation data."""
+    Returns:
+        pandas.DataFrame: Deprivation data.
+    """
 
     file_path = data_path / country_path_dict[country]
 
@@ -46,6 +44,8 @@ def get_country_imd_data(country, data_path=PROJECT_DIR, usecols=None):
 
 
 def get_gb_imd_data(
+    data_path=base_config.ROOT_DATA_PATH,
+    rel_data_path=base_config.IMD_PATH,
     usecols=[
         "IMD Rank",
         "IMD Decile",
@@ -53,24 +53,26 @@ def get_gb_imd_data(
         "Income Score",
         "Employment Score",
         "Country",
-    ]
+    ],
 ):
     """Get deprivation data for England, Wales and Scotland.
 
-    Parameters
-    ----------
-    usecols : ['IMD Rank', 'IMD Decile', 'Postcode', 'Income Score', 'Employment Score']
-        Features to include.
-        Above selection works for all countries.
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+        rel_data_path (str/Path, optional): Relative path to IMD data. Defaults to base_config.IMD_PATH.
+        usecols (list, optional):  List of features/columns to load.
+            Defaults to ["IMD Rank", "IMD Decile", "Postcode", "Income Score", "Employment Score", "Country"].
+            This selection works for all countries. None will load all features.
 
-    Return
-    ----------
-    imd_df : pandas.DataFrame
-        Deprivation data for all countries."""
+    Returns:
+        pandas.DataFrame:  Deprivation data for all countries.
+    """
 
-    england_imd = get_country_imd_data("England", usecols=usecols)
-    wales_imd = get_country_imd_data("Wales", usecols=usecols)
-    scotland_imd = get_country_imd_data("Scotland", usecols=usecols)
+    imd_path = Path(data_path) / rel_data_path
+
+    england_imd = get_country_imd_data("England", data_path=imd_path, usecols=usecols)
+    wales_imd = get_country_imd_data("Wales", data_path=imd_path, usecols=usecols)
+    scotland_imd = get_country_imd_data("Scotland", data_path=imd_path, usecols=usecols)
 
     imd_df = pd.concat([england_imd, wales_imd, scotland_imd], axis=0)
 
@@ -80,18 +82,14 @@ def get_gb_imd_data(
 def merge_imd_with_other_set(imd_df, other_df, postcode_label="Postcode"):
     """Merge IMD data with other data based on postcode.
 
-    Parameters
-    ----------
-    imd_df : pandas.DataFrame
-        Deprivation data
+    Args:
+        imd_df (pandas.DataFrame): Deprivation data.
+        other_df (pandas.DataFrame): Other data.
+        postcode_label (str, optional):  How to rename postcode label. Defaults to "Postcode".
 
-    other_df : pandas.DataFrame
-        Other data
-
-    Return
-    ----------
-    merged_df : pandas.DataFrame
-        Two datasets merged on postcode."""
+    Returns:
+        pandas.DataFrame:  Two datasets merged on postcode.
+    """
 
     if "POSTCODE" in other_df.columns:
         other_df = other_df.rename(columns={"POSTCODE": "Postcode"})

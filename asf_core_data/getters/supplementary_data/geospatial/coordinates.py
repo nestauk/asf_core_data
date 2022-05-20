@@ -9,28 +9,19 @@ from asf_core_data.config import base_config
 
 # ---------------------------------------------------------------------------------
 
-# # Load config file
-# data_config = get_yaml_config(
-#     Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml")
-# )
-
-# # Get paths
-# LOCATION_PATH = str(PROJECT_DIR) + data_config["POSTCODE_TO_COORD_PATH"]
-
 
 def get_postcode_coordinates(
     data_path=PROJECT_DIR, rel_data_path=base_config.POSTCODE_TO_COORD_PATH
 ):
     """Load location data (postcode, latitude, longitude).
 
-    Parameters
-    ----------
-    None
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to PROJECT_DIR.
+        rel_data_path (str/Path, optional): Relative path for geographical data. Defaults to base_config.POSTCODE_TO_COORD_PATH.
 
-    Return
-    ---------
-    location_data_df : pandas.DateFrame
-        Location data (postcode, latitude, longitude)."""
+    Returns:
+        pandas.DateFrame: Location data (postcode, latitude, longitude).
+    """
 
     path = Path(data_path) / rel_data_path
 

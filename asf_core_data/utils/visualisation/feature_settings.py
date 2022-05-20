@@ -1,5 +1,8 @@
-from asyncio import constants
+# File: asf_core_data/utils/visualisation/feature_settings.py
+"""Feature settings for easier plotting, e.g. order of feature names.
+"""
 
+# ---------------------------------------------------------------------------------
 
 country_order = ["England", "Wales", "Scotland"]
 
