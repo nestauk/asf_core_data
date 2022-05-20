@@ -202,7 +202,6 @@ def load_and_preprocess_epc_data(
             logging.warning("Careful! You're not loading the complete GB dataset.")
 
     epc_df = epc_data.load_raw_epc_data(
-        subset=subset,
         data_path=data_path,
         rel_data_path=rel_data_path,
         subset=subset,
