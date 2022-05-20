@@ -92,7 +92,7 @@ def concatenate_save_raw_installations():
     concat_installations.drop_duplicates(inplace=True, ignore_index=True)
     print("Number of records after removing duplicates:", concat_installations.shape[0])
 
-    save_to_s3(s3, bucket_name, concat_installations, installations_raw_s3_path)
+    save_to_s3(s3, bucket_name, concat_installations, "/" + installations_raw_s3_path)
 
 
 def generate_processed_mcs_installations(epc_version="none"):

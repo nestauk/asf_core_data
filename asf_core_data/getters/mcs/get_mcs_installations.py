@@ -41,7 +41,7 @@ def get_raw_installations_data(
     """
 
     if refresh or not os.path.exists(local_path):
-        hps = load_s3_data(s3, BUCKET_NAME, INSTALLATIONS_RAW_S3_PATH)
+        hps = load_s3_data(BUCKET_NAME, INSTALLATIONS_RAW_S3_PATH, usecols=None)
     else:
         hps = pd.read_excel(local_path)
 
