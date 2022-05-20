@@ -520,6 +520,7 @@ def load_cleansed_epc(
 def load_preprocessed_epc_data(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_EPC_DATA_PATH.parent,
+    subset="GB",
     batch=None,
     version="preprocessed_dedupl",
     usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
@@ -544,6 +545,7 @@ def load_preprocessed_epc_data(
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
         rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_EPC_DATA_PATH.parent.
         batch (str, optional): Data batch to load. Defaults to None.
+        subset (str, optional): Nation subset: 'GB', 'Wales', 'England', 'Scotland'. Defaults to "GB", loading all nation's data.
         version (str, optional): Data version to use. Defaults to "preprocessed_dedupl".
         usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
@@ -598,8 +600,8 @@ def load_preprocessed_epc_data(
         if col in epc_df.columns:
             epc_df[col] = pd.to_datetime(epc_df[col])
 
-    # if subset is not None and subset != "GB":
-    #     epc_df = epc_df.loc[epc_df["COUNTRY"] == subset]
+    if subset is not None and subset != "GB":
+        epc_df = epc_df.loc[epc_df["COUNTRY"] == subset]
 
     return epc_df
 
