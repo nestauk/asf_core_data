@@ -1,5 +1,6 @@
-# File: asf_core_data/getters/mcs/get_mcs.py
-"""Getting MCS heat pump data."""
+# File: asf_core_data/getters/mcs/get_mcs_installations.py
+"""Function to get concatenated installations data in a usable format:
+with renamed columns and correct dtypes."""
 
 import pandas as pd
 import os
@@ -56,6 +57,7 @@ def get_raw_installations_data(
     hps = (
         hps.rename(columns=colnames_dict)
         .fillna({"address_1": "", "address_2": "", "address_3": ""})
+        .convert_dtypes()
         .drop_duplicates(
             subset=[
                 "version",

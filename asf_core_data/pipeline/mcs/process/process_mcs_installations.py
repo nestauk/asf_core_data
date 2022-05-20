@@ -129,8 +129,8 @@ def get_processed_installations_data(refresh=True):
     installations_data = add_columns(installations_data)
     installations_data = mask_outliers(installations_data)
     installations_data = identify_clusters(installations_data)
-    installations_data["installer_name"] = installations_data["installer_name"].apply(
-        clean_company_name
-    )
+    # installations_data["installer_name"] = installations_data["installer_name"].apply(
+    #     clean_company_name
+    # )
 
     return installations_data
