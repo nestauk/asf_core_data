@@ -7,7 +7,6 @@ import re
 import time
 import os
 import logging
-import warnings
 
 from asf_core_data.pipeline.preprocessing import data_cleaning, feature_engineering
 from asf_core_data.getters.epc import epc_data, data_batches
@@ -43,7 +42,7 @@ def preprocess_data(
         df (pandas.DataFrame): Dataframe holding EPC data to process.
         remove_duplicates (bool, optional): Whether or not to remove duplicates.. Defaults to True.
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
-        subset (str, optional): Nation subset: "England", "Wales" or "Scotland". Defaults to "GB", loading both England and Wales data.
+        subset (str, optional): Nation subset: "England", "Wales" or "Scotland", will adjust outfile path.
         batch (str, optional): Data batch to load. Defaults to None.
         save_data (bool, optional):  Whether or not to save preprocessed data at different stages (original, cleaned, deduplicated).
             Defaults to base_config.PREPROC_EPC_DATA_PATH.
@@ -156,9 +155,9 @@ def preprocess_data(
 
 
 def load_and_preprocess_epc_data(
-    subset="GB",
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_DATA_PATH,
+    subset="GB",
     usecols=base_config.EPC_FEAT_SELECTION,
     batch=None,
     n_samples=None,
@@ -171,6 +170,7 @@ def load_and_preprocess_epc_data(
         subset (str, optional): Nation subset: "England", "Wales" or "Scotland". Defaults to "GB", loading both England and Wales data.
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
         rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.EPC_FEAT_SELECTION.
+        subset (str, optional): Nation subset: "England", "Wales" or "Scotland". Defaults to "GB", loading all data.
         usecols (list, optional): List of features/columns to load from EPC dataset.
             By default, a pre-selected list of features (specified in the config file) is used.
             If None, then all features will be loaded. Defaults to None.
@@ -205,6 +205,7 @@ def load_and_preprocess_epc_data(
         subset=subset,
         data_path=data_path,
         rel_data_path=rel_data_path,
+        subset=subset,
         batch=batch,
         usecols=usecols,
         n_samples=n_samples,
