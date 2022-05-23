@@ -20,6 +20,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
 from asf_core_data.getters.epc.epc_data import (
     load_preprocessed_epc_data,
 )
+from asf_core_data.getters.data_getters import load_s3_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,
@@ -29,6 +30,7 @@ config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
 max_token_length = config["MCS_EPC_MAX_TOKEN_LENGTH"]
 matching_parameter = config["MCS_EPC_MATCHING_PARAMETER"]
+bucket_name = config["BUCKET_NAME"]
 
 # ---------------------------------------------------------------------------------
 
@@ -295,7 +297,12 @@ def join_mcs_epc_data(
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        epcs = load_preprocessed_epc_data(version=epc_version, low_memory=True)
+        # TODO: replace with line that loads most recent full EPC data
+        epcs = load_s3_data(
+            bucket_name,
+            "outputs/EPC/EPC_GB_preprocessed_and_deduplicated_sample_prox.csv",
+            usecols=None,
+        )
 
     prepared_hps = prepare_hps(hps)
     prepared_epcs = prepare_epcs(epcs)
