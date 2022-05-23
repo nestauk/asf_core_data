@@ -13,7 +13,6 @@ import pandas as pd
 
 
 from asf_core_data import get_yaml_config, _base_config_path
-from asf_core_data import Path
 
 #####################################################################
 
@@ -75,4 +74,4 @@ def save_to_s3(s3, bucket_name, output_var, output_file_dir):
         output_var.to_csv("s3://" + bucket_name + output_file_dir, index=False)
     else:
         byte_obj = json.dumps(output_var)
-    obj.put(Body=byte_obj)
+        obj.put(Body=byte_obj)

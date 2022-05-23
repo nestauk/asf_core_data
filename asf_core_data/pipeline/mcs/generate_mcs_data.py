@@ -6,6 +6,7 @@ import pandas as pd
 import warnings
 import re
 import datetime
+import boto3
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
@@ -15,7 +16,12 @@ from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
     join_mcs_epc_data,
     select_most_relevant_epc,
 )
-from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+from asf_core_data.getters.data_getters import (
+    get_s3_dir_files,
+    load_s3_data,
+    save_to_s3,
+)
+from asf_core_data.pipeline.mcs.process.process_mcs_utils import colnames_dict
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
@@ -44,13 +50,17 @@ def concatenate_save_raw_installations():
     While doing so, checks whether any records in the files are outside the
     year and quarter stated in the filename, and flags if file columns differ.
     """
+    s3 = boto3.resource("s3")
 
-    bucket = s3.Bucket(bucket_name)
+    installations_files = [
+        key
+        for key in get_s3_dir_files(s3, bucket_name, raw_data_s3_folder)
+        if "installations" in key
+    ]
 
     installations_keys_and_dfs = [
-        (object.key, load_s3_data(s3, bucket_name, object.key))
-        for object in bucket.objects.filter(Prefix=raw_data_s3_folder)
-        if "installations" in object.key
+        (key, load_s3_data(bucket_name, key).rename(columns=colnames_dict))
+        for key in installations_files
     ]
 
     # check whether any records in the files are outside the quarter stated in the filename
@@ -65,14 +75,8 @@ def concatenate_save_raw_installations():
                 days=1
             )
             if (
-                (
-                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
-                    < start_date
-                )
-                | (
-                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
-                    > end_date
-                )
+                (pd.to_datetime(key_and_df[1]["commission_date"]).dt.date < start_date)
+                | (pd.to_datetime(key_and_df[1]["commission_date"]).dt.date > end_date)
             ).any():
                 warnings.warn(
                     "{} has some records outside its stated quarter.".format(

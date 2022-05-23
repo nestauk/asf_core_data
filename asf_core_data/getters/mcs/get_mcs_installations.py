@@ -1,15 +1,13 @@
 # File: asf_core_data/getters/mcs/get_mcs_installations.py
-"""Function to get concatenated installations data in a usable format:
-with renamed columns and correct dtypes."""
+"""Function to get concatenated installations data in a usable format,
+with correct dtypes."""
 
 import pandas as pd
 import os
 
 from asf_core_data import PROJECT_DIR, get_yaml_config
 
-from asf_core_data.getters.data_getters import s3, load_s3_data
-
-from asf_core_data.pipeline.mcs.process.process_mcs_utils import colnames_dict
+from asf_core_data.getters.data_getters import load_s3_data
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
@@ -47,16 +45,15 @@ def get_raw_installations_data(
 
     hps = hps.astype(
         {
-            "Address Line 1": str,
-            "Address Line 2": str,
-            "Address Line 3": str,
-            "Postcode": str,
+            "address_1": str,
+            "address_2": str,
+            "address_3": str,
+            "postcode": str,
         }
     )
-    hps["Commissioning Date"] = pd.to_datetime(hps["Commissioning Date"])
+    hps["commission_date"] = pd.to_datetime(hps["commission_date"])
     hps = (
-        hps.rename(columns=colnames_dict)
-        .fillna({"address_1": "", "address_2": "", "address_3": ""})
+        hps.fillna({"address_1": "", "address_2": "", "address_3": ""})
         .convert_dtypes()
         .drop_duplicates(
             subset=[

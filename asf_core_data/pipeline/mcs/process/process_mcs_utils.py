@@ -31,6 +31,7 @@ colnames_dict = {
     "Flow temp/SCOP ": "flow_scop",
     "Technology Type": "tech_type",
     "Installation Type": "installation_type",
+    " Installation Type": "installation_type",
     "End User Installation Type": "end_user_installation_type",
     "Installation New at Commissioning Date?": "new",
     "Renewable System Design": "design",
@@ -46,6 +47,7 @@ colnames_dict = {
     "Alternative Heating System Type": "alt_type",
     "Alternative Heating System Fuel Type": "alt_fuel",
     "Overall Cost": "cost",
+    "Fuel Type": "fuel_type",
 }
 
 mcs_companies_dict = {
