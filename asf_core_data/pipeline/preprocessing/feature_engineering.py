@@ -339,7 +339,10 @@ def get_heating_features(df, fine_grained_HP_types=False):
         (df["HP_INSTALLED"])
         | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("heat pump"))
         | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pumpa teas"))
-        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pwmp gwres")),
+        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pwmp gwres"))
+        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("bwmp gwres"))
+        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pympiau gwres"))
+        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("bympiau gwres")),
         True,
         False,
     )
