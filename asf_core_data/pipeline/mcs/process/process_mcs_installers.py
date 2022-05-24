@@ -8,7 +8,7 @@ import argparse
 import pandas as pd
 
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
-    get_processed_mcs_data,
+    get_processed_installations_data,
 )
 
 from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
@@ -115,11 +115,11 @@ if __name__ == "__main__":
 
     # LOAD DATA
     ## load data from s3
-    installer_company_data = load_s3_data(s3, bucket_name, installer_company_data_path)
-    uk_geo_data = load_s3_data(s3, bucket_name, uk_geo_path)
+    installer_company_data = load_s3_data(bucket_name, installer_company_data_path)
+    uk_geo_data = load_s3_data(bucket_name, uk_geo_path)
 
     ## load cleaned installations data
-    mcs_data = get_processed_mcs_data()
+    mcs_data = get_processed_installations_data()
 
     # PREPROCESS INSTALLER COMPANY DATA
     cleaned_installers_data = preprocess_installer_companies(
