@@ -368,6 +368,18 @@ def select_most_relevant_epc(joined_df):
     return filtered_data
 
 
+def main():
+
+    joined_df = join_mcs_epc_data()
+    most_relevant_joined_df = select_most_relevant_epc(joined_df)
+
+    return most_relevant_joined_df
+
+
+if __name__ == "__main__":
+
+    main()
+
 #### For testing purposes:
 
 # import pandas as pd
