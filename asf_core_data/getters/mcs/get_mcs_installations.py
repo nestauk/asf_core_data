@@ -53,8 +53,7 @@ def get_raw_installations_data(
     )
     hps["commission_date"] = pd.to_datetime(hps["commission_date"])
     hps = (
-        hps.fillna({"address_1": "", "address_2": "", "address_3": ""})
-        .convert_dtypes()
+        hps.convert_dtypes()
         .drop_duplicates(
             subset=[
                 "version",

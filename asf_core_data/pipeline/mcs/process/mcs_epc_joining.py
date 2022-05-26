@@ -58,14 +58,12 @@ def prepare_hps(hps):
         remove_punctuation(add1).lower().strip()
         + " "
         + remove_punctuation(add2).lower().strip()
-        for add1, add2 in zip(hps["address_1"].fillna(""), hps["address_2"].fillna(""))
+        for add1, add2 in zip(hps["address_1"], hps["address_2"])
     ]
 
     hps["numeric_tokens"] = [
         extract_token_set(address, postcode, max_token_length)
-        for address, postcode in zip(
-            hps["standardised_address"].fillna(""), hps["postcode"].fillna("")
-        )
+        for address, postcode in zip(hps["standardised_address"], hps["postcode"])
     ]
 
     return hps
@@ -220,25 +218,32 @@ def join_prepared_mcs_epc_data(
 
     print("Joining the data...")
     merged = (
-        hps.reset_index()
+        hps.reset_index().drop(
+            columns=["standardised_postcode", "standardised_address", "numeric_tokens"]
+        )
         # Join MCS records to the index-matching df on MCS index
         .merge(top_matches, how="left", left_on="index", right_on="level_0")
         # Then join this merged df to EPC records on EPC index
-        .merge(epcs.reset_index(), how="left", left_on="level_1", right_on="index")
+        .merge(
+            epcs.reset_index().drop(
+                columns=[
+                    "ADDRESS1",
+                    "ADDRESS2",
+                    "POSTTOWN",
+                    "POSTCODE",
+                    "standardised_postcode",
+                    "numeric_tokens",
+                ],
+                errors="ignore",
+            ),
+            how="left",
+            left_on="level_1",
+            right_on="index",
+        )
         # Drop any duplicated or unnecessary columns
         .drop(
             columns=[
-                "standardised_postcode_x",
-                "standardised_address_x",
-                "numeric_tokens_x",
-                "ADDRESS1",
-                "ADDRESS2",
-                "POSTTOWN",
-                "POSTCODE",
                 "index_y",
-                "postcode_y",
-                "standardised_postcode_y",
-                "numeric_tokens_y",
                 "level_0",
             ],
             errors="ignore",
@@ -253,9 +258,9 @@ def join_prepared_mcs_epc_data(
     )
 
     if drop_epc_address:
-        merged = merged.drop(columns="standardised_address_y")
+        merged = merged.drop(columns="standardised_address")
     else:
-        merged = merged.rename(columns={"standardised_address_y": "epc_address"})
+        merged = merged.rename(columns={"standardised_address": "epc_address"})
 
     if verbose:
 
@@ -401,4 +406,4 @@ if __name__ == "__main__":
 # prepared_hps = prepare_hps(test_mcs)
 # prepared_epcs = prepare_epcs(test_epc)
 
-# join_mcs_epc_data(hps=test_mcs, epcs=test_epc, all_records=False)
+# join_mcs_epc_data(hps=test_mcs, epcs=test_epc, all_records=True)
