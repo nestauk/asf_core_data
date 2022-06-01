@@ -91,8 +91,6 @@ def concatenate_save_raw_mcs():
             # append quarterly installer data
             installer_dfs.append(key_and_df[1][installer_key])
 
-            print(key_and_df[1], type(key_and_df[1]))
-
             if (
                 (
                     pd.to_datetime(
@@ -270,5 +268,4 @@ def generate_and_save_mcs():
 
 
 if __name__ == "__main__":
-    # generate_and_save_mcs()
-    concatenate_save_raw_mcs()
+    generate_and_save_mcs()
