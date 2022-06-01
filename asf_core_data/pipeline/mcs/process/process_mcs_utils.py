@@ -11,6 +11,9 @@ import time
 import re
 import numpy as np
 
+from asf_core_data import bucket_name, config
+from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+
 #######################################################
 
 colnames_dict = {
@@ -141,8 +144,7 @@ def clean_concat_installers(data):
         data.drop(columns=hp_types.columns[1], axis=1, inplace=True)
 
     data.columns = [
-        " ".join(c.split(" ")[:-1]) if "Installation" in c else c
-        for c in raw_installers_clean.columns
+        " ".join(c.split(" ")[:-1]) if "Installation" in c else c for c in data.columns
     ]
 
     return data
@@ -281,3 +283,19 @@ def extract_token_set(address, postcode, max_token_length):
     valid_token_set = set(valid_tokens)
 
     return valid_token_set
+
+
+if __name__ == "__main__":
+    config_info = config
+    installer_company_data_path = config_info["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
+    uk_geo_path = config_info["UK_GEO_PATH"]
+    cleaned_installations_path = config_info["PREPROC_GEO_MCS_INSTALLATIONS_PATH"]
+    cleaned_installer_company_path = config_info["PREPROC_MCS_INSTALLER_COMPANY_PATH"]
+
+    installer_company_data = load_s3_data(bucket_name, installer_company_data_path)
+    uk_geo_data = load_s3_data(bucket_name, uk_geo_path)
+
+    ## preprocess different columns
+    installer_company_data = clean_concat_installers(
+        installer_company_data
+    ).reset_index(drop=True)

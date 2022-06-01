@@ -11,10 +11,11 @@ from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
-from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
-    join_mcs_epc_data,
-    select_most_relevant_epc,
-)
+
+# from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
+#    join_mcs_epc_data,
+#    select_most_relevant_epc,
+# )
 from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
@@ -27,7 +28,7 @@ mcs_installations_epc_most_relevant_path = config[
     "MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH"
 ]
 installations_raw_s3_path = config["INSTALLATIONS_RAW_S3_PATH"]
-installers_raw_s3_path = installers_raw_s3_path["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
+installers_raw_s3_path = config["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
 raw_data_s3_folder = config["RAW_DATA_S3_FOLDER"]
 
 keyword_to_path_dict = {
@@ -39,7 +40,7 @@ keyword_to_path_dict = {
 
 
 def concatenate_save_raw_mcs():
-    """Generate concatenated installation and installer csv from individual installation 
+    """Generate concatenated installation and installer csv from individual installation
     and installer files.
 
     Takes all files in S3 raw data folder with "installations" or "installers" in the filename,
@@ -51,9 +52,9 @@ def concatenate_save_raw_mcs():
     bucket = s3.Bucket(bucket_name)
 
     keys_and_dfs = [
-        (object.key, load_s3_data(s3, bucket_name, object.key))
+        (object.key, load_s3_data(bucket_name, object.key))
         for object in bucket.objects.filter(Prefix=raw_data_s3_folder)
-        if "installations" or "installers" in object.key
+        if ("installations" or "installers") in object.key
     ]
 
     installer_dfs = []
@@ -80,11 +81,17 @@ def concatenate_save_raw_mcs():
                 ]
             )
             installer_key = " ".join(
-                [key for key in (list(df.keys())) if "installer" in key.lower()]
+                [
+                    key
+                    for key in (list(key_and_df[1].keys()))
+                    if "installer" in key.lower()
+                ]
             )
 
             # append quarterly installer data
             installer_dfs.append(key_and_df[1][installer_key])
+
+            print(key_and_df[1], type(key_and_df[1]))
 
             if (
                 (
@@ -111,7 +118,7 @@ def concatenate_save_raw_mcs():
         if key:
             if type(dfs) == dict:
                 installations_dfs.append(dfs[installations_key])
-            elif type(dfs) == DataFrame:
+            elif type(dfs) == pd.DataFrame:
                 if "installations" in key:
                     installations_dfs.append(dfs)
 
@@ -208,7 +215,7 @@ def get_mcs_installations(epc_version="none", refresh=False):
             latest_version = max(matches)
             print("Loading", latest_version, "from S3")
             mcs_installations = load_s3_data(
-                s3, bucket_name, latest_version[1:]  # undoing the hack
+                bucket_name, latest_version[1:]  # undoing the hack
             )
             return mcs_installations
         else:
@@ -263,4 +270,5 @@ def generate_and_save_mcs():
 
 
 if __name__ == "__main__":
-    generate_and_save_mcs()
+    # generate_and_save_mcs()
+    concatenate_save_raw_mcs()

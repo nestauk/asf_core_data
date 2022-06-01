@@ -1,6 +1,4 @@
 ########################################
-from pydrive2.auth import GoogleAuth
-from pydrive2.drive import GoogleDrive
 import os
 from datetime import datetime
 
@@ -8,38 +6,30 @@ from asf_core_data.getters.data_getters import s3, save_to_s3
 
 from asf_core_data import config, bucket_name, PROJECT_DIR
 
+from asf_core_data.pipeline.mcs.test.gdrive_to_s3_utils import (
+    gauth,
+    drive,
+    keywords,
+    all_folders,
+    get_mcs_data_dumps_folder,
+)
+
 ########################################
 
-local_data_dump_dir = config["lOCAL_NEW_MCS_DATA_DUMP_DIR"]
+local_data_dump_dir = config["LOCAL_NEW_MCS_DATA_DUMP_DIR"]
 s3_data_dump_dir = config["S3_NEW_MCS_DATA_DUMP_DIR"]
-
-gauth = GoogleAuth()
-gauth.LocalWebserverAuth()
-drive = GoogleDrive(gauth)
 
 
 def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
     """Pulls MCS data dumps from Google Drive to a local dir and s3.
-    
+
     Inputs:
         local_data_dump_dir (str): local path to store MCS data dumps.
-        s3_data_dump_dir (str): path in s3 to store MCS data dumps. 
+        s3_data_dump_dir (str): path in s3 to store MCS data dumps.
 
     """
-    # get all folder names
-    all_folders_list = drive.ListFile(
-        {"q": "'root' in parents and trashed=false"}
-    ).GetList()
-    # get id of MCS Data Dumps folder name
-    mcs_folder_id = [
-        folder["id"]
-        for folder in all_folders_list
-        if folder["title"] == "MCS Data Dumps"
-    ]
-    # get mcs files and parse created date
-    mcs_files = drive.ListFile(
-        {"q": "'{}' in parents and trashed=false".format("".join(mcs_folder_id))}
-    ).GetList()
+    mcs_files = get_mcs_data_dumps_folder(keywords, all_folders)
+
     installers = []
     installations = []
     for mcs_file in mcs_files:
@@ -59,6 +49,7 @@ def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
 
     for _ in (latest_installations, latest_installers):
         name, ext = _["title"].split(".")[0], _["title"].split(".")[1]
+        print(name, ext)
         timestamp = str(_["createdDate"]).split(" ")[0].replace("-", "_")
         latest_dump_name = name + "_" + timestamp + "." + ext
         output_path = str(PROJECT_DIR) + local_data_dump_dir + latest_dump_name
@@ -66,9 +57,9 @@ def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
         file_id = _["id"]
         file = drive.CreateFile({"id": file_id})
         print(f"downloaded file {file_id} locally...")
+        print(f"pushing file {file_id} to s3...")
         file.GetContentFile(output_path)
         s3.Bucket(bucket_name).upload_file(output_path, s3_path)
-        print(f"pushed file {file_id} to s3...")
 
 
 if __name__ == "__main__":

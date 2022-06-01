@@ -104,7 +104,7 @@ def within_mcs_installers_check(mcs_installers):
     )
 
     try:
-        mcs_installer_comp_data = schema_withchecks.validate(
+        mcs_installers_no_unspecified = schema_withchecks.validate(
             mcs_installers_no_unspecified, lazy=True
         )
     except pa.errors.SchemaErrors as err:

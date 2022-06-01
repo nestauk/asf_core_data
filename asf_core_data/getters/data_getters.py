@@ -20,14 +20,13 @@ s3 = boto3.resource("s3")
 logger = logging.getLogger(__name__)
 
 
-def load_s3_data(s3, bucket_name, file_name):
+def load_s3_data(bucket_name, file_name):
     """
     Load data from S3 location.
     s3: S3 boto3 resource
     bucket_name: The S3 bucket name
     file_name: S3 key to load
     """
-    obj = s3.Object(bucket_name, file_name)
     if fnmatch(file_name, "*.xlsx"):
         data = pd.read_excel(
             os.path.join("s3://" + bucket_name, file_name), sheet_name=None
