@@ -12,10 +12,10 @@ from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
 
-# from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
-#    join_mcs_epc_data,
-#    select_most_relevant_epc,
-# )
+from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
+    join_mcs_epc_data,
+    select_most_relevant_epc,
+)
 from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
