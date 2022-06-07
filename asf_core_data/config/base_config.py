@@ -423,9 +423,9 @@ dtypes_prepr = {
 
 dtypes_recom = {
     "LMK_KEY": str,
-    "IMPROVEMENT_ITEM": int,
+    "IMPROVEMENT_ITEM": str,
     "IMPROVEMENT_SUMMARY_TEXT": str,
-    "IMPROVEMENT_ID": int,
+    "IMPROVEMENT_ID": str,
     "IMPROVEMENT_ID_TEXT": str,
     "INDICATIVE_COST": str,
 }
