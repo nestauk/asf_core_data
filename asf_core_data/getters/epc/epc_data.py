@@ -50,7 +50,7 @@ def load_england_wales_recommendations(
     subset=None,
     usecols=None,
     n_samples=None,
-    dtype=base_config.dtypes,
+    dtype=base_config.dtypes_recom,
     low_memory=True,
 ):
     """Load the England and/or Wales EPC data.
