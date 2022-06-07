@@ -153,7 +153,7 @@ def load_scotland_data(
         Path(data_path) / rel_data_path, data_path=data_path, batch=batch
     )
     RAW_SCOTLAND_DATA_ZIP = data_batches.get_batch_path(
-        Path(data_path) / base_config.RAW_ENG_SCOTLAND_DATA_ZIP,
+        Path(data_path) / base_config.RAW_SCOTLAND_DATA_ZIP,
         data_path=data_path,
         batch=batch,
     )
