@@ -47,7 +47,7 @@ def load_england_wales_recommendations(
     data_path=base_config.ROOT_DATA_PATH,
     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
     batch=None,
-    subset=None,
+    subset="Wales",
     usecols=None,
     n_samples=None,
     dtype=base_config.dtypes_recom,
@@ -59,7 +59,7 @@ def load_england_wales_recommendations(
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
         rel_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_ENG_WALES_DATA_PATH.
         batch (str, optional): Data batch to load. Defaults to None.
-        subset (str, optional): Nation subset: "England", "Wales". Defaults to None, loading both England and Wales data.
+        subset (str, optional): Nation subset: "England", "Wales". Defaults to 'Wales'.
         usecols (list, optional): List of features/columns to load from EPC dataset. Defaults to None, loading all features.
         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
         dtype (dict, optional): Dict with dtypes for easier loading. Defaults to base_config.dtypes.
@@ -153,7 +153,7 @@ def load_scotland_data(
         Path(data_path) / rel_data_path, data_path=data_path, batch=batch
     )
     RAW_SCOTLAND_DATA_ZIP = data_batches.get_batch_path(
-        Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP,
+        Path(data_path) / base_config.RAW_ENG_SCOTLAND_DATA_ZIP,
         data_path=data_path,
         batch=batch,
     )
@@ -392,17 +392,17 @@ def load_raw_epc_data(
     # Get Scotland data
     if subset in ["Scotland", "GB"]:
 
-        epc_Scotland_df = load_scotland_data(
+        epc_scotland_df = load_scotland_data(
             data_path=RAW_DATA_PATH,
             rel_data_path=scotland_path,
             usecols=usecols,
             n_samples=None if n_samples is None else n_samples + additional_samples,
         )
 
-        all_epc_df.append(epc_Scotland_df)
+        all_epc_df.append(epc_scotland_df)
 
         if subset == "Scotland":
-            return epc_Scotland_df
+            return epc_scotland_df
 
     # Get the Wales/England data
     if subset in ["Wales", "England"]:
