@@ -303,11 +303,14 @@ def join_mcs_epc_data(
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
         # TODO: replace with line that loads most recent full EPC data
-        epcs = load_s3_data(
-            bucket_name,
-            "outputs/EPC/EPC_GB_preprocessed_and_deduplicated_sample_prox.csv",
-            usecols=None,
+        epcs = load_preprocessed_epc_data(
+            data_path="../ASF_data", version=epc_version, usecols=None
         )
+        # epcs = load_s3_data(
+        #     bucket_name,
+        #     "outputs/EPC/EPC_GB_preprocessed_and_deduplicated_sample_prox.csv",
+        #     usecols=None,
+        # )
 
     prepared_hps = prepare_hps(hps)
     prepared_epcs = prepare_epcs(epcs)

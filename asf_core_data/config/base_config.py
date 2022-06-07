@@ -371,7 +371,7 @@ dtypes_prepr = {
     "LODGEMENT_DATETIME": str,
     # new features
     "COUNTRY": str,
-    "N_ENTRIES": int,
+    "N_ENTRIES": str,
     "HEATING_SYSTEM": str,
     "HEATING_FUEL": str,
     "HP_INSTALLED": bool,
