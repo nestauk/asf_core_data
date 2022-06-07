@@ -425,10 +425,12 @@ dtypes_recom = {
     "LMK_KEY": str,
     "IMPROVEMENT_ITEM": str,
     "IMPROVEMENT_SUMMARY_TEXT": str,
+    "IMPROVEMENT_DESCR_TEXT": str,
     "IMPROVEMENT_ID": str,
     "IMPROVEMENT_ID_TEXT": str,
     "INDICATIVE_COST": str,
 }
+
 
 MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
