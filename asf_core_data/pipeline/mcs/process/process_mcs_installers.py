@@ -131,9 +131,7 @@ if __name__ == "__main__":
     mcs_data = get_processed_installations_data(refresh=True)
 
     ## preprocess different columns
-    installer_company_data = clean_concat_installers(
-        installer_company_data
-    ).reset_index(drop=True)
+    installer_company_data = clean_concat_installers(installer_company_data)
 
     # PREPROCESS INSTALLER COMPANY DATA
     cleaned_installers_data = preprocess_installer_companies(

@@ -1,25 +1,29 @@
-# File: asf_core_data/pipeline/mcs/generate_mcs_data.py
-"""Generates MCS heat pump installation data."""
-
+#####################################
 from datetime import date
 import pandas as pd
 import warnings
 import re
 import datetime
-
 from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
-
-from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
-    join_mcs_epc_data,
-    select_most_relevant_epc,
+from asf_core_data.getters.data_getters import (
+    s3,
+    load_s3_data,
+    save_to_s3,
+    get_s3_dir_files,
 )
-from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+
+from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
+    colnames_dict,
+)
+
+#####################################
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
+# %%
 bucket_name = config["BUCKET_NAME"]
 mcs_installations_path = config["MCS_INSTALLATIONS_PATH"]
 mcs_installations_epc_full_path = config["MCS_INSTALLATIONS_EPC_FULL_PATH"]
@@ -39,30 +43,55 @@ keyword_to_path_dict = {
 }
 
 
-def concatenate_save_raw_mcs():
-    """Generate concatenated installation and installer csv from individual installation
-    and installer files.
+def get_latest_mcs_from_s3():
+    """Gets latest installations and installer MCS data from latest_raw_data s3 path."""
 
-    Takes all files in S3 raw data folder with "installations" or "installers" in the filename,
+    mcs_files = [
+        key
+        for key in get_s3_dir_files(s3, bucket_name, raw_data_s3_folder)
+        if "installations" or "installer" in key
+    ]
+
+    installer_data = []
+    installations_data = []
+
+    for file in mcs_files:
+        if "installations" in file:
+            installations = load_s3_data(bucket_name, file)
+            if type(installations) == pd.DataFrame:
+                installations_data.append((file, installations))
+            elif type(installations) == dict:
+                installations_key = " ".join(
+                    [
+                        key
+                        for key in list(installations.keys())
+                        if "installs" in key.lower()
+                    ]
+                )
+                installer_key = " ".join(
+                    [
+                        key
+                        for key in list(installations.keys())
+                        if "installer" in key.lower()
+                    ]
+                )
+
+                installer_data.append((file, installations[installer_key]))
+                installations_data.append((file, installations[installations_key]))
+        elif "installer" in file:
+            installers = load_s3_data(bucket_name, file)
+            installer_data.append((file, installers))
+
+    return installer_data, installations_data
+
+
+def concatenate_save_raw_installations(all_installations_data):
+    """Generate concatenated installation csv from individual installation files.
     concatenates and saves the result in the top level MCS inputs folder.
     While doing so, checks whether any records in the files are outside the
     year and quarter stated in the filename, and flags if file columns differ.
     """
-
-    bucket = s3.Bucket(bucket_name)
-
-    keys_and_dfs = [
-        (object.key, load_s3_data(bucket_name, object.key))
-        for object in bucket.objects.filter(Prefix=raw_data_s3_folder)
-        if ("installations" or "installers") in object.key
-    ]
-
-    installer_dfs = []
-    for key_and_df in keys_and_dfs:
-        # get installers data
-        if "installer" in key_and_df[0]:
-            installer_dfs.append(key_and_df[1])
-        # get quarterly info
+    for key_and_df in all_installations_data:
         year_quarter_search = re.search(r"20[0-9][0-9]_q[1-4]", key_and_df[0])
         if year_quarter_search:  # ignore mcs_installations_2021.xlsx
             year_quarter = year_quarter_search[0]  # get match
@@ -72,36 +101,13 @@ def concatenate_save_raw_mcs():
             end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(
                 days=1
             )
-
-            installations_key = " ".join(
-                [
-                    key
-                    for key in (list(key_and_df[1].keys()))
-                    if "installs" in key.lower()
-                ]
-            )
-            installer_key = " ".join(
-                [
-                    key
-                    for key in (list(key_and_df[1].keys()))
-                    if "installer" in key.lower()
-                ]
-            )
-
-            # append quarterly installer data
-            installer_dfs.append(key_and_df[1][installer_key])
-
             if (
                 (
-                    pd.to_datetime(
-                        key_and_df[1][installations_key]["Commissioning Date"]
-                    ).dt.date
+                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
                     < start_date
                 )
                 | (
-                    pd.to_datetime(
-                        key_and_df[1][installations_key]["Commissioning Date"]
-                    ).dt.date
+                    pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
                     > end_date
                 )
             ).any():
@@ -111,32 +117,30 @@ def concatenate_save_raw_mcs():
                     )
                 )
 
-    installations_dfs = []
-    for key, dfs in keys_and_dfs:
-        if key:
-            if type(dfs) == dict:
-                installations_dfs.append(dfs[installations_key])
-            elif type(dfs) == pd.DataFrame:
-                if "installations" in key:
-                    installations_dfs.append(dfs)
+    installations_dfs = [key_and_df[1] for key_and_df in all_installations_data]
 
     if len(set([tuple(df.columns) for df in installations_dfs])) > 1:
         warnings.warn("Not all installation file columns are the same.")
 
     concat_installations = pd.concat(installations_dfs)
-    concat_installers = pd.concat(installer_dfs)
-
     print(
-        "Number of installation records before removing duplicates:",
-        concat_installations.shape[0],
+        "Number of records before removing duplicates:", concat_installations.shape[0]
     )
     concat_installations.drop_duplicates(inplace=True, ignore_index=True)
-    print(
-        "Number of installation records after removing duplicates:",
-        concat_installations.shape[0],
-    )
+    print("Number of records after removing duplicates:", concat_installations.shape[0])
+
+    concat_installations = concat_installations.rename(columns=colnames_dict)
 
     save_to_s3(s3, bucket_name, concat_installations, "/" + installations_raw_s3_path)
+
+
+def concatenate_save_raw_installers(all_installer_data):
+    """Generate concatenated installer csv from individual installer files.
+    concatenates and saves the result in the top level MCS inputs folder"""
+    installer_dfs = [key_and_df[1] for key_and_df in all_installer_data]
+    concat_installers = pd.concat(installer_dfs)
+    concat_installers.drop_duplicates(inplace=True, ignore_index=True)
+
     save_to_s3(s3, bucket_name, concat_installers, "/" + installers_raw_s3_path)
 
 
@@ -225,6 +229,7 @@ def get_mcs_installations(epc_version="none", refresh=False):
     return mcs_installations
 
 
+# %%
 def generate_and_save_mcs():
     """Concatenates, generates and saves the different versions of the MCS-EPC data to S3.
     Different versions are a) just installation data, b) installation data with
@@ -245,7 +250,10 @@ def generate_and_save_mcs():
         ]
     ]
 
-    concatenate_save_raw_mcs()
+    all_installer_data, all_installations_data = get_latest_mcs_from_s3()
+
+    concatenate_save_raw_installations(all_installations_data)
+    concatenate_save_raw_installers(all_installer_data)
 
     processed_mcs = get_processed_installations_data()
     save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)

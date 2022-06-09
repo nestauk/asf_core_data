@@ -1,8 +1,14 @@
+# %%
+# %matplotlib inline
+
+# %% [markdown]
 """
 script to get and save data from s3 bucket and from files.
 """
-#######################################################
+# %% [markdown]
+#
 
+# %%
 import boto3
 import os
 from fnmatch import fnmatch
@@ -14,8 +20,7 @@ import logging
 import pickle
 import json
 
-#######################################################
-
+# %%
 s3 = boto3.resource("s3")
 logger = logging.getLogger(__name__)
 
@@ -63,3 +68,18 @@ def save_to_s3(s3, bucket_name, output_var, output_file_path):
         print(
             'Function not supported for file type other than "*.pkl", "*.json" and "*.csv"'
         )
+
+
+def get_s3_dir_files(s3, bucket_name, dir_name):
+    """
+    get a list of all files in bucket directory.
+    s3: S3 boto3 resource
+    bucket_name: The S3 bucket name
+    dir_name: bucket directory name
+    """
+    dir_files = []
+    my_bucket = s3.Bucket(bucket_name)
+    for object_summary in my_bucket.objects.filter(Prefix=dir_name):
+        dir_files.append(object_summary.key)
+
+    return dir_files

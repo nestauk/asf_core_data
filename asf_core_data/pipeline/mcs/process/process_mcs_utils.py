@@ -147,7 +147,7 @@ def clean_concat_installers(data):
         " ".join(c.split(" ")[:-1]) if "Installation" in c else c for c in data.columns
     ]
 
-    return data
+    return data.reset_index(drop=True)
 
 
 def geocode_postcode(data, geodata):
