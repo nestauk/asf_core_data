@@ -1,196 +1,144 @@
-# File: heat_pump_adoption_modelling/pipeline/preprocessing/data_cleaning.py
-"""Cleaning and standardising the EPC dataset."""
+# File: asf_core_data/pipeline/preprocessing/data_cleaning.py
+"""Cleaning and standardising the EPC dataset.
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
-from asf_core_data.config import base_config
-from numpy.core import numeric
+
+DATA CLEANING GUIDELINES
+------------------------
+
+If you would like to clean an additional feature from the EPC or MCS dataset,
+please stick to the following guidelines.
+
+---
+A) Simple mapping from a set of values to a standardised set of values
+
+If you want to standardise values using a dict, add a respective dict entry in the
+feature_cleaning_dict in data_cleaning_utils.py and add the feature name to the list
+features_to_standardise.
+
+Note that all values not found in the dict will be mapped to np.nan/unknown.
+
+For example:
+
+...
+{"FEATURE_TO_CLEAN"  :  {'undesired value 1":"desired value A",
+                         'undesired value 2":"desired value A",
+                         'undesired value 3":"desired valye B"}
+}
+
+features_to_standardise = [...,..., "FEATURE_TO_CLEAN"]
+
+---
+B) Custom function for standardising and cleaning features
+
+If a simple dict mapping is not sufficient, e.g. because you need to apply regular expression,
+create a custom function in data_cleaning.py and name it clean_FEATURE_TO_CLEAN().
+
+The function can either take B1) a single value or B2) the entire dataframe as input.
+
+Examples for B1) cases are clean_POSTCODE() and clean_FLOOR_LEVEL().
+Examples for B2) cases are clean_PHOTO_SUPPLY() and clean_EFF_SCORES().
+
+Make sure to add B1 cases to the custom_cleaning_dict in custom_clean_features().
+Make sure to add B2 cases to custom_clean_features() above the line  # [Additional cleaning functions here].
+Note that the function must contain a check whether the feature is even present in the given dataframe.
+
+---
+C) Add values that should be standardised to np.nan or "unknown"
+
+Add the values to the list 'invalid_values' in data_cleaning_utils.py
+
+---
+D) Set a max value for features
+
+Add the feature to the dict in custom_clean_features(). For example:
+
+cap_value_dict = {
+    "NUMBER_HABITABLE_ROOMS": 10,
+    "NUMBER_HEATED_ROOMS": 10,
+    "FEATURE_TO_CLEAN": 50
+}
+
+
+E) Any other way of cleaning data
+
+Make sure it doesn't disrupt the current pipeline and feel free to add these guidelines here.
+
+"""
+# ---------------------------------------------------------------------------------
+
+
+import re
+
 import pandas as pd
 import numpy as np
 
+
+from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data.config import base_config
+from asf_core_data.pipeline.preprocessing import data_cleaning_utils
+
+# ---------------------------------------------------------------------------------
 
 # Load config file
 config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
 
 
-def reformat_postcode(df):
-    """Change the POSTCODE feature in uniform format (without spaces).
+def clean_POSTCODE(postcode, level="unit", with_space=True):
+    """Get POSTCODE as unit, district, sector or area.
 
-    Parameters
-    ----------
-    df : pandas.Dataframe
-        Dataframe to format.
+    Args:
+        postcode (str):  Raw postcode
+        level (str, optional): Desired postcode level.
+            Options: district, area, sector, unit. Defaults to "unit".
+        with_space (bool, optional): Whether to add space after district. Defaults to True.
 
-    Return
-    ----------
-    df : pandas.Dataframe
-        Dataframe with reformatted POSTCODE."""
+    Returns:
+        str: Specific postcode level.
+    """
 
-    df["POSTCODE"] = df["POSTCODE"].str.upper().str.replace(r"\s+", "", regex=True)
+    postcode = postcode.strip()
+    postcode = postcode.upper()
 
-    return df
+    seperation = " " if with_space else ""
 
+    if level == "area":
+        return re.findall(r"([A-Z]+)", postcode)[0]
 
-def standardise_dates(df, features):
-
-    for feature in features:
-
-        df[feature] = df[feature].str.replace(r"00(\d\d)", r"20\1", regex=True)
-
-        df[feature] = pd.to_datetime(df[feature], errors="coerce")
-
-        df.loc[
-            (df[feature].dt.year > base_config.CURRENT_YEAR + 1)
-            & (df[feature].dt.year < 2018),
-            feature,
-        ] = np.datetime64("NaT")
-
-    return df
-
-
-def date_formatter(date):
-    """Reformat the date to the format year-month-day.
-
-    Parameters
-    ----------
-    date: str/float
-        Date to reformat (usually from INSPECTION_DATE).
-
-    Return
-    ----------
-    formatted_date : str
-        Formatted data in the required format."""
-
-    if isinstance(date, float):
-        return "unknown"
-
-    # Get year, month and day from different formats
-    if "-" in date:
-        year, month, day = str(date).split("-")
-    elif "/" in date:
-        day, month, year = str(date).split("/")
     else:
-        return "unknown"
+        part_1 = postcode[:-3].strip()
+        part_2 = postcode[-3:].strip()
 
-    # Assume that years starting with 00xx mean 20xx
-    if year.startswith("00"):
-        year = "20" + year[-2:]
-
-    # Discard entries past current year + plus (future projects) and before 2008
-    if len(year) != 4 or int(year) > base_config.CURRENT_YEAR + 1 or int(year) < 2008:
-        return "unknown"
-
-    formatted_date = year + "/" + month + "/" + day
-
-    return formatted_date
-
-
-def standardise_solar_water_heating_flag(flag):
-
-    flag_dict = {
-        "N": "False",
-        "unknown": "unknown",
-        "Y": "True",
-        "false": "False",
-        "true": "True",
-    }
-
-    if flag not in flag_dict.keys():
-        return "unknown"
-    else:
-        return flag_dict[flag]
+        if level == "district":
+            return part_1
+        elif level == "sector":
+            return part_1 + seperation + part_2[0]
+        elif level == "unit":
+            return part_1 + seperation + part_2
+        else:
+            raise IOError(
+                "Postcode level '{}' unknown. Please select 'area', 'district', 'sector' or 'unit'.".format(
+                    level
+                )
+            )
 
 
-def standardise_floor_level(floor_level, as_numeric=True):
+def clean_FLOOR_LEVEL(floor_level, as_numeric=base_config.FLOOR_LEVEL_AS_NUM):
     """Standardise floor level.
     By default, the floor level is given as a numeric value (between -1 and 10).
     Alternatively, the floor level can be returned as one of the following categories:
     -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10+
 
-    Parameters
-    ----------
-    floor_level : str
-        Floor level.
+    Args:
+        floor_level (str):  Floor level.
+        as_numeric (bool, optional): Whehter to return floor level as numeric value. Defaults to base_config.FLOOR_LEVEL_AS_NUM.
+            If set to False, return value as category.
 
-    as_numeric : bool, default=True
-        Return floor level as numeric value.
-        If set to False, return value as category.
+    Returns:
+        int/str: Standardised floor level
+    """
 
-    Return
-    ----------
-    standardised floor level : int, or str
-        Standardised floor level."""
-
-    floor_level_dict = {
-        "-1.0": -1,
-        "Basement": -1,
-        "Ground": 0,
-        "0.0": 0,
-        "00": 0,
-        "0": 0,
-        "1st": 1,
-        "1.0": 1,
-        "1": 1,
-        "01": 1,
-        "2nd": 2,
-        "2.0": 2,
-        "2": 2,
-        "02": 2,
-        "3rd": 3,
-        "3.0": 2,
-        "3": 3,
-        "03": 3,
-        "04": 4,
-        "4th": 4,
-        "4.0": 4,
-        "4": 4,
-        "05": 5,
-        "5th": 5,
-        "5.0": 5,
-        "5": 5,
-        "06": 6,
-        "6th": 6,
-        "6.0": 6,
-        "6": 6,
-        "07": 7,
-        "7th": 7,
-        "7.0": 7,
-        "7": 7,
-        "08": 8,
-        "8th": 8,
-        "8.0": 8,
-        "8": 8,
-        "09": 9,
-        "9th": 9,
-        "9.0": 9,
-        "9": 9,
-        "10": 10,
-        "10th": 10,
-        "10.0": 10,
-        "11th": 10,
-        "12th": 10,
-        "13th": 10,
-        "14th": 10,
-        "15th": 10,
-        "16th": 10,
-        "17th": 10,
-        "18th": 10,
-        "19th": 10,
-        "20th": 10,
-        "11": 10,
-        "12": 10,
-        "13": 10,
-        "14": 10,
-        "15": 10,
-        "16": 10,
-        "17": 10,
-        "18": 10,
-        "19": 10,
-        "20": 10,
-        "21st or above": 10,
-        "20+": 10,
-        "top floor": 10,
-        "mid floor": 5,
-    }
+    # floor_level = floor_level.strip()
+    floor_level_dict = data_cleaning_utils.feature_cleaning_dict["FLOOR_LEVEL"]
 
     if floor_level in floor_level_dict.keys():
         if as_numeric:
@@ -204,289 +152,76 @@ def standardise_floor_level(floor_level, as_numeric=True):
         return standard_floor_level
 
 
-def standardise_tenure(tenure):
-    """Standardise tenure types; one of the four categories:
-    rental (social), rental (private), owner-occupied, unknown
-
-    Parameters
-    ----------
-    tenure : str
-        Raw tenure type.
-
-    Return
-    ----------
-    standardised tenure : str
-        Standardised tenure type."""
-
-    # Catch NaN
-    if isinstance(tenure, float):
-        return "unknown"
-
-    tenure = tenure.lower()
-    tenure_mapping = {
-        "owner-occupied": "owner-occupied",
-        "rental (social)": "rental (social)",
-        "rented (social)": "rental (social)",
-        "rental (private)": "rental (private)",
-        "rented (private)": "rental (private)",
-        "unknown": "unknown",
-        "no data!": "unknown",
-        "not defined - use in the case of a new dwelling for which the intended tenure in not known. it is no": "unknown",
-    }
-
-    return tenure_mapping[tenure]
-
-
-def standardise_constr_age(age, adjust_age_bands=True):
-
+def clean_CONSTRUCTION_AGE_BAND(age_band, merged_bands=base_config.MERGED_AGE_BANDS):
     """Standardise construction age bands and if necessary adjust
     the age bands to combine the Scotland and England/Wales data.
 
-    Parameters
-    ----------
-    age : str
-        Raw construction age.
+    Args:
+        age_band (str): Raw construction age.
+        merged_bands (bool, optional):  Whether to merge Scotland and England/Wales age bands. Defaults to base_config.MERGED_AGE_BANDS.
 
-    merge_country_data : bool, default=True
-        Whether to merge Scotland and England/Wales age bands.
+    Returns:
+        str: Standardised age construction band.
+    """
 
-    Return
-    ----------
-    Standardised age construction band : str
-        Standardised age construction band."""
+    age_band = age_band.strip()
 
-    # Handle NaN
-    if isinstance(age, float):
-        return "unknown"
-
-    age = age.strip()
-
-    age_mapping = {
-        "England and Wales: before 1900": "England and Wales: before 1900",
-        "England and Wales: 1900-1929": "England and Wales: 1900-1929",
-        "England and Wales: 1930-1949": "England and Wales: 1930-1949",
-        "England and Wales: 1950-1966": "England and Wales: 1950-1966",
-        "England and Wales: 1967-1975": "England and Wales: 1967-1975",
-        "England and Wales: 1976-1982": "England and Wales: 1976-1982",
-        "England and Wales: 1983-1990": "England and Wales: 1983-1990",
-        "England and Wales: 1991-1995": "England and Wales: 1991-1995",
-        "England and Wales: 1996-2002": "England and Wales: 1996-2002",
-        "England and Wales: 2003-2006": "England and Wales: 2003-2006",
-        "England and Wales: 2007-2011": "England and Wales: 2007-2011",
-        "England and Wales: 2007-2011": "England and Wales: 2007 onwards",
-        "England and Wales: 2007 onwards": "England and Wales: 2007 onwards",
-        "England and Wales: 2012 onwards": "England and Wales: 2012 onwards",
-        "1900": "England and Wales: 1900-1929",
-        "2021": "England and Wales: 2012 onwards",
-        "2020": "England and Wales: 2012 onwards",
-        "2019": "England and Wales: 2012 onwards",
-        "2018": "England and Wales: 2012 onwards",
-        "2017": "England and Wales: 2012 onwards",
-        "2016": "England and Wales: 2012 onwards",
-        "2015": "England and Wales: 2012 onwards",
-        "2014": "England and Wales: 2012 onwards",
-        "2013": "England and Wales: 2012 onwards",
-        "2012": "England and Wales: 2012 onwards",
-        "2011": "England and Wales: 2007 onwards",
-        "2010": "England and Wales: 2007 onwards",
-        "2009": "England and Wales: 2007 onwards",
-        "2008": "England and Wales: 2007 onwards",
-        "2007": "England and Wales: 2007 onwards",
-        "before 1919": "Scotland: before 1919",
-        "1919-1929": "Scotland: 1919-1929",
-        "1930-1949": "Scotland: 1930-1949",
-        "1950-1964": "Scotland: 1950-1964",
-        "1965-1975": "Scotland: 1965-1975",
-        "1976-1983": "Scotland: 1976-1983",
-        "1984-1991": "Scotland: 1984-1991",
-        "1992-1998": "Scotland: 1992-1998",
-        "1999-2002": "Scotland: 1999-2002",
-        "2003-2007": "Scotland: 2003-2007",
-        "2008 onwards": "Scotland: 2008 onwards",
-        "unknown": "unknown",
-        "NO DATA!": "unknown",
-        "INVALID!": "unknown",
-        "Not applicable": "unknown",
-    }
-
-    age_mapping_adjust_age_bands = {
-        "England and Wales: before 1900": "England and Wales: before 1900",
-        "England and Wales: 1900-1929": "1900-1929",
-        "England and Wales: 1930-1949": "1930-1949",
-        "England and Wales: 1950-1966": "1950-1966",
-        "England and Wales: 1967-1975": "1965-1975",
-        "England and Wales: 1976-1982": "1976-1983",
-        "England and Wales: 1983-1990": "1983-1991",
-        "England and Wales: 1991-1995": "1991-1998",
-        "England and Wales: 1996-2002": "1996-2002",
-        "England and Wales: 2003-2006": "2003-2007",
-        "England and Wales: 2007-2011": "2007 onwards",
-        "England and Wales: 2007 onwards": "2007 onwards",
-        "England and Wales: 2012 onwards": "2007 onwards",
-        "2021": "2007 onwards",
-        "2020": "2007 onwards",
-        "2019": "2007 onwards",
-        "2018": "2007 onwards",
-        "2017": "2007 onwards",
-        "2016": "2007 onwards",
-        "2015": "2007 onwards",
-        "2015": "2007 onwards",
-        "2014": "2007 onwards",
-        "2013": "2007 onwards",
-        "2013": "2007 onwards",
-        "2012": "2007 onwards",
-        "2011": "2007 onwards",
-        "2010": "2007 onwards",
-        "2009": "2007 onwards",
-        "2008": "2007 onwards",
-        "2007": "2007 onwards",
-        "1900": "1900-1929",
-        "before 1919": "Scotland: before 1919",
-        "1919-1929": "1900-1929",
-        "1930-1949": "1930-1949",
-        "1950-1964": "1950-1966",
-        "1965-1975": "1965-1975",
-        "1976-1983": "1976-1983",
-        "1984-1991": "1983-1991",
-        "1992-1998": "1991-1998",
-        "1999-2002": "1996-2002",
-        "2003-2007": "2003-2007",
-        "2008 onwards": "2007 onwards",
-        "unknown": "unknown",
-        "NO DATA!": "unknown",
-        "INVALID!": "unknown",
-        "Not applicable": "unknown",
-    }
-
-    if adjust_age_bands:
-
-        if age not in age_mapping_adjust_age_bands:
-            return "unknown"
-        else:
-            return age_mapping_adjust_age_bands[age]
+    if merged_bands:
+        age_band_dict = data_cleaning_utils.feature_cleaning_dict[
+            "CONSTRUCTION_AGE_BAND_MERGED"
+        ]
     else:
-        if age not in age_mapping:
-            return "unknown"
-        else:
-            return age_mapping[age]
+        age_band_dict = data_cleaning_utils.feature_cleaning_dict[
+            "CONSTRUCTION_AGE_BAND"
+        ]
 
-
-def standardise_constr_age_original(age):
-    """Standardise construction age bands.
-
-    Parameters
-    ----------
-    age : str
-        Raw construction age.
-
-    Return
-    ----------
-    Standardised age construction band : str
-        Standardised age construction band."""
-
-    return standardise_constr_age(age, adjust_age_bands=False)
-
-
-def standardise_efficiency(efficiency):
-    """Standardise efficiency types; one of the five categories:
-    poor, very poor, average, good, very good
-
-    Parameters
-    ----------
-    efficiency : str
-        Raw efficiency type.
-
-    Return
-    ----------
-    standardised efficiency : str
-        Standardised efficiency type."""
-
-    # Handle NaN
-    if isinstance(efficiency, float):
+    if age_band in age_band_dict.keys():
+        return age_band_dict[age_band]
+    else:
         return "unknown"
 
-    efficiency = efficiency.lower().strip()
-    efficiency = efficiency.strip('"')
-    efficiency = efficiency.strip()
-    efficiency = efficiency.strip("|")
-    efficiency = efficiency.strip()
 
-    efficiency_mapping = {
-        "poor |": "Poor",
-        "very poor |": "Very Poor",
-        "average |": "Average",
-        "good |": "Good",
-        "very good |": "Very Good",
-        "poor": "Poor",
-        "very poor": "Very Poor",
-        "average": "Average",
-        "good": "Good",
-        "very good": "Very Good",
-        "n/a": "unknown",
-        "n/a |": "unknown",
-        "n/a": "unknown",
-        "n/a | n/a": "unknown",
-        "n/a | n/a | n/a": "unknown",
-        "n/a | n/a | n/a | n/a": "unknown",
-        "no data!": "unknown",
-        "unknown": "unknown",
-    }
+def clean_LOCAL_AUTHORITY(local_authority):
+    """Clean local authority label.
 
-    return efficiency_mapping[efficiency]
+    Args:
+        local_authority (str): Local authority label.
+
+    Returns:
+        str:  Cleaned local authority.
+    """
+
+    if local_authority in ["00EM", "16UD"]:
+        return "unknown"
+    else:
+        return local_authority
 
 
-def standardise_glazed_area(area, as_numeric=True):
+def clean_GLAZED_AREA(area, as_numeric=base_config.GLAZED_AREA_AS_NUM):
     """Standardise glazed area type.
     By default, the glazed area is given as a numeric value (between 1 and 5).
     Alternatively, the glazed area can be returned as one of the following categories:
     Normal, More Than Typical, Much More Than Typical, Less Than Typical, Much Less Than Typical, unknown.
 
-    Parameters
-    ----------
-    area : str
-        Glazed area type.
+    Args:
+        area (str): Glazed area type.
+        as_numeric (bool, optional):  Return glazed area as numeric value.
+            If set to False, return value as category.
+            Defaults to base_config.GLAZED_AREA_AS_NUM.
 
-    as_numeric : bool, default=True
-        Return glazed area as numeric value.
-        If set to False, return value as category.
+    Returns:
+        str: Standardised glazed area.
+    """
 
-    Return
-    ----------
-    standardised glazed area : int, or str
-        Standardised glazed area."""
-
-    glazed_area_dict = {
-        "1": 1,
-        "3": 3,
-        "2": 2,
-        "5": 5,
-        "4": 4,
-        "0": np.nan,
-        "Normal": 3,
-        "unknown": np.nan,
-        "More Than Typical": 4,
-        "Much More Than Typical": 5,
-        "Less Than Typical": 2,
-        "Much Less Than Typical": 1,
-        "Not Defined": np.nan,
-        np.nan: np.nan,
-    }
-
-    glazed_area_cat_dict = {
-        5: "Much More Than Typical",
-        4: "More Than Typical",
-        3: "Normal",
-        2: "Less Than Typical",
-        1: "Much Less Than Typical",
-        np.nan: "unknown",
-    }
+    glazed_area_cat = data_cleaning_utils.feature_cleaning_dict["GLAZED_AREA_CAT"]
+    glazed_area_num = data_cleaning_utils.feature_cleaning_dict["GLAZED_AREA_NUM"]
 
     # Standardise (numeric or cat) using dict
-    if area in glazed_area_dict.keys():
+    if area in glazed_area_num.keys():
         if as_numeric:
-            return glazed_area_dict[area]
+            return glazed_area_num[area]
         else:
-            return glazed_area_cat_dict[glazed_area_dict[area]]
+            return glazed_area_cat[glazed_area_num[area]]
 
     # Handle unknown/NaN
     else:
@@ -494,18 +229,18 @@ def standardise_glazed_area(area, as_numeric=True):
         return standardised_area
 
 
-def clean_photo_supply(df):
+def clean_PHOTO_SUPPLY(df):
     """Extract photo supply area from length descriptions.
 
-    Paramters
-    ----------
-    df : pandas.DataFrame
-        Given dataframe.
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
 
-    Return
-    ---------
-     df : pandas.DataFrame
-        Dataframe with fixed photo supply column."""
+    Returns:
+        pd.DateFrame: Dataframe with fixed photo supply column.
+    """
+
+    if "PHOTO_SUPPLY" not in df.columns:
+        return df
 
     # Set all values mentioning "Peak Power" to "unknown" because they do not contain photo supply area
     df["PHOTO_SUPPLY"] = df["PHOTO_SUPPLY"].str.replace(
@@ -517,49 +252,245 @@ def clean_photo_supply(df):
     return df
 
 
-def clean_local_authority(local_authority):
-    """Clean local authority label.
+def create_efficiency_mapping(efficiency_set, only_first=base_config.ONLY_FIRST_EFF):
+    """Create dict to map efficiency label(s) to numeric value.
 
-    Paramters
-    ----------
-    local_authority : str
-        Local authority label.
+    Args:
+        efficiency_set (list): List of efficiencies as encoded as strings.
+        only_first (bool, optional): Only consider first efficiency entry if where are multiple.
+            Defaults to base_config.ONLY_FIRST_EFF.
 
-    Return
-    ----------
-    local_authority : str
-        Cleaned local authority."""
+    Returns:
+        dict: Map efficiency labels to numeric values.
+    """
 
-    if local_authority in ["00EM", "16UD"]:
-        return "unknown"
-    else:
-        return local_authority
+    efficiency_map = {}
+
+    for eff in efficiency_set:
+
+        # If efficiency is float (incl. NaN)
+        if isinstance(eff, float):
+            efficiency_map[eff] = np.nan
+            continue
+
+        # Split parts of label (especially for Scotland data)
+        eff_parts = [
+            part.strip()
+            for part in eff.split("|")
+            if part.strip() not in ["n/a", "unknown", ""]
+        ]
+
+        if not eff_parts:
+            efficiency_map[eff] = np.nan
+            continue
+
+        if only_first:
+            eff_parts = eff_parts[:1]
+
+        # Map labels to numeric value and take mean
+        eff_value = sum(
+            [data_cleaning_utils.eff_value_dict[part] for part in eff_parts]
+        ) / float(len(eff_parts))
+
+        efficiency_map[eff] = round(eff_value, 1)
+
+    return efficiency_map
 
 
-def cap_feature_values(df, feature, cap_n=10):
+def clean_EFF_SCORES(df):
+    """Clean and modify energy efficiency and environment ratings and scores for different categories,
+    e.g. WINDOWS_ENVIRONMENT_EFF.
+
+    Standardise ratings and get average value if several values given.
+    Capture both as categorical feature (very poor to very good) and as numeric features (1.0 to 5.0), ending with "_SCORE".
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe with updated efficiency score features.
+    """
+
+    for feat in df.columns:
+        # If efficiency feature, get respective mapping
+        if feat.endswith("_EFF"):
+
+            df[feat] = df[feat].str.lower()
+            map_dict = create_efficiency_mapping(list(df[feat].unique()))
+
+            # Encode features
+            df[feat + "_SCORE"] = df[feat].map(map_dict)
+            df[feat] = round(df[feat + "_SCORE"]).map(
+                data_cleaning_utils.value_eff_dict
+            )
+
+    return df
+
+
+def cap_feature_values(df, feature, cap_value=10, as_cat=False):
     """Cap the values of a given feature, in order to reduce the
     effect of outliers.
     For example, set NUMBER_OF_HABITABLE_ROOMS values that are
     greater/equal to 10 to "10+".
 
-    Paramters
-    ----------
-    df : pandas.DataFrame
-        Given dataframe.
 
-    feature : str
-        Feature for which values are capped.
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+        feature (str):  Feature for which values are capped.
+        cap_value (int, optional): Max value / where to cap. Defaults to 10.
+        as_cat (bool, optional): Save as category instead of numeric feature. Defaults to False.
 
-    cap_n : int, default=10
-        At which value to cap.
-
-    Return
-    ---------
-     df : pandas.DataFrame
-        Dataframe with capped values."""
+    Returns:
+        pandas.DataFrame: Dataframe with capped values.
+    """
 
     # Cap at given limit (i.e. 10)
-    df.loc[(df[feature] >= cap_n), feature] = cap_n  # str(cap_n) + "+"
+    cap_n = str(cap_n) + "+" if as_cat else cap_value
+    df.loc[(df[feature] >= cap_n), feature] = cap_value
+
+    if as_cat:
+        df[feature] = df[feature].astype(str)
+
+    return df
+
+
+def standardise_dates(
+    df, date_features=["INSPECTION_DATE", "LODGEMENT_DATE", "LODGEMENT_DATETIME"]
+):
+    """Standardise date features and transform to datetime values for easier handling.
+    Test for unreasonable dates and fix years starting with 00.
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+        date_features (list, optional): Date features to modify. Defaults to ["INSPECTION_DATE", "LODGEMENT_DATE", "LODGEMENT_DATETIME"].
+
+    Returns:
+        pandas.DataFrame: Dataframe with standardises date features.
+    """
+
+    date_features = [
+        date_feat for date_feat in date_features if date_feat in df.columns
+    ]
+
+    for feature in date_features:
+
+        # Fix years starting with 00 -> 20..
+        df[feature] = df[feature].str.replace(r"00(\d\d)", r"20\1", regex=True)
+        df[feature] = pd.to_datetime(df[feature], errors="coerce")
+
+        df.loc[
+            (df[feature].dt.year > base_config.CURRENT_YEAR + 1)
+            | (df[feature].dt.year < 2008),
+            feature,
+        ] = np.datetime64("NaT")
+
+    return df
+
+
+def standardise_unknowns(df):
+    """Standardise unknown and invalid values.
+    For numeric features, change invalid values to NaN.
+    For categorical features, change invalid values to "unknown".
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe with cleaned up unknown values.
+    """
+    for feat in df.columns:
+
+        if feat in data_cleaning_utils.numeric_features:
+            df[feat] = df[feat].replace(data_cleaning_utils.invalid_values, np.nan)
+        else:
+            df[feat] = df[feat].replace(data_cleaning_utils.invalid_values, "unknown")
+
+    return df
+
+
+def standardise_features(df):
+    """Standardise features using a mapping dict.
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe with stanardised features.
+    """
+
+    for feat in df.columns:
+
+        if feat in data_cleaning_utils.features_to_standardise:
+
+            df[feat] = df[feat].str.strip()
+            feat_clean_dict = data_cleaning_utils.feature_cleaning_dict[feat]
+
+            df[feat] = df[feat].str.strip()
+            df[feat] = df[feat].map(feat_clean_dict)
+            df[feat].fillna("unknown", inplace=True)
+
+    return df
+
+
+def remove_empty_features(df):
+    """Remove empty features, i.e. features/columns that only have one unique value.
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe with removed empty features.
+    """
+    # Remove all columns with only NaN
+    df.dropna(axis=1, how="all", inplace=True)
+
+    # Remove all columns that have only same value
+    nunique = df.nunique()
+    cols_to_drop = nunique[nunique == 1].index
+    df.drop(cols_to_drop, axis=1, inplace=True)
+
+    return df
+
+
+def custom_clean_features(df):
+    """Custom clean features.
+    For instances, standardise values and cap at max value.
+
+    Args:
+        df (pandas.DataFrame): Dataframe to modify.
+
+    Returns:
+        pandas.DataFrame: Dataframe after custom cleaning features.
+    """
+
+    custom_cleaning_dict = {
+        "POSTCODE": clean_POSTCODE,
+        "CONSTRUCTION_AGE_BAND": clean_CONSTRUCTION_AGE_BAND,
+        "LOCAL_AUTHORITY_LABEL": clean_LOCAL_AUTHORITY,
+        "FLOOR_LEVEL": clean_FLOOR_LEVEL,
+        "GLAZED_AREA": clean_GLAZED_AREA,
+    }
+
+    cap_value_dict = {
+        "NUMBER_HABITABLE_ROOMS": 10,
+        "NUMBER_HEATED_ROOMS": 10,
+    }
+
+    # Custom cleaning by value (B1)
+    for feat in df.columns:
+        if feat in custom_cleaning_dict.keys():
+            df[feat] = df[feat].apply(custom_cleaning_dict[feat])
+
+    # Custom cleaning by df (B2) - usually categorical to numeric feature cleaning
+    df = clean_PHOTO_SUPPLY(df)
+    df = clean_EFF_SCORES(df)
+    # [Additional cleaning functions here]
+
+    # Cap features
+    for feat in df.columns:
+        if feat in cap_value_dict.keys():
+            cap_value = cap_value_dict[feat]
+            df = cap_feature_values(df, feat, cap_value=cap_value)
 
     return df
 
@@ -568,117 +499,17 @@ def clean_epc_data(df):
     """Standardise and clean EPC data.
     For example, reformat dates and standardise categories.
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Raw/original EPC dataframe.
+    Args:
+        df (pandas.DataFrame): Raw/original EPC dataframe.
 
-    Return
-    ----------
-    df : pandas.DataFrame
-        Standarised and cleaned EPC dataframe."""
+    Returns:
+        pandas.DataFram: Standarised and cleaned EPC dataframe.
+    """
 
-    column_to_function_dict = {
-        "TENURE": standardise_tenure,
-        "CONSTRUCTION_AGE_BAND": standardise_constr_age,
-        "WINDOWS_ENERGY_EFF": standardise_efficiency,
-        "FLOOR_ENERGY_EFF": standardise_efficiency,
-        "HOT_WATER_ENERGY_EFF": standardise_efficiency,
-        "LIGHTING_ENERGY_EFF": standardise_efficiency,
-        "LOCAL_AUTHORITY_LABEL": clean_local_authority,
-        "SOLAR_WATER_HEATING_FLAG": standardise_solar_water_heating_flag,
-        "FLOOR_LEVEL": standardise_floor_level,
-        "GLAZED_AREA": standardise_glazed_area,
-    }
-
-    date_features = ["LODGEMENT_DATE", "INSPECTION_DATE"]
-
-    numeric_features = [
-        "ENERGY_CONSUMPTION_CURRENT",
-        "TOTAL_FLOOR_AREA",
-        "CURRENT_ENERGY_EFFICIENCY",
-        "CO2_EMISS_CURR_PER_FLOOR_AREA",
-        "HEATING_COST_CURRENT",
-        "HEATING_COST_POTENTIAL",
-        "HOT_WATER_COST_CURRENT",
-        "HOT_WATER_COST_POTENTIAL",
-        "LIGHTING_COST_CURRENT",
-        "LIGHTING_COST_POTENTIAL",
-        "WIND_TURBINE_COUNT",
-        "MAIN_HEATING_CONTROLS",
-        "MULTI_GLAZE_PROPORTION",
-        "FLOOR_HEIGHT",
-        "EXTENSION_COUNT",
-        "NUMBER_HEATED_ROOMS",
-        "FLOOR_LEVEL",
-        "NUMBER_HABITABLE_ROOMS",
-        "CO2_EMISSIONS_CURRENT",
-    ]
-
-    invalid_values = [
-        "unknown",
-        "%%MAINHEATCONTROL%%",
-        "NODATA!",
-        "unknown",
-        "NO DATA!",
-        "INVALID!",
-        "not defined",
-        "none of the above",
-        "no data!",
-        "nodata!",
-        "Not applicable",
-        "Not Defined",
-        "Unknown",
-        "not recorded",
-        np.nan,
-    ]
-
-    make_numeric = [
-        "WIND_TURBINE_COUNT",
-        "MAIN_HEATING_CONTROLS",
-        "MULTI_GLAZE_PROPORTION",
-        "FLOOR_HEIGHT",
-        "EXTENSION_COUNT",
-        "NUMBER_HEATED_ROOMS",
-        "NUMBER_HABITABLE_ROOMS",
-    ]
-
-    # Replace values such as INVALID! or NODATA!
-    for column in df.columns:
-        if column in numeric_features:
-            df[column] = df[column].replace(invalid_values, np.nan)
-
-            if column not in ["WIND_TURBINE_COUNT", "FLOOR_LEVEL"] + make_numeric:
-                df[column] = df[column].mask(df[column] < 0.0)
-        else:
-            df[column] = df[column].replace(invalid_values, "unknown")
-
-    for column in df.columns:
-        if column in make_numeric:
-            df[column] = pd.to_numeric(df[column])
-            df[column] = df[column].mask(df[column] < 0.0)
-
-    df = standardise_dates(df, date_features)
-
-    if "CONSTRUCTION_AGE_BAND" in df.columns:
-        df["CONSTRUCTION_AGE_BAND_ORIGINAL"] = df["CONSTRUCTION_AGE_BAND"].apply(
-            standardise_constr_age_original
-        )
-
-    # Reformat postcode
-    if "POSTCODE" in df.columns:
-        df = reformat_postcode(df)
-
-    if "PHOTO_SUPPLY" in df.columns:
-        df = clean_photo_supply(df)
-
-    # Clean up features
-    for column in df.columns:
-        if column in column_to_function_dict.keys():
-            df[column] = df[column].apply(column_to_function_dict[column])
-
-    if "NUMBER_HABITABLE_ROOMS" in df.columns:
-        # Limit max value for NUMBER_HABITABLE_ROOMS
-        df = cap_feature_values(df, "NUMBER_HABITABLE_ROOMS", cap_n=10)
+    df = remove_empty_features(df)
+    df = standardise_unknowns(df)
+    df = standardise_features(df)
+    df = standardise_dates(df)
+    df = custom_clean_features(df)
 
     return df

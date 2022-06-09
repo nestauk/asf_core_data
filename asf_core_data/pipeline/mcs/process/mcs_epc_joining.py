@@ -20,6 +20,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
 from asf_core_data.getters.epc.epc_data import (
     load_preprocessed_epc_data,
 )
+from asf_core_data.getters.data_getters import load_s3_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,
@@ -29,6 +30,7 @@ config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
 max_token_length = config["MCS_EPC_MAX_TOKEN_LENGTH"]
 matching_parameter = config["MCS_EPC_MATCHING_PARAMETER"]
+bucket_name = config["BUCKET_NAME"]
 
 # ---------------------------------------------------------------------------------
 
@@ -56,14 +58,12 @@ def prepare_hps(hps):
         remove_punctuation(add1).lower().strip()
         + " "
         + remove_punctuation(add2).lower().strip()
-        for add1, add2 in zip(hps["address_1"].fillna(""), hps["address_2"].fillna(""))
+        for add1, add2 in zip(hps["address_1"], hps["address_2"])
     ]
 
     hps["numeric_tokens"] = [
         extract_token_set(address, postcode, max_token_length)
-        for address, postcode in zip(
-            hps["standardised_address"].fillna(""), hps["postcode"].fillna("")
-        )
+        for address, postcode in zip(hps["standardised_address"], hps["postcode"])
     ]
 
     return hps
@@ -218,25 +218,32 @@ def join_prepared_mcs_epc_data(
 
     print("Joining the data...")
     merged = (
-        hps.reset_index()
+        hps.reset_index().drop(
+            columns=["standardised_postcode", "standardised_address", "numeric_tokens"]
+        )
         # Join MCS records to the index-matching df on MCS index
         .merge(top_matches, how="left", left_on="index", right_on="level_0")
         # Then join this merged df to EPC records on EPC index
-        .merge(epcs.reset_index(), how="left", left_on="level_1", right_on="index")
+        .merge(
+            epcs.reset_index().drop(
+                columns=[
+                    "ADDRESS1",
+                    "ADDRESS2",
+                    "POSTTOWN",
+                    "POSTCODE",
+                    "standardised_postcode",
+                    "numeric_tokens",
+                ],
+                errors="ignore",
+            ),
+            how="left",
+            left_on="level_1",
+            right_on="index",
+        )
         # Drop any duplicated or unnecessary columns
         .drop(
             columns=[
-                "standardised_postcode_x",
-                "standardised_address_x",
-                "numeric_tokens_x",
-                "ADDRESS1",
-                "ADDRESS2",
-                "POSTTOWN",
-                "POSTCODE",
                 "index_y",
-                "postcode_y",
-                "standardised_postcode_y",
-                "numeric_tokens_y",
                 "level_0",
             ],
             errors="ignore",
@@ -251,9 +258,9 @@ def join_prepared_mcs_epc_data(
     )
 
     if drop_epc_address:
-        merged = merged.drop(columns="standardised_address_y")
+        merged = merged.drop(columns="standardised_address")
     else:
-        merged = merged.rename(columns={"standardised_address_y": "epc_address"})
+        merged = merged.rename(columns={"standardised_address": "epc_address"})
 
     if verbose:
 
@@ -295,7 +302,15 @@ def join_mcs_epc_data(
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        epcs = load_preprocessed_epc_data(version=epc_version, low_memory=True)
+        # TODO: replace with line that loads most recent full EPC data
+        epcs = load_preprocessed_epc_data(
+            data_path="../ASF_data", version=epc_version, usecols=None
+        )
+        # epcs = load_s3_data(
+        #     bucket_name,
+        #     "outputs/EPC/EPC_GB_preprocessed_and_deduplicated_sample_prox.csv",
+        #     usecols=None,
+        # )
 
     prepared_hps = prepare_hps(hps)
     prepared_epcs = prepare_epcs(epcs)
@@ -361,6 +376,18 @@ def select_most_relevant_epc(joined_df):
     return filtered_data
 
 
+def main():
+
+    joined_df = join_mcs_epc_data()
+    most_relevant_joined_df = select_most_relevant_epc(joined_df)
+
+    return most_relevant_joined_df
+
+
+if __name__ == "__main__":
+
+    main()
+
 #### For testing purposes:
 
 # import pandas as pd
@@ -382,4 +409,4 @@ def select_most_relevant_epc(joined_df):
 # prepared_hps = prepare_hps(test_mcs)
 # prepared_epcs = prepare_epcs(test_epc)
 
-# join_mcs_epc_data(hps=test_mcs, epcs=test_epc, all_records=False)
+# join_mcs_epc_data(hps=test_mcs, epcs=test_epc, all_records=True)

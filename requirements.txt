@@ -17,3 +17,5 @@ pandera
 pydrive2
 gdown
 h3
+s3fs
+fsspec

@@ -1,15 +1,16 @@
-# File: heat_pump_adoption_modelling/pipeline/supervised_model/utils/kepler.py
+# File: asf_core_data/utils/visualisation/kepler.py
 """
-Generate Kepler maps for supervised model outputs.
+Handle Kepler map configs and save maps.
 """
 
 # ----------------------------------------------------------------------------------
 
-
 import yaml
-from asf_core_data import get_yaml_config, Path, PROJECT_DIR
+
+from asf_core_data import Path
 from asf_core_data.config import base_config
 
+# ----------------------------------------------------------------------------------
 
 # Load config file
 KEPLER_PATH = base_config.KEPLER_OUTPUT
@@ -18,15 +19,14 @@ KEPLER_PATH = base_config.KEPLER_OUTPUT
 def get_config(filename, data_path=".", rel_path=KEPLER_PATH):
     """Return Kepler config in yaml format.
 
-    Parameters
-    ----------
-    path: str
-        Path to config files.
+    Args:
+        filename (str): Config filename.
+        data_path (str/Path, optional):  Path to config files. Defaults to ".".
+        rel_path (str/Path, optional): Relative path to Kepler configs. Defaults to KEPLER_PATH.
 
-    Return
-    ---------
-    config: str
-        Return Kepler configuration content."""
+    Returns:
+        config (str): Kepler configuration content.
+    """
 
     config_path = Path(data_path) / rel_path / "configs" / filename
 
@@ -40,15 +40,12 @@ def get_config(filename, data_path=".", rel_path=KEPLER_PATH):
 def save_config(map, filename, data_path=".", rel_path=KEPLER_PATH):
     """Save Kepler map configruations.
 
-    Parameters
-    ----------
-    map: Kepler.map
-        Kepler map after modifications.
-
-    config_path: str
-        Path to config files.
-
-    Return: None"""
+    Args:
+        map (Kepler.map):  Kepler map after modifications.
+        filename (str): Config filename.
+        data_path (str/Path, optional):  Path to config files. Defaults to ".".
+        rel_path (str/Path, optional): Relative path to Kepler configs. Defaults to KEPLER_PATH.
+    """
 
     config_path = Path(data_path) / rel_path / "configs" / filename
 
@@ -59,15 +56,12 @@ def save_config(map, filename, data_path=".", rel_path=KEPLER_PATH):
 def save_map(map, filename, data_path=".", rel_path=KEPLER_PATH):
     """Save Kepler map as HTML.
 
-    Parameters
-    ----------
-    map: Kepler.map
-        Kepler map after modifications.
-
-    config_path: str
-        Path to config files.
-
-    Return: None"""
+    Args:
+        map (Kepler.map): Kepler map after modifications.
+        filename (str): Map filename.
+        data_path (str/Path, optional): Path to config files. Defaults to ".".
+        rel_path (str/Path, optional):  Relative path to Kepler maps. Defaults to KEPLER_PATH.
+    """
 
     map_path = Path(data_path) / rel_path / "maps" / filename
     map.save_to_html(file_name=map_path)

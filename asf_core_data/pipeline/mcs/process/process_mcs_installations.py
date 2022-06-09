@@ -15,7 +15,7 @@ MAX_COST = config["MCS_MAX_COST"]
 CLUSTER_TIME_INTERVAL = config["MCS_CLUSTER_TIME_INTERVAL"]
 
 
-def add_columns(hps):
+def add_hp_features(hps):
     """Adds product_id, product_name, manufacturer, flow_temp, scop,
     rhi and year columns to HP installation records.
 
@@ -90,6 +90,8 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
         DataFrame: DataFrame with added 'cluster' column.
     """
 
+    # Compute difference between consecutive installations within each postcode
+    # (both backwards and forwards - otherwise we'd miss the first/last in each cluster)
     hps["diff_bwd"] = (
         hps.sort_values(["postcode", "commission_date"])
         .groupby("postcode")["commission_date"]
@@ -101,6 +103,7 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
         .diff(periods=-1)
     )
 
+    # Flag as cluster if within time_interval days of another installation
     hps["cluster"] = False
     hps["cluster"].loc[
         (hps["diff_bwd"] <= dt.timedelta(days=time_interval))
@@ -126,11 +129,11 @@ def get_processed_installations_data(refresh=True):
 
     installations_data = get_raw_installations_data(refresh=refresh)
 
-    installations_data = add_columns(installations_data)
+    installations_data = add_hp_features(installations_data)
     installations_data = mask_outliers(installations_data)
     installations_data = identify_clusters(installations_data)
-    installations_data["installer_name"] = installations_data["installer_name"].apply(
-        clean_company_name
-    )
+    # installations_data["installer_name"] = installations_data["installer_name"].apply(
+    #     clean_company_name
+    # )
 
     return installations_data

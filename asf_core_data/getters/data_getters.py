@@ -1,14 +1,3 @@
-# %%
-# %matplotlib inline
-
-# %% [markdown]
-"""
-script to get and save data from s3 bucket and from files.
-"""
-# %% [markdown]
-#
-
-# %%
 import boto3
 import os
 from fnmatch import fnmatch

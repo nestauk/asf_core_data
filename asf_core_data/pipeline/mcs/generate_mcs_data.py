@@ -228,8 +228,6 @@ def get_mcs_installations(epc_version="none", refresh=False):
 
     return mcs_installations
 
-
-# %%
 def generate_and_save_mcs():
     """Concatenates, generates and saves the different versions of the MCS-EPC data to S3.
     Different versions are a) just installation data, b) installation data with
