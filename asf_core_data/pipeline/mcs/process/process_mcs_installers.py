@@ -1,3 +1,4 @@
+# %%
 # File: asf_core_data/pipeline/process_mcs_installers.py
 """Processing MCS installer company data.
 
@@ -18,6 +19,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     clean_company_name,
     geocode_postcode,
     match_companies_house,
+    clean_concat_installers,
 )
 
 from asf_core_data import bucket_name, get_yaml_config, _base_config_path
@@ -42,6 +44,12 @@ def preprocess_installer_companies(installer_companies, installations_data, api_
 
     # rename columns
     installer_companies = installer_companies.rename(columns=mcs_companies_dict)
+
+    # make sure they're heat pump companies
+    hp_cols = [col for col in installer_companies.columns if "hps" in col]
+    installer_companies = installer_companies[
+        installer_companies[hp_cols].eq("YES").any(axis=1)
+    ]
 
     # drop unspecified column
     installer_companies = installer_companies[
@@ -101,8 +109,9 @@ def preprocess_installer_companies(installer_companies, installations_data, api_
 
 if __name__ == "__main__":
     # get config file with relevant paramenters
+    # get config file with relevant paramenters
     config_info = get_yaml_config(_base_config_path)
-    installer_company_data_path = config_info["MCS_RAW_INSTALLER_S3_PATH"]
+    installer_company_data_path = config_info["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
     uk_geo_path = config_info["UK_GEO_PATH"]
     cleaned_installations_path = config_info["PREPROC_GEO_MCS_INSTALLATIONS_PATH"]
     cleaned_installer_company_path = config_info["PREPROC_MCS_INSTALLER_COMPANY_PATH"]
@@ -119,11 +128,18 @@ if __name__ == "__main__":
     uk_geo_data = load_s3_data(bucket_name, uk_geo_path)
 
     ## load cleaned installations data
-    mcs_data = get_processed_installations_data()
+    mcs_data = get_processed_installations_data(refresh=True)
+
+    ## preprocess different columns
+    installer_company_data = clean_concat_installers(installer_company_data)
 
     # PREPROCESS INSTALLER COMPANY DATA
     cleaned_installers_data = preprocess_installer_companies(
         installer_company_data, mcs_data, api_key
+    )
+
+    cleaned_installers_data = cleaned_installers_data.drop_duplicates(
+        subset=["address_1", "postcode"]
     )
 
     # geocode data

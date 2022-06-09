@@ -11,6 +11,9 @@ import time
 import re
 import numpy as np
 
+from asf_core_data import bucket_name, config
+from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+
 #######################################################
 
 colnames_dict = {
@@ -65,8 +68,8 @@ mcs_companies_dict = {
     "Biomass": "biomass",
     "Solar Photovoltaics": "solar_pv",
     "Micro CHP": "micro_chp",
-    "SolarAssistedHeatPump": "solar_assisted_hps",
-    "GasAbsorptionHeatPump": "gas_absorption_hps",
+    "Solar Assisted Heat Pump": "solar_assisted_hps",
+    "Gas Absorption Heat Pump": "gas_absorption_hps",
     "Ground/Water Source Heat Pump": "ground_water_hps",
     "Battery Storage": "battery_storage",
     "Eastern Region": "eastern_region",
@@ -105,6 +108,48 @@ def clean_company_name(company_name):
     ]
 
     return " ".join(company_name)
+
+
+def clean_concat_installers(data):
+    """Cleans concatenated installers data by:
+        - dropping duplicate company names;
+        - removing columns with identical values;
+        - merging similar columns.
+
+    Args:
+        data (pd.DataFrame): Concatenated installers data
+
+    Returns:
+        data (pd.DataFrame): Cleaned, concatenated installers data
+
+    """
+
+    keywords_to_merge = [
+        "Air Source",
+        "Exhaust Air",
+        "Assisted",
+        "Absorption",
+        "Ground/Water",
+    ]
+    # deduplicate
+    data = data.drop_duplicates(subset="Company Name")
+    # installation and design is the same; drop columns
+    data = data[[col for col in data.columns if "Design" not in col]]
+    # merge columns iteratively
+    for keyword in keywords_to_merge:
+        hp_types = data[[col for col in data.columns if keyword in col]]
+        data[hp_types.columns[0]] = (
+            hp_types.where(hp_types.ne(0), np.nan)
+            .bfill(axis=1)[hp_types.columns[0]]
+            .fillna(0)
+        )
+        data.drop(columns=hp_types.columns[1], axis=1, inplace=True)
+
+    data.columns = [
+        " ".join(c.split(" ")[:-1]) if "Installation" in c else c for c in data.columns
+    ]
+
+    return data.reset_index(drop=True)
 
 
 def geocode_postcode(data, geodata):
@@ -240,3 +285,19 @@ def extract_token_set(address, postcode, max_token_length):
     valid_token_set = set(valid_tokens)
 
     return valid_token_set
+
+
+if __name__ == "__main__":
+    config_info = config
+    installer_company_data_path = config_info["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
+    uk_geo_path = config_info["UK_GEO_PATH"]
+    cleaned_installations_path = config_info["PREPROC_GEO_MCS_INSTALLATIONS_PATH"]
+    cleaned_installer_company_path = config_info["PREPROC_MCS_INSTALLER_COMPANY_PATH"]
+
+    installer_company_data = load_s3_data(bucket_name, installer_company_data_path)
+    uk_geo_data = load_s3_data(bucket_name, uk_geo_path)
+
+    ## preprocess different columns
+    installer_company_data = clean_concat_installers(
+        installer_company_data
+    ).reset_index(drop=True)

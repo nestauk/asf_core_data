@@ -1,3 +1,10 @@
+MCS_RAW_S3_PATH: "inputs/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_LOCAL_PATH: "/inputs/data/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_INSTALLER_S3_PATH: "inputs/MCS/mcs_installer_information.xlsx"
+MCS_RAW_INSTALLER_CONCAT_S3_PATH: "inputs/MCS/mcs_installers.csv"
+
+LOCAL_NEW_MCS_DATA_DUMP_DIR: "/inputs/data/mcs/"
+S3_NEW_MCS_DATA_DUMP_DIR: "inputs/MCS/latest_raw_data/"
 RAW_DATA_S3_FOLDER: "inputs/MCS/latest_raw_data"
 INSTALLATIONS_RAW_S3_PATH: "inputs/MCS/mcs_installations.csv"
 INSTALLATIONS_RAW_LOCAL_PATH: "/inputs/data/mcs/installations"

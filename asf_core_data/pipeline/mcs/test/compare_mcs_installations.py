@@ -3,41 +3,37 @@
 can provide different old_df, new_df and comp_df s3 directory paths directly when running script.
 defaults to paths in config/base.yaml
 
-python compare_mcs_installations.py --old_df OLD_DF_PATH --new_df NEW_DF_PATH --comp_df COMP_DF_PATH
+python compare_mcs_installations.py --new_installations_df NEW_INSTALLATIONS_PATH --old_installers_df OLD_INSTALLERS_PATH --new_installers_df NEW_INSTALLERS_PATH
 """
 import datacompy
-from numpy import datetime64
-import pandas as pd
 import pandera as pa
 from datetime import datetime
-import time
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
+from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.getters.data_getters import s3, load_s3_data
 import sys
 import argparse
 
 
-config = get_yaml_config(Path(str(PROJECT_DIR) + "/asf_core_data/config/base.yaml"))
+config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
 bucket_name = config["BUCKET_NAME"]
 
 
-def compare_mcs(old_data, new_data):
+def compare_mcs_installers(old_installers_data, new_installers_data):
 
     compare = datacompy.Compare(
-        old_data,
-        new_data,
+        old_installers_data,
+        new_installers_data,
         join_columns=[
-            "Version Number",
-            "Commissioning Date",
-            "Address Line 1",
-            "Postcode",
+            "Company Name",
+            "MCS certificate number",
+            "Add 1",
+            "PCode",
         ],
-        df1_name="Old Data",
-        df2_name="New Data",
+        df1_name="Old Installers Data",
+        df2_name="New Installers Data",
     )
-
     print(compare.report())
 
 
@@ -107,9 +103,13 @@ def within_mcs_installers_check(mcs_installers):
         }
     )
 
-    mcs_installer_comp_data = schema_withchecks.validate(
-        mcs_installers_no_unspecified, lazy=True
-    )
+    try:
+        mcs_installers_no_unspecified = schema_withchecks.validate(
+            mcs_installers_no_unspecified, lazy=True
+        )
+    except pa.errors.SchemaErrors as err:
+        err.failure_cases  # dataframe of schema errors
+        err.data  # invalid dataframe
 
 
 def within_mcs_installations_check(mcs_installations):
@@ -187,9 +187,13 @@ def within_mcs_installations_check(mcs_installations):
         # unique=["Commissioning Date", "Address Line 1", "Address Line 2", "Address Line 3", "Postcode"],
     )
 
-    mcs_installation_comp_data = schema_withchecks.validate(
-        mcs_installations, lazy=True
-    )
+    try:
+        mcs_installation_comp_data = schema_withchecks.validate(
+            mcs_installations, lazy=True
+        )
+    except pa.errors.SchemaErrors as err:
+        err.failure_cases  # dataframe of schema errors
+        err.data  # invalid dataframe
 
 
 if __name__ == "__main__":
@@ -200,45 +204,45 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-old_df",
-        "--old_df",
-        nargs="?",
-        default="inputs/MCS/mcs_heat_pumps_sept_21.xlsx",
-        help="directory of old_installations_df in s3",
-    )
-    parser.add_argument(
-        "-new_df",
-        "--new_df",
+        "-new_installations_df",
+        "--new_installations_df",
         nargs="?",
         default=config["MCS_RAW_S3_PATH"],
         help="directory of new_installations_df in s3",
     )
     parser.add_argument(
-        "-comp_df",
-        "--comp_df",
+        "-old_installers_df",
+        "--old_installers_df",
         nargs="?",
         default=config["MCS_RAW_INSTALLER_S3_PATH"],
-        help="directory of comp_df in s3",
+        help="directory of old_installers_df in s3",
+    )
+
+    parser.add_argument(
+        "-new_installers_df",
+        "--new_installers_df",
+        nargs="?",
+        help="directory of new_installers_df in s3",
     )
 
     args = parser.parse_args()
-    old_installation_data_path = args.old_df
-    new_installation_data_path = args.new_df
-    installers_path = args.comp_df
+    new_installation_data_path = args.new_installations_df
+    old_installers_path = args.old_installers_df
+    new_installers_path = args.new_installers_df
 
-    old_installation_data = load_s3_data(s3, bucket_name, old_installation_data_path)
     new_installation_data = load_s3_data(s3, bucket_name, new_installation_data_path)
-    mcs_installers = load_s3_data(s3, bucket_name, installers_path)
+    old_installers_data = load_s3_data(s3, bucket_name, old_installers_path)
+    new_installers_data = load_s3_data(s3, bucket_name, new_installers_path)
 
     sys.stdout = open(test_output_txt, "w")
 
-    print(f"---- within installer check of {installers_path}----")
-    within_mcs_installers_check(mcs_installers)
+    print(f"---- within installer check of {new_installers_path}----")
+    within_mcs_installers_check(new_installers_data)
 
     print(f"---- within installation check of {new_installation_data_path}----")
     within_mcs_installations_check(new_installation_data)
 
     print(
-        f"---- between installations check of {old_installation_data_path} and {new_installation_data_path}----"
+        f"---- between installations check of {old_installers_path} and {new_installers_path}----"
     )
-    compare_mcs(old_installation_data, new_installation_data)
+    compare_mcs_installers(old_installers_data, new_installers_data)
