@@ -9,9 +9,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.13.8
 #   kernelspec:
-#     display_name: heat_pump_adoption_modelling
+#     display_name: core_package_testing
 #     language: python
-#     name: heat_pump_adoption_modelling
+#     name: core_package_testing
 # ---
 
 # %% [markdown]

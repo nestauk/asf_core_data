@@ -1,6 +1,18 @@
 MCS_RAW_S3_PATH: "inputs/MCS/mcs_heat_pumps.xlsx"
 MCS_RAW_LOCAL_PATH: "/inputs/data/MCS/mcs_heat_pumps.xlsx"
 
+MCS_RAW_INSTALLER_S3_PATH: "inputs/MCS/mcs_installer_information.xlsx"
+MCS_RAW_INSTALLER_CONCAT_S3_PATH: "inputs/MCS/mcs_installers.csv"
+LOCAL_NEW_MCS_DATA_DUMP_DIR: "/inputs/data/mcs/"
+S3_NEW_MCS_DATA_DUMP_DIR: "inputs/MCS/latest_raw_data/"
+RAW_DATA_S3_FOLDER: "inputs/MCS/latest_raw_data"
+INSTALLATIONS_RAW_S3_PATH: "inputs/MCS/mcs_installations.csv"
+INSTALLATIONS_RAW_LOCAL_PATH: "/inputs/data/mcs/installations"
+MCS_RAW_INSTALLER_S3_PATH: "inputs/mcs/mcs_installer_information.xlsx"
+PREPROC_GEO_MCS_INSTALLATIONS_PATH: "/outputs/mcs/cleaned_geocoded_mcs_installations.csv"
+PREPROC_MCS_INSTALLER_COMPANY_PATH: "/outputs/mcs/cleaned_geocoded_mcs_installer_companies.csv"
+
+
 CURRENT_YEAR: 2021
 BATCH: "Q4_2021"
 
@@ -23,6 +35,8 @@ RAW_SCOTLAND_DATA_ZIP: "/inputs/data/EPC/raw_data/Scotland/D_EPC_data.zip"
 
 RAW_ENG_WALES_DATA_PATH: "/inputs/data/EPC/raw_data/England_Wales/"
 RAW_SCOTLAND_DATA_PATH: "/inputs/data/EPC/raw_data/Scotland/"
+
+UK_GEO_PATH: "inputs/supplementary_data/ukpostcodes_to_coordindates.csv"
 
 IMD_ENGLAND_PATH: "/inputs/data/utils/IMD/England_IMD.csv"
 IMD_WALES_PATH: "/inputs/data/utils/IMD/Wales_IMD.csv"
@@ -139,6 +153,27 @@ EPC_PREPROC_FEAT_SELECTION:
     "UPRN",
   ]
 
+MCS_MAX_COST: 200000
+MCS_MAX_CAPACITY: 45
+MCS_CLUSTER_TIME_INTERVAL: 31
+MCS_EPC_ADDRESS_FIELDS: ["ADDRESS1", "ADDRESS2", "POSTTOWN", "POSTCODE"]
+MCS_EPC_CHARACTERISTIC_FIELDS:
+  [
+    "TOTAL_FLOOR_AREA",
+    "CONSTRUCTION_AGE_BAND",
+    "BUILT_FORM",
+    "PROPERTY_TYPE",
+    "BUILDING_REFERENCE_NUMBER",
+    "INSPECTION_DATE",
+    "FLOOR_ENERGY_EFF",
+    "WALLS_ENERGY_EFF",
+    "NUMBER_HABITABLE_ROOMS",
+    "HP_INSTALLED",
+    "TENURE",
+    "CURRENT_ENERGY_RATING",
+    "LOCAL_AUTHORITY_LABEL",
+  ]
+
 # dtypes:
 #   { "LMK_KEY": str,
 #       "ADDRESS1": str,
@@ -243,12 +278,19 @@ EPC_PREPROC_FEAT_SELECTION:
 #     "DIFF_POT_ENERGY_RATING": float,
 #   }
 
+BUCKET_NAME: "asf-core-data"
 MCS_HP_PATH: "/inputs/MCS_data/mcs_heat_pumps.xlsx"
 MCS_DOMESTIC_HP_PATH: "/outputs/mcs_domestic_hps.csv"
+MCS_PROCESSED_PATH: "/outputs/data/mcs_processed.csv"
 INFLATION_PATH: "/inputs/MCS_data/inflation.csv"
 MCS_EPC_MATCHING_PARAMETER: 0.7
 MCS_EPC_MERGED_PATH: "/outputs/mcs_epc.csv"
 MCS_EPC_MAX_TOKEN_LENGTH: 8
+
+MCS_INSTALLATIONS_PATH: "/outputs/MCS/mcs_installations_{}.csv"
+MCS_INSTALLATIONS_EPC_FULL_PATH: "/outputs/MCS/mcs_installations_epc_full_{}.csv"
+MCS_INSTALLATIONS_EPC_NEWEST_PATH: "/outputs/MCS/mcs_installations_epc_newest_{}.csv"
+MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH: "/outputs/MCS/mcs_installations_epc_most_relevant_{}.csv"
 
 parse_dates:
   ["INSPECTION_DATE", "LODGEMENT_DATE", "HP_INSTALL_DATE", "FIRST_HP_MENTION"]

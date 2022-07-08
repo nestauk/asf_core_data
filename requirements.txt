@@ -10,6 +10,12 @@ typer
 sh
 openpyxl
 boto3
+os
+recordlinkage
+requests
+pandera
+pydrive2
+gdown
 h3
 s3fs
 fsspec

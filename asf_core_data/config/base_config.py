@@ -421,6 +421,7 @@ dtypes_prepr = {
     "MAIN_HEATING_CATEGORY": str,
 }
 
+
 dtypes_recom = {
     "LMK_KEY": str,
     "IMPROVEMENT_ITEM": str,
@@ -430,7 +431,6 @@ dtypes_recom = {
     "IMPROVEMENT_ID_TEXT": str,
     "INDICATIVE_COST": str,
 }
-
 
 MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
