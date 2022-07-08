@@ -22,7 +22,7 @@ For example:
 ...
 {"FEATURE_TO_CLEAN"  :  {'undesired value 1":"desired value A",
                          'undesired value 2":"desired value A",
-                         'undesired value 3":"desired valye B"}
+                         'undesired value 3":"desired value B"}
 }
 
 features_to_standardise = [...,..., "FEATURE_TO_CLEAN"]
@@ -30,7 +30,7 @@ features_to_standardise = [...,..., "FEATURE_TO_CLEAN"]
 ---
 B) Custom function for standardising and cleaning features
 
-If a simple dict mapping is not sufficient, e.g. because you need to apply regular expression,
+If a simple dict mapping is not sufficient, e.g. because you need to apply regular expressions,
 create a custom function in data_cleaning.py and name it clean_FEATURE_TO_CLEAN().
 
 The function can either take B1) a single value or B2) the entire dataframe as input.
@@ -61,7 +61,7 @@ cap_value_dict = {
 
 E) Any other way of cleaning data
 
-Make sure it doesn't disrupt the current pipeline and feel free to add these guidelines here.
+Make sure it doesn't disrupt the current pipeline and feel free to add to these guidelines here.
 
 """
 # ---------------------------------------------------------------------------------

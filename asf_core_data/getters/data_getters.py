@@ -12,14 +12,31 @@ import json
 # %%
 s3 = boto3.resource("s3")
 logger = logging.getLogger(__name__)
+# get config file with relevant paramenters
+config_info = get_yaml_config(_base_config_path)
 
 
-def load_s3_data(bucket_name, file_name):
+def get_s3_dir_files(s3, bucket_name, dir_name):
     """
-    Load data from S3 location.
+    get a list of all files in bucket directory.
     s3: S3 boto3 resource
     bucket_name: The S3 bucket name
+    dir_name: bucket directory name
+    """
+    dir_files = []
+    my_bucket = s3.Bucket(bucket_name)
+    for object_summary in my_bucket.objects.filter(Prefix=dir_name):
+        dir_files.append(object_summary.key)
+
+    return dir_files
+
+
+def load_s3_data(bucket_name, file_name, usecols=None):
+    """
+    Load data from S3 location.
+    bucket_name: The S3 bucket name
     file_name: S3 key to load
+    usecols: Columns of data to use. Defaults to None, loading all columns.
     """
     if fnmatch(file_name, "*.xlsx"):
         data = pd.read_excel(
@@ -30,9 +47,20 @@ def load_s3_data(bucket_name, file_name):
         else:
             return data[list(data.keys())[0]]
     elif fnmatch(file_name, "*.csv"):
-        return pd.read_csv(os.path.join("s3://" + bucket_name, file_name))
+        return pd.read_csv(
+            os.path.join("s3://" + bucket_name, file_name),
+            encoding="latin-1",
+            usecols=usecols,
+        )
+    elif fnmatch(file_name, "*.pickle") or fnmatch(file_name, "*.pkl"):
+        obj = s3.Object(bucket_name, file_name)
+        file = obj.get()["Body"].read()
+        return pickle.loads(file)
+
     else:
-        print('Function not supported for file type other than "*.xlsx" and "*.csv"')
+        print(
+            'Function not supported for file type other than "*.xlsx", "*.pickle", and "*.csv"'
+        )
 
 
 def save_to_s3(s3, bucket_name, output_var, output_file_path):
@@ -57,18 +85,3 @@ def save_to_s3(s3, bucket_name, output_var, output_file_path):
         print(
             'Function not supported for file type other than "*.pkl", "*.json" and "*.csv"'
         )
-
-
-def get_s3_dir_files(s3, bucket_name, dir_name):
-    """
-    get a list of all files in bucket directory.
-    s3: S3 boto3 resource
-    bucket_name: The S3 bucket name
-    dir_name: bucket directory name
-    """
-    dir_files = []
-    my_bucket = s3.Bucket(bucket_name)
-    for object_summary in my_bucket.objects.filter(Prefix=dir_name):
-        dir_files.append(object_summary.key)
-
-    return dir_files

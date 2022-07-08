@@ -38,7 +38,7 @@ from asf_core_data import Path
 # %%
 # Enter the path to your local data dir
 # Adjust data dir!!
-LOCAL_DATA_DIR = "/Users/chris.williamson/ASF_data"
+LOCAL_DATA_DIR = "/Users/juliasuter/Documents/ASF_data"
 
 # %%
 data_batches.check_for_newest_batch(data_path=LOCAL_DATA_DIR, verbose=True)
@@ -54,12 +54,12 @@ print("Available batches:", data_batches.get_all_batch_names(data_path=LOCAL_DAT
 print("Newest batch:", data_batches.get_most_recent_batch(data_path=LOCAL_DATA_DIR))
 
 # %%
-england_epc = epc_data.load_england_wales_data(
-    data_path=LOCAL_DATA_DIR, subset="England", batch="2021_Q2_0721"
+wales_epc = epc_data.load_england_wales_data(
+    data_path=LOCAL_DATA_DIR, subset="Wales", batch="2021_Q2_0721"
 )
 print(
     "Batch 2021_Q2_0721 includes {} samples and {} features.".format(
-        england_epc.shape[0], england_epc.shape[1]
+        wales_epc.shape[0], wales_epc.shape[1]
     )
 )
 
@@ -101,13 +101,10 @@ wales_epc = preprocess_epc_data.load_and_preprocess_epc_data(
 # no need to download it just for testing this line of code!
 # You can also simply re-name 'EPC_Wales_preprocessed_and_deduplicated' which was created in the previous cell
 
-eng_epc = epc_data.load_preprocessed_epc_data(
-    data_path=LOCAL_DATA_DIR,
-    subset="GB",
-    batch="newest",
-    usecols=["ADDRESS1", "POSTCODE", "MAINHEAT_DESCRIPTION", "ENERGY_TARIFF"],
+wales_epc = epc_data.load_preprocessed_epc_data(
+    data_path=LOCAL_DATA_DIR, subset="Wales", batch="newest"
 )
-eng_epc.shape
+wales_epc.shape
 
 # %%
 wales_epc_2015 = epc_data.filter_by_year(wales_epc, 2015, up_to=True)

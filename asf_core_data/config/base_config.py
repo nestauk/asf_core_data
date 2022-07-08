@@ -371,7 +371,7 @@ dtypes_prepr = {
     "LODGEMENT_DATETIME": str,
     # new features
     "COUNTRY": str,
-    "N_ENTRIES": str,
+    "N_ENTRIES": int,
     "HEATING_SYSTEM": str,
     "HEATING_FUEL": str,
     "HP_INSTALLED": bool,
@@ -419,6 +419,17 @@ dtypes_prepr = {
     "WATER_HEATING_DEMAND": float,
     "HEAT_LOSS_CORRIDOR": str,
     "MAIN_HEATING_CATEGORY": str,
+}
+
+
+dtypes_recom = {
+    "LMK_KEY": str,
+    "IMPROVEMENT_ITEM": str,
+    "IMPROVEMENT_SUMMARY_TEXT": str,
+    "IMPROVEMENT_DESCR_TEXT": str,
+    "IMPROVEMENT_ID": str,
+    "IMPROVEMENT_ID_TEXT": str,
+    "INDICATIVE_COST": str,
 }
 
 MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
