@@ -10,7 +10,6 @@ typer
 sh
 openpyxl
 boto3
-os
 recordlinkage
 requests
 pandera

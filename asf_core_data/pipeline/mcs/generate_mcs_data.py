@@ -8,6 +8,12 @@ from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
+
+from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
+    join_mcs_epc_data,
+    select_most_relevant_epc,
+)
+
 from asf_core_data.getters.data_getters import (
     s3,
     load_s3_data,
@@ -23,7 +29,6 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
-# %%
 bucket_name = config["BUCKET_NAME"]
 mcs_installations_path = config["MCS_INSTALLATIONS_PATH"]
 mcs_installations_epc_full_path = config["MCS_INSTALLATIONS_EPC_FULL_PATH"]
@@ -82,7 +87,7 @@ def get_latest_mcs_from_s3():
             installers = load_s3_data(bucket_name, file)
             installer_data.append((file, installers))
 
-    return installer_data, installations_data
+    return installations_data, installer_data
 
 
 def concatenate_save_raw_installations(all_installations_data):
@@ -228,6 +233,7 @@ def get_mcs_installations(epc_version="none", refresh=False):
 
     return mcs_installations
 
+
 def generate_and_save_mcs():
     """Concatenates, generates and saves the different versions of the MCS-EPC data to S3.
     Different versions are a) just installation data, b) installation data with
@@ -248,7 +254,7 @@ def generate_and_save_mcs():
         ]
     ]
 
-    all_installer_data, all_installations_data = get_latest_mcs_from_s3()
+    all_installations_data, all_installer_data = get_latest_mcs_from_s3()
 
     concatenate_save_raw_installations(all_installations_data)
     concatenate_save_raw_installers(all_installer_data)
