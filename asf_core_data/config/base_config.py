@@ -1,7 +1,7 @@
 from asf_core_data import Path
 
 MCS_RAW_S3_PATH = "inputs/MCS/mcs_heat_pumps.xlsx"
-MCS_RAW_LOCAL_PATH = "/inputs/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_LOCAL_PATH = "/inputs/data/mcs/mcs_heat_pumps.xlsx"
 
 CURRENT_YEAR = 2022
 LATEST_BATCH = "Q4_2021_0721"
@@ -540,3 +540,5 @@ PREPROC_MCS_INSTALLER_COMPANY_PATH = (
 
 LOCAL_NEW_MCS_DATA_DUMP_DIR = "/inputs/data/mcs/"
 S3_NEW_MCS_DATA_DUMP_DIR = "inputs/MCS/latest_raw_data/"
+INSTALLATIONS_RAW_S3_PATH = "inputs/MCS/mcs_installations.csv"
+INSTALLATIONS_RAW_LOCAL_PATH = "/inputs/data/mcs/installations"
