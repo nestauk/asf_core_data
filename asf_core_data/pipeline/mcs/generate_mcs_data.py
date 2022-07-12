@@ -1,4 +1,5 @@
-#####################################
+# asf_core_data/pipeline/mcs/generate_mcs_data.py
+# Functions for generating MCS data and saving to S3.
 # %%
 
 from datetime import date
@@ -6,7 +7,7 @@ import pandas as pd
 import warnings
 import re
 import datetime
-from asf_core_data import PROJECT_DIR, get_yaml_config
+
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
@@ -27,21 +28,21 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     colnames_dict,
 )
 
-#####################################
+from asf_core_data.config import base_config
+
 # %%
 
-config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
+bucket_name = base_config.BUCKET_NAME
+mcs_installations_path = base_config.MCS_INSTALLATIONS_PATH
+mcs_installations_epc_full_path = base_config.MCS_INSTALLATIONS_EPC_FULL_PATH
+mcs_installations_epc_newest_path = base_config.MCS_INSTALLATIONS_EPC_NEWEST_PATH
+mcs_installations_epc_most_relevant_path = (
+    base_config.MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH
+)
 
-bucket_name = config["BUCKET_NAME"]
-mcs_installations_path = config["MCS_INSTALLATIONS_PATH"]
-mcs_installations_epc_full_path = config["MCS_INSTALLATIONS_EPC_FULL_PATH"]
-mcs_installations_epc_newest_path = config["MCS_INSTALLATIONS_EPC_NEWEST_PATH"]
-mcs_installations_epc_most_relevant_path = config[
-    "MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH"
-]
-installations_raw_s3_path = config["INSTALLATIONS_RAW_S3_PATH"]
-installers_raw_s3_path = config["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
-raw_data_s3_folder = config["RAW_DATA_S3_FOLDER"]
+installations_raw_s3_path = base_config.INSTALLATIONS_RAW_S3_PATH
+installers_raw_s3_path = base_config.MCS_RAW_INSTALLER_CONCAT_S3_PATH
+raw_data_s3_folder = base_config.RAW_DATA_S3_FOLDER
 
 keyword_to_path_dict = {
     "none": mcs_installations_path,
