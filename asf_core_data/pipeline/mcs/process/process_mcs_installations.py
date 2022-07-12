@@ -7,7 +7,9 @@ import pandas as pd
 import re
 import datetime as dt
 
-from asf_core_data.getters.mcs.get_mcs_installations import get_raw_installations_data
+from asf_core_data.getters.mcs_test.get_mcs_installations import (
+    get_raw_installations_data,
+)
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
 
 from asf_core_data.config import base_config
