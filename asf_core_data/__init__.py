@@ -37,4 +37,5 @@ config = get_yaml_config(_base_config_path)
 
 # useful top-level functions when importing as a package
 from asf_core_data.pipeline.mcs.generate_mcs_data import get_mcs_installations
-from asf_core_data.getters.epc.epc_data import load_preprocessed_epc_data
+
+# from asf_core_data.getters.epc.epc_data import load_preprocessed_epc_data
