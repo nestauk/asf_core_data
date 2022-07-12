@@ -6,12 +6,8 @@ import logging
 import pickle
 import json
 
-from asf_core_data import get_yaml_config, _base_config_path
-
 s3 = boto3.resource("s3")
 logger = logging.getLogger(__name__)
-# get config file with relevant paramenters
-config_info = get_yaml_config(_base_config_path)
 
 
 def get_s3_dir_files(s3, bucket_name, dir_name):

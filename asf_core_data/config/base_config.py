@@ -435,9 +435,7 @@ dtypes_recom = {
 MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
 INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
-MCS_EPC_MATCHING_PARAMETER = 0.7
 MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_epc.csv")
-MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 parse_dates = [
     "INSPECTION_DATE",
@@ -485,3 +483,56 @@ england_wales_only_features = [
     "UPRN_SOURCE",
     "LODGEMENT_DATETIME",
 ]
+
+
+# MCS settings
+
+MCS_HP_PATH = "/inputs/MCS_data/mcs_heat_pumps.xlsx"
+MCS_DOMESTIC_HP_PATH = "/outputs/mcs_domestic_hps.csv"
+MCS_PROCESSED_PATH = "/outputs/data/mcs_processed.csv"
+INFLATION_PATH = "/inputs/MCS_data/inflation.csv"
+MCS_EPC_MATCHING_PARAMETER = 0.7
+MCS_EPC_MERGED_PATH = "/outputs/mcs_epc.csv"
+MCS_EPC_MAX_TOKEN_LENGTH = 8
+
+MCS_MAX_COST = 200000
+MCS_MAX_CAPACITY = 45
+MCS_CLUSTER_TIME_INTERVAL = 31
+MCS_EPC_ADDRESS_FIELDS = ["ADDRESS1", "ADDRESS2", "POSTCODE"]
+MCS_EPC_CHARACTERISTIC_FIELDS = [
+    "LMK_KEY",
+    "ADDRESS1",
+    "ADDRESS2",
+    "POSTCODE",
+    "INSPECTION_DATE",
+    "TRANSACTION_TYPE",
+    "TENURE",
+    "CURRENT_ENERGY_RATING",
+    "POTENTIAL_ENERGY_RATING",
+    "PROPERTY_TYPE",
+    "BUILT_FORM",
+    "NUMBER_HABITABLE_ROOMS",
+    "CONSTRUCTION_AGE_BAND",
+    "TOTAL_FLOOR_AREA",
+    "LIGHTING_ENERGY_EFF",
+    "FLOOR_ENERGY_EFF",
+    "WINDOWS_ENERGY_EFF",
+    "WALLS_ENERGY_EFF",
+    "ROOF_ENERGY_EFF",
+    "MAINHEAT_DESCRIPTION",
+]
+
+MCS_INSTALLATIONS_PATH = "/outputs/MCS/mcs_installations_{}.csv"
+MCS_INSTALLATIONS_EPC_FULL_PATH = "/outputs/MCS/mcs_installations_epc_full_{}.csv"
+MCS_INSTALLATIONS_EPC_NEWEST_PATH = "/outputs/MCS/mcs_installations_epc_newest_{}.csv"
+MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH = (
+    "/outputs/MCS/mcs_installations_epc_most_relevant_{}.csv"
+)
+
+MCS_RAW_INSTALLER_CONCAT_S3_PATH = "inputs/MCS/mcs_installers.csv"
+PREPROC_GEO_MCS_INSTALLATIONS_PATH = (
+    "/outputs/mcs/cleaned_geocoded_mcs_installations.csv"
+)
+PREPROC_MCS_INSTALLER_COMPANY_PATH = (
+    "/outputs/mcs/cleaned_geocoded_mcs_installer_companies.csv"
+)

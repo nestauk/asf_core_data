@@ -1,18 +1,18 @@
 # File: asf_core_data/pipeline/mcs/process/process_mcs_installations.py
 """Processing MCS heat pump installation data."""
 
+# %%
+
 import pandas as pd
 import re
 import datetime as dt
 
-from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.getters.mcs.get_mcs_installations import get_raw_installations_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
 
-config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
+from asf_core_data.config import base_config
 
-MAX_COST = config["MCS_MAX_COST"]
-CLUSTER_TIME_INTERVAL = config["MCS_CLUSTER_TIME_INTERVAL"]
+# %%
 
 
 def add_hp_features(hps):
@@ -51,7 +51,7 @@ def add_hp_features(hps):
     return hps
 
 
-def mask_outliers(hps, max_cost=MAX_COST):
+def mask_outliers(hps, max_cost=base_config.MCS_MAX_COST):
     """Replace 'unreasonable' values in HP installation data with NA.
     'Unreasonable' values are cost values that are 0 or above the max_cost,
     flow_temp values less than or equal to 0, and scop values that are 0.
@@ -76,7 +76,7 @@ def mask_outliers(hps, max_cost=MAX_COST):
     return hps
 
 
-def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
+def identify_clusters(hps, time_interval=base_config.MCS_CLUSTER_TIME_INTERVAL):
     """Label HP records with whether they form part of a 'cluster'
     of installations in the same postcode and around the same time.
     This suggests that these installations were done en masse.
@@ -84,7 +84,7 @@ def identify_clusters(hps, time_interval=CLUSTER_TIME_INTERVAL):
     Args:
         dhps (DataFrame): DataFrame of HP installations with 'postcode' and 'commission_date' columns.
         time_interval (int, optional): Maximum gap between two installations in the same postcode.
-        Defaults to CLUSTER_TIME_INTERVAL.
+        Defaults to base_config.MCS_CLUSTER_TIME_INTERVAL.
 
     Returns:
         DataFrame: DataFrame with added 'cluster' column.

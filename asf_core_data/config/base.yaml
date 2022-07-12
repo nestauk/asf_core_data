@@ -1,7 +1,6 @@
 MCS_RAW_S3_PATH: "inputs/MCS/mcs_heat_pumps.xlsx"
 MCS_RAW_LOCAL_PATH: "/inputs/data/MCS/mcs_heat_pumps.xlsx"
 
-MCS_RAW_INSTALLER_S3_PATH: "inputs/MCS/mcs_installer_information.xlsx"
 MCS_RAW_INSTALLER_CONCAT_S3_PATH: "inputs/MCS/mcs_installers.csv"
 LOCAL_NEW_MCS_DATA_DUMP_DIR: "/inputs/data/mcs/"
 S3_NEW_MCS_DATA_DUMP_DIR: "inputs/MCS/latest_raw_data/"
@@ -12,8 +11,7 @@ MCS_RAW_INSTALLER_S3_PATH: "inputs/mcs/mcs_installer_information.xlsx"
 PREPROC_GEO_MCS_INSTALLATIONS_PATH: "/outputs/mcs/cleaned_geocoded_mcs_installations.csv"
 PREPROC_MCS_INSTALLER_COMPANY_PATH: "/outputs/mcs/cleaned_geocoded_mcs_installer_companies.csv"
 
-
-CURRENT_YEAR: 2021
+CURRENT_YEAR: 2022
 BATCH: "Q4_2021"
 
 EST_CLEANSED_EPC_DATA_DEDUPL_PATH: "/inputs/EPC_data/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"

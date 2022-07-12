@@ -1,4 +1,6 @@
 #####################################
+# %%
+
 from datetime import date
 import pandas as pd
 import warnings
@@ -26,6 +28,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
 )
 
 #####################################
+# %%
 
 config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
 
@@ -214,9 +217,11 @@ def get_mcs_installations(epc_version="none", refresh=False):
         file_list = [
             ("/" + object.key) for object in bucket.objects.filter(Prefix=folder)
         ]  # bit of a hack
-        file_prefix = keyword_to_path_dict[epc_version]
+        file_prefix = keyword_to_path_dict[epc_version].split("{")[0]
         matches = [
-            filename for filename in file_list if filename.startswith(file_prefix)
+            filename
+            for filename in file_list
+            if (re.split("[0-9]", filename)[0] == file_prefix)
         ]
         if len(matches) > 0:
             latest_version = max(matches)
@@ -257,7 +262,7 @@ def generate_and_save_mcs():
     all_installations_data, all_installer_data = get_latest_mcs_from_s3()
 
     concatenate_save_raw_installations(all_installations_data)
-    concatenate_save_raw_installers(all_installer_data)
+    # concatenate_save_raw_installers(all_installer_data)
 
     processed_mcs = get_processed_installations_data()
     save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
@@ -268,16 +273,20 @@ def generate_and_save_mcs():
     print("Saved in S3: " + full_epc_path)
 
     # avoid completely regenerating the joined df by just filtering it
-    newest_mcs_epc = fully_joined_mcs_epc.loc[
-        fully_joined_mcs_epc.groupby("original_mcs_index")["INSPECTION_DATE"].idxmax()
-    ]
-    save_to_s3(s3, bucket_name, newest_mcs_epc, newest_epc_path)
-    print("Saved in S3: " + newest_epc_path)
+    # make sure INSPECTION_DATE column is a date
+    # fully_joined_mcs_epc["INSPECTION_DATE"] = pd.to_datetime(fully_joined_mcs_epc["INSPECTION_DATE"])
+    # newest_mcs_epc = fully_joined_mcs_epc.loc[
+    #     fully_joined_mcs_epc.groupby("original_mcs_index")["INSPECTION_DATE"].idxmax()
+    # ]
+    # save_to_s3(s3, bucket_name, newest_mcs_epc, newest_epc_path)
+    # print("Saved in S3: " + newest_epc_path)
 
     most_relevant_mcs_epc = select_most_relevant_epc(fully_joined_mcs_epc)
     save_to_s3(s3, bucket_name, most_relevant_mcs_epc, most_relevant_epc_path)
-    print("Saved in S3: " + most_relevant_mcs_epc)
+    print("Saved in S3: " + most_relevant_epc_path)
 
+
+# %%
 
 if __name__ == "__main__":
     generate_and_save_mcs()

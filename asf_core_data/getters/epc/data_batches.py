@@ -9,6 +9,7 @@ from asf_core_data.config import base_config
 
 import warnings
 import boto3
+import os
 
 # ---------------------------------------------------------------------------------
 
@@ -41,8 +42,13 @@ def get_all_batch_names(data_path="S3", rel_path=base_config.RAW_DATA_PATH):
 
     else:
 
-        data_path = get_batch_path(data_path / rel_path.parent, data_path=data_path)
-        batches = [p.name for p in data_path.glob("*/") if not p.name.startswith(".")]
+        data_path = get_batch_path(
+            data_path / Path(rel_path).parent, data_path=data_path
+        )
+        batches = [
+            p.name for p in Path(data_path).glob("*/") if not p.name.startswith(".")
+        ]
+        # batches = os.listdir(Path(data_path) / Path(rel_path))
 
     return batches
 
