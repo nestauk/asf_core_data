@@ -529,6 +529,7 @@ MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH = (
     "/outputs/MCS/mcs_installations_epc_most_relevant_{}.csv"
 )
 
+MCS_RAW_INSTALLER_S3_PATH = "inputs/mcs/mcs_installer_information.xlsx"
 MCS_RAW_INSTALLER_CONCAT_S3_PATH = "inputs/MCS/mcs_installers.csv"
 PREPROC_GEO_MCS_INSTALLATIONS_PATH = (
     "/outputs/mcs/cleaned_geocoded_mcs_installations.csv"
@@ -536,3 +537,6 @@ PREPROC_GEO_MCS_INSTALLATIONS_PATH = (
 PREPROC_MCS_INSTALLER_COMPANY_PATH = (
     "/outputs/mcs/cleaned_geocoded_mcs_installer_companies.csv"
 )
+
+LOCAL_NEW_MCS_DATA_DUMP_DIR = "/inputs/data/mcs/"
+S3_NEW_MCS_DATA_DUMP_DIR = "inputs/MCS/latest_raw_data/"

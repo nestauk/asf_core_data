@@ -1,7 +1,7 @@
 """to run script,
 
 can provide different old_df, new_df and comp_df s3 directory paths directly when running script.
-defaults to paths in config/base.yaml
+defaults to paths in base_config
 
 python compare_mcs_installations.py --new_installations_df NEW_INSTALLATIONS_PATH --old_installers_df OLD_INSTALLERS_PATH --new_installers_df NEW_INSTALLERS_PATH
 """
@@ -9,15 +9,13 @@ import datacompy
 import pandera as pa
 from datetime import datetime
 
-from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.getters.data_getters import s3, load_s3_data
 import sys
 import argparse
 
+from asf_core_data.config import base_config
 
-config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
-
-bucket_name = config["BUCKET_NAME"]
+bucket_name = base_config.BUCKET_NAME
 
 
 def compare_mcs_installers(old_installers_data, new_installers_data):
@@ -197,24 +195,21 @@ def within_mcs_installations_check(mcs_installations):
 
 
 if __name__ == "__main__":
-    test_output_txt = (
-        str(PROJECT_DIR)
-        + f'/asf_core_data/pipeline/mcs/test/mcs_test_{datetime.now().strftime("%Y%m%d-%H%M%S")}.txt'
-    )
+    test_output_txt = f'mcs_test_{datetime.now().strftime("%Y%m%d-%H%M%S")}.txt'
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-new_installations_df",
         "--new_installations_df",
         nargs="?",
-        default=config["MCS_RAW_S3_PATH"],
+        default=base_config.MCS_RAW_S3_PATH,
         help="directory of new_installations_df in s3",
     )
     parser.add_argument(
         "-old_installers_df",
         "--old_installers_df",
         nargs="?",
-        default=config["MCS_RAW_INSTALLER_S3_PATH"],
+        default=base_config.MCS_RAW_INSTALLER_S3_PATH,
         help="directory of old_installers_df in s3",
     )
 

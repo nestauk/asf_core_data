@@ -10,6 +10,7 @@ Overall process is as follows:
 - Of the remaining matches, take the ones with highest score
 - Join datasets using this matching
 """
+
 # %%
 
 import recordlinkage as rl
@@ -27,7 +28,6 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
 
 from asf_core_data.config import base_config
 
-# ---------------------------------------------------------------------------------
 # %%
 
 #### PREPROCESSING
@@ -99,7 +99,6 @@ def prepare_epcs(epcs):
 
 
 # ---------------------------------------------------------------------------------
-
 
 #### JOINING
 
