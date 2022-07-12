@@ -212,9 +212,13 @@ The MCS datasets contain information on MCS-certified heat pump **installations*
 
 ### How to use <a name="instructions"></a>
 
-To pull installation data into a project, first install this repo as a package then run
+To pull installation data into a project, first install this repo as a package by adding this line to your project's `requirements.txt`, substituting `$BRANCH` for your desired branch name:
 
-    from asf_core_data.asf_core_data.pipeline.mcs.generate_mcs_data import get_mcs_installations
+    asf_core_data@ git+ssh://git@github.com/nestauk/asf_core_data.git@$BRANCH
+
+The MCS data can then be pulled in using:
+
+    from asf_core_data import get_mcs_installations
 
     installation_data = get_mcs_installations(...)
 
