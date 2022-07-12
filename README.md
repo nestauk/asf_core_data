@@ -1,6 +1,6 @@
 # ASF Core Data <a name="core_data_overview"></a>
 
-Last updated: March 31 2022 by Chris Williamson
+Last updated: July 12 2022 by Chris Williamson
 
 ## Overview <a name="overview"></a>
 
@@ -221,6 +221,14 @@ The MCS data can then be pulled in using:
     from asf_core_data import get_mcs_installations
 
     installation_data = get_mcs_installations(...)
+
+To update the data on the `asf-core-data` S3 bucket, run:
+
+    from asf_core_data import generate_and_save_mcs
+
+    generate_and_save_mcs()
+
+This requires processed EPC data to be saved locally as set out by the requirements in the section above.
 
 ### Installations <a name="mcs_installations"></a>
 
