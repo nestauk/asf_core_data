@@ -216,7 +216,7 @@ To pull installation data into a project, first install this repo as a package b
 
     asf_core_data@ git+ssh://git@github.com/nestauk/asf_core_data.git@$BRANCH
 
-The MCS data can then be pulled in using:
+The data can then be pulled in using:
 
     from asf_core_data import get_mcs_installations
 
@@ -229,6 +229,10 @@ To update the data on the `asf-core-data` S3 bucket, run:
     generate_and_save_mcs()
 
 This requires processed EPC data to be saved locally as set out by the requirements in the section above.
+
+To produce a new processed version of installer data on S3, run `generate_and_save_mcs` as above, then using a Companies House API key run
+
+    python asf_core_data/pipeline/mcs/process/process_mcs_installers.py -key [API KEY]
 
 ### Installations <a name="mcs_installations"></a>
 

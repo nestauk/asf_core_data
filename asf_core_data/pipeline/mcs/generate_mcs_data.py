@@ -263,7 +263,7 @@ def generate_and_save_mcs():
     all_installations_data, all_installer_data = get_latest_mcs_from_s3()
 
     concatenate_save_raw_installations(all_installations_data)
-    # concatenate_save_raw_installers(all_installer_data)
+    concatenate_save_raw_installers(all_installer_data)
 
     processed_mcs = get_processed_installations_data()
     save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
