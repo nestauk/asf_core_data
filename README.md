@@ -230,6 +230,12 @@ To update the data on the `asf-core-data` S3 bucket, run:
 
 This requires processed EPC data to be saved locally as set out by the requirements in the section above.
 
+To run checks on raw installations data:
+
+    from asf_core_data import test_installation_data
+
+    test_installation_data(filename)
+
 To produce a new processed version of installer data on S3, run `generate_and_save_mcs` as above, then using a Companies House API key run
 
     python asf_core_data/pipeline/mcs/process/process_mcs_installers.py -key [API KEY]

@@ -5,6 +5,9 @@ defaults to paths in base_config
 
 python compare_mcs_installations.py --new_installations_df NEW_INSTALLATIONS_PATH --old_installers_df OLD_INSTALLERS_PATH --new_installers_df NEW_INSTALLERS_PATH
 """
+
+# %%
+
 import datacompy
 import pandera as pa
 from datetime import datetime
@@ -14,6 +17,8 @@ import sys
 import argparse
 
 from asf_core_data.config import base_config
+
+# %%
 
 bucket_name = base_config.BUCKET_NAME
 
@@ -136,7 +141,7 @@ def within_mcs_installations_check(mcs_installations):
                 ],
             ),
             "Version Number": pa.Column(int),
-            "Postcode": pa.Column(checks=pa.Check.str_length(5, 7), nullable=True),
+            "Postcode": pa.Column(checks=pa.Check.str_length(5, 8), nullable=True),
             "Technology Type": pa.Column(
                 checks=pa.Check.isin(
                     [
@@ -186,13 +191,22 @@ def within_mcs_installations_check(mcs_installations):
     )
 
     try:
-        mcs_installation_comp_data = schema_withchecks.validate(
-            mcs_installations, lazy=True
-        )
+        schema_withchecks.validate(mcs_installations, lazy=True)
     except pa.errors.SchemaErrors as err:
-        err.failure_cases  # dataframe of schema errors
-        err.data  # invalid dataframe
+        print(err.failure_cases)  # dataframe of schema errors
+        # print(err.data)  # invalid dataframe
 
+
+def test_installation_data(filename):
+
+    raw_installation_data = load_s3_data(
+        "asf-core-data", "inputs/MCS/latest_raw_data/" + filename
+    )
+
+    return within_mcs_installations_check(raw_installation_data)
+
+
+# %%
 
 if __name__ == "__main__":
     test_output_txt = f'mcs_test_{datetime.now().strftime("%Y%m%d-%H%M%S")}.txt'
