@@ -1,9 +1,9 @@
-# File: asf_core_data/pipeline/process_mcs_utils.py
+# File: asf_core_data/pipeline/mcs/process/process_mcs_utils.py
 """
 functions used to preprocess mcs data across installations and
 installer company data.
 """
-#######################################################
+# %%
 
 import pandas as pd
 import requests
@@ -15,7 +15,7 @@ from asf_core_data.getters.data_getters import load_s3_data
 
 from asf_core_data.config import base_config
 
-#######################################################
+# %%
 
 colnames_dict = {
     "Version Number": "version",
@@ -287,6 +287,8 @@ def extract_token_set(address, postcode, max_token_length):
 
     return valid_token_set
 
+
+# %%
 
 if __name__ == "__main__":
     installer_company_data_path = base_config.MCS_RAW_INSTALLER_CONCAT_S3_PATH
