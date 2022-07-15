@@ -491,7 +491,7 @@ MCS_HP_PATH = "/inputs/MCS_data/mcs_heat_pumps.xlsx"
 MCS_DOMESTIC_HP_PATH = "/outputs/mcs_domestic_hps.csv"
 MCS_PROCESSED_PATH = "/outputs/data/mcs_processed.csv"
 MCS_EPC_MATCHING_PARAMETER = 0.7
-MCS_EPC_MERGED_PATH = "/outputs/mcs_epc.csv"
+MCS_EPC_MERGED_PATH = "/outputs/data/mcs_epc.csv"
 MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 MCS_MAX_COST = 200000
