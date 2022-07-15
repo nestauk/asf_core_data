@@ -203,7 +203,7 @@ def test_installation_data(filename):
         "asf-core-data", "inputs/MCS/latest_raw_data/" + filename
     )
 
-    return within_mcs_installations_check(raw_installation_data)
+    return within_mcs_installations_check(list(raw_installation_data.values())[0])
 
 
 # %%
