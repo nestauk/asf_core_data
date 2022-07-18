@@ -220,13 +220,13 @@ The data can then be pulled in using:
 
     from asf_core_data import get_mcs_installations
 
-    installation_data = get_mcs_installations(...)
+    installation_data = get_mcs_installations()
 
 To update the data on the `asf-core-data` S3 bucket, run:
 
     from asf_core_data import generate_and_save_mcs
 
-    generate_and_save_mcs()
+    generate_and_save_mcs(epc_data_path=...)
 
 This requires processed EPC data to be saved locally as set out by the requirements in the section above.
 

@@ -272,11 +272,17 @@ def join_prepared_mcs_epc_data(
 
 
 def join_mcs_epc_data(
-    hps=None, epcs=None, all_records=True, drop_epc_address=True, verbose=True
+    epc_data_path=base_config.ROOT_DATA_PATH,
+    hps=None,
+    epcs=None,
+    all_records=True,
+    drop_epc_address=True,
+    verbose=True,
 ):
     """Produce joined MCS-EPC dataframe from "unprepared" data.
 
     Args:
+        epc_data_path (string): Path to local top-level EPC data folder.
         hps (Dataframe, optional): MCS installation records.
         If None, records are fetched automatically. Defaults to None.
         epcs (Dataframe, optional): EPC records. If None, records
@@ -300,8 +306,8 @@ def join_mcs_epc_data(
         print("Getting EPC data...")
         # TODO: load from S3 instead
         epcs = load_preprocessed_epc_data(
-            data_path="/Users/chris.williamson/ASF_data",
-            rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
+            data_path=epc_data_path,
+            # rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
             version=epc_version,
             usecols=[
                 "LMK_KEY",
