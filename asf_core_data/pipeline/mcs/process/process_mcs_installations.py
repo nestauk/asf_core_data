@@ -112,6 +112,8 @@ def identify_clusters(hps, time_interval=base_config.MCS_CLUSTER_TIME_INTERVAL):
         | (hps["diff_fwd"] >= dt.timedelta(days=-time_interval))
     ] = True
 
+    hps.drop(columns=["diff_bwd", "diff_fwd"], inplace=True)
+
     return hps
 
 

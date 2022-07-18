@@ -298,7 +298,7 @@ def join_mcs_epc_data(
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        # TODO: replace with line that loads most recent full EPC data
+        # TODO: load from S3 instead
         epcs = load_preprocessed_epc_data(
             data_path="/Users/chris.williamson/ASF_data",
             rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
