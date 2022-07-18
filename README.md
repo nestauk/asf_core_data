@@ -220,7 +220,7 @@ The data can then be pulled in using:
 
     from asf_core_data import get_mcs_installations
 
-    installation_data = get_mcs_installations(...)
+    installation_data = get_mcs_installations(epc_version=...)
 
 Replace the `...` above with
 
