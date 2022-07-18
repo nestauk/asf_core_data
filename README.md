@@ -208,7 +208,7 @@ Below we describe the necessary steps to download and update the data. Don't wor
 
 ## MCS Data <a name="mcs"></a>
 
-The MCS datasets contain information on MCS-certified heat pump **installations** and **installers**. These datasets are proprietary and cannot be shared outside of Nesta. Both datasets are provided quarterly by MCS and are stored in the **asf-core-data** bucket on S3.
+The MCS datasets contain information on MCS-certified heat pump **installations** and **installers**. These datasets are proprietary and cannot be shared outside of Nesta. Both datasets are provided quarterly by MCS and are stored in the **asf-core-data** bucket on S3. Information about the fields in this dataset can be found [here](https://docs.google.com/spreadsheets/d/1EKrQGZfeyVkQPJC05746vT0mWlGvK4vnzj5upi_fPBY/edit?usp=sharing) (accessible only by Nesta employees).
 
 ### How to use <a name="instructions"></a>
 
@@ -220,7 +220,13 @@ The data can then be pulled in using:
 
     from asf_core_data import get_mcs_installations
 
-    installation_data = get_mcs_installations()
+    installation_data = get_mcs_installations(...)
+
+Replace the `...` above with
+
+- "none" to get just the MCS installation records
+- "full" to get every MCS installation record joined to the property's full EPC history (one row for each installation-EPC pair) - installations without a matching EPC are kept, but with missing data in the EPC fields
+- "most_relevant" to get every MCS installation joined to its "most relevant" EPC record (this being the latest EPC before the installation if one exists; otherwise, the earliest EPC after the installation) - installations without a matching EPC are kept, but with missing data in the EPC fields
 
 To update the data on the `asf-core-data` S3 bucket, run:
 
@@ -249,7 +255,7 @@ The MCS **installations** dataset contains one record for each MCS certificate. 
 - characteristics of the installation: commissioning date, overall cost, installer name, whether or not the installation is eligible for RHI
 - characteristics of the certificate: version number, certification date
 
-For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing). Further information about the fields included in this dataset can be found [here](https://docs.google.com/spreadsheets/d/1XaGDblbCIBTkStH3_RE7d6qzzKAWghRf/edit#gid=1260528248). (Access to these documents is provided only to Nesta employees)
+For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing) (assessible only to Nesta employees).
 
 ### Installers <a name="mcs_installers"></a>
 
@@ -261,12 +267,11 @@ The MCS **installers** dataset contains one record for each MCS-certified instal
 
 ### Merging with EPC <a name="mcs_epc_merging"></a>
 
-**asf_core_data/pipeline/mcs** contains functions for processing the raw MCS data and joining it with EPC data. In particular, running **generate_mcs_data.py** will process and save four different versions of the data to S3:
+**asf_core_data/pipeline/mcs** contains functions for processing the raw MCS data and joining it with EPC data. In particular, running **generate_mcs_data.py** will process and save three different versions of the data to S3:
 
-1. Cleaned MCS installation data, with one row for each **installation**, taking the most recent version of each certificate
+1. Cleaned MCS installation data, with one row for each **installation**
 2. As in 1., with EPC data fully joined: when a property also appears in EPC data, a row is included for each EPC (so the full EPC history of the property appears in the data)
-3. As in 2., filtered only to the most recent EPC
-4. As in 2., filtered to the "most relevant" EPC which aims to best reflect the status of the property at the time of the installation: the latest EPC before the installation if one exists, otherwise the earliest EPC after the installation
+3. As in 2., filtered to the "most relevant" EPC which aims to best reflect the status of the property at the time of the installation: the latest EPC before the installation if one exists, otherwise the earliest EPC after the installation
 
 Further details about the processing and joining of the data are provided within asf_core_data/pipeline.
 
