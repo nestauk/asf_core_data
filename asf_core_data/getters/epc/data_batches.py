@@ -9,50 +9,9 @@ from asf_core_data.config import base_config
 
 import warnings
 import boto3
+import os
 
 # ---------------------------------------------------------------------------------
-
-
-def get_batch_path(path, data_path, batch="newest"):
-    """Create path to specific batch, e.g. to the newest batch.
-
-    Args:
-        path (str/Path): Path that needs to be updated with batch name.
-        data_path (str/Path, optional): Path to ASF core data directory. Defaults to None.
-        batch (str, optional): Which batch to use, either specific batch name or relative indicator. Defaults to "newest".
-
-    Returns:
-        Path: Path with specific batch name integrated.
-    """
-
-    # If batch does not need to be filled in
-    if not "{}" in str(path):
-        return Path(path)
-
-    # Get most recent batch
-    if batch is None or batch.lower() in [
-        "newest",
-        "most recent",
-        "most_recent",
-        "latest",
-    ]:
-
-        newest_batch = get_most_recent_batch(data_path=data_path)
-        path = str(path).format(newest_batch)
-
-        # Warn if not the newest batch
-        is_newest, newest_s3_batch = check_for_newest_batch(data_path=data_path)
-        if not is_newest:
-            warnings.warn(
-                "You are loading the newest local batch - but a newer batch ({}) is available on S3.".format(
-                    newest_s3_batch
-                )
-            )
-
-    else:
-        path = str(path).format(batch.upper())
-
-    return Path(path)
 
 
 def get_all_batch_names(data_path="S3", rel_path=base_config.RAW_DATA_PATH):
@@ -83,8 +42,13 @@ def get_all_batch_names(data_path="S3", rel_path=base_config.RAW_DATA_PATH):
 
     else:
 
-        data_path = get_batch_path(data_path / rel_path.parent, data_path=data_path)
-        batches = [p.name for p in data_path.glob("*/") if not p.name.startswith(".")]
+        data_path = get_batch_path(
+            data_path / Path(rel_path).parent, data_path=data_path
+        )
+        batches = [
+            p.name for p in Path(data_path).glob("*/") if not p.name.startswith(".")
+        ]
+        # batches = os.listdir(Path(data_path) / Path(rel_path))
 
     return batches
 
@@ -138,3 +102,45 @@ def check_for_newest_batch(data_path=None, verbose=False):
                 )
             )
         return (False, s3_batch)
+
+
+def get_batch_path(path, data_path, batch="newest"):
+    """Create path to specific batch, e.g. to the newest batch.
+
+    Args:
+        path (str/Path): Path that needs to be updated with batch name.
+        data_path (str/Path, optional): Path to ASF core data directory. Defaults to None.
+        batch (str, optional): Which batch to use, either specific batch name or relative indicator. Defaults to "newest".
+
+    Returns:
+        Path: Path with specific batch name integrated.
+    """
+
+    # If batch does not need to be filled in
+    if not "{}" in str(path):
+        return Path(path)
+
+    # Get most recent batch
+    if batch is None or batch.lower() in [
+        "newest",
+        "most recent",
+        "most_recent",
+        "latest",
+    ]:
+
+        newest_batch = get_most_recent_batch(data_path=data_path)
+        path = str(path).format(newest_batch)
+
+        # Warn if not the newest batch
+        is_newest, newest_s3_batch = check_for_newest_batch(data_path=data_path)
+        if not is_newest:
+            warnings.warn(
+                "You are loading the newest local batch - but a newer batch ({}) is available on S3.".format(
+                    newest_s3_batch
+                )
+            )
+
+    else:
+        path = str(path).format(batch.upper())
+
+    return Path(path)

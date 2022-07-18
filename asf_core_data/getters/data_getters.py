@@ -1,19 +1,13 @@
 import boto3
 import os
 from fnmatch import fnmatch
-from urllib.request import urlretrieve
-from zipfile import ZipFile
-from asf_core_data import PROJECT_DIR
 import pandas as pd
 import logging
 import pickle
 import json
 
-# %%
 s3 = boto3.resource("s3")
 logger = logging.getLogger(__name__)
-# get config file with relevant paramenters
-config_info = get_yaml_config(_base_config_path)
 
 
 def get_s3_dir_files(s3, bucket_name, dir_name):

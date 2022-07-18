@@ -10,7 +10,6 @@ typer
 sh
 openpyxl
 boto3
-os
 recordlinkage
 requests
 pandera
@@ -19,3 +18,4 @@ gdown
 h3
 s3fs
 fsspec
+datacompy

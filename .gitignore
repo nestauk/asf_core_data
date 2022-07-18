@@ -128,3 +128,6 @@ target/
 
 # NPM
 node_modules/
+
+# secrets
+client_secrets.json

@@ -11,28 +11,24 @@ Overall process is as follows:
 - Join datasets using this matching
 """
 
+# %%
+
 import recordlinkage as rl
 
-from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
 from asf_core_data.getters.epc.epc_data import (
     load_preprocessed_epc_data,
 )
-from asf_core_data.getters.data_getters import load_s3_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,
 )
 
-config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
+from asf_core_data.config import base_config
 
-max_token_length = config["MCS_EPC_MAX_TOKEN_LENGTH"]
-matching_parameter = config["MCS_EPC_MATCHING_PARAMETER"]
-bucket_name = config["BUCKET_NAME"]
-
-# ---------------------------------------------------------------------------------
+# %%
 
 #### PREPROCESSING
 
@@ -62,7 +58,7 @@ def prepare_hps(hps):
     ]
 
     hps["numeric_tokens"] = [
-        extract_token_set(address, postcode, max_token_length)
+        extract_token_set(address, postcode, base_config.MCS_EPC_MAX_TOKEN_LENGTH)
         for address, postcode in zip(hps["standardised_address"], hps["postcode"])
     ]
 
@@ -93,7 +89,7 @@ def prepare_epcs(epcs):
     ]
 
     epcs["numeric_tokens"] = [
-        extract_token_set(address, postcode, max_token_length)
+        extract_token_set(address, postcode, base_config.MCS_EPC_MAX_TOKEN_LENGTH)
         for address, postcode in zip(
             epcs["standardised_address"].fillna(""), epcs["POSTCODE"].fillna("")
         )
@@ -103,7 +99,6 @@ def prepare_epcs(epcs):
 
 
 # ---------------------------------------------------------------------------------
-
 
 #### JOINING
 
@@ -190,7 +185,8 @@ def join_prepared_mcs_epc_data(
 
     # First ensure that all matches are above the matching parameter
     good_matches = matching[
-        (matching["numerics"] == 1) & (matching["address_score"] >= matching_parameter)
+        (matching["numerics"] == 1)
+        & (matching["address_score"] >= base_config.MCS_EPC_MATCHING_PARAMETER)
     ].reset_index()
 
     if all_records:
@@ -276,11 +272,17 @@ def join_prepared_mcs_epc_data(
 
 
 def join_mcs_epc_data(
-    hps=None, epcs=None, all_records=True, drop_epc_address=True, verbose=True
+    epc_data_path=base_config.ROOT_DATA_PATH,
+    hps=None,
+    epcs=None,
+    all_records=True,
+    drop_epc_address=True,
+    verbose=True,
 ):
     """Produce joined MCS-EPC dataframe from "unprepared" data.
 
     Args:
+        epc_data_path (string): Path to local top-level EPC data folder.
         hps (Dataframe, optional): MCS installation records.
         If None, records are fetched automatically. Defaults to None.
         epcs (Dataframe, optional): EPC records. If None, records
@@ -302,15 +304,34 @@ def join_mcs_epc_data(
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        # TODO: replace with line that loads most recent full EPC data
+        # TODO: load from S3 instead
         epcs = load_preprocessed_epc_data(
-            data_path="../ASF_data", version=epc_version, usecols=None
+            data_path=epc_data_path,
+            # rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
+            version=epc_version,
+            usecols=[
+                "LMK_KEY",
+                "ADDRESS1",
+                "ADDRESS2",
+                "POSTCODE",
+                "INSPECTION_DATE",
+                "TRANSACTION_TYPE",
+                "TENURE",
+                "CURRENT_ENERGY_RATING",
+                "POTENTIAL_ENERGY_RATING",
+                "PROPERTY_TYPE",
+                "BUILT_FORM",
+                "NUMBER_HABITABLE_ROOMS",
+                "CONSTRUCTION_AGE_BAND",
+                "TOTAL_FLOOR_AREA",
+                "LIGHTING_ENERGY_EFF",
+                "FLOOR_ENERGY_EFF",
+                "WINDOWS_ENERGY_EFF",
+                "WALLS_ENERGY_EFF",
+                "ROOF_ENERGY_EFF",
+                "MAINHEAT_DESCRIPTION",
+            ],
         )
-        # epcs = load_s3_data(
-        #     bucket_name,
-        #     "outputs/EPC/EPC_GB_preprocessed_and_deduplicated_sample_prox.csv",
-        #     usecols=None,
-        # )
 
     prepared_hps = prepare_hps(hps)
     prepared_epcs = prepare_epcs(epcs)
@@ -374,6 +395,9 @@ def select_most_relevant_epc(joined_df):
     )
 
     return filtered_data
+
+
+# %%
 
 
 def main():

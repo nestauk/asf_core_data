@@ -1,9 +1,9 @@
-# File: asf_core_data/pipeline/process_mcs_utils.py
+# File: asf_core_data/pipeline/mcs/process/process_mcs_utils.py
 """
 functions used to preprocess mcs data across installations and
 installer company data.
 """
-#######################################################
+# %%
 
 import pandas as pd
 import requests
@@ -11,10 +11,11 @@ import time
 import re
 import numpy as np
 
-from asf_core_data import bucket_name, config
-from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+from asf_core_data.getters.data_getters import load_s3_data
 
-#######################################################
+from asf_core_data.config import base_config
+
+# %%
 
 colnames_dict = {
     "Version Number": "version",
@@ -287,12 +288,14 @@ def extract_token_set(address, postcode, max_token_length):
     return valid_token_set
 
 
+# %%
+
 if __name__ == "__main__":
-    config_info = config
-    installer_company_data_path = config_info["MCS_RAW_INSTALLER_CONCAT_S3_PATH"]
-    uk_geo_path = config_info["UK_GEO_PATH"]
-    cleaned_installations_path = config_info["PREPROC_GEO_MCS_INSTALLATIONS_PATH"]
-    cleaned_installer_company_path = config_info["PREPROC_MCS_INSTALLER_COMPANY_PATH"]
+    installer_company_data_path = base_config.MCS_RAW_INSTALLER_CONCAT_S3_PATH
+    uk_geo_path = base_config.POSTCODE_TO_COORD_PATH
+    cleaned_installations_path = base_config.PREPROC_GEO_MCS_INSTALLATIONS_PATH
+    cleaned_installer_company_path = base_config.PREPROC_MCS_INSTALLER_COMPANY_PATH
+    bucket_name = base_config.BUCKET_NAME
 
     installer_company_data = load_s3_data(bucket_name, installer_company_data_path)
     uk_geo_data = load_s3_data(bucket_name, uk_geo_path)

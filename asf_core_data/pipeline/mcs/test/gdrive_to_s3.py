@@ -2,12 +2,11 @@
 import os
 from datetime import datetime
 
-from asf_core_data.getters.data_getters import s3, save_to_s3
+from asf_core_data.getters.data_getters import s3
 
-from asf_core_data import config, bucket_name, PROJECT_DIR
+from asf_core_data.config import base_config
 
 from asf_core_data.pipeline.mcs.test.gdrive_to_s3_utils import (
-    gauth,
     drive,
     keywords,
     all_folders,
@@ -16,8 +15,9 @@ from asf_core_data.pipeline.mcs.test.gdrive_to_s3_utils import (
 
 ########################################
 
-local_data_dump_dir = config["LOCAL_NEW_MCS_DATA_DUMP_DIR"]
-s3_data_dump_dir = config["S3_NEW_MCS_DATA_DUMP_DIR"]
+local_data_dump_dir = base_config.LOCAL_NEW_MCS_DATA_DUMP_DIR
+s3_data_dump_dir = base_config.S3_NEW_MCS_DATA_DUMP_DIR
+bucket_name = base_config.BUCKET_NAME
 
 
 def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
@@ -44,15 +44,17 @@ def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
         max(_, key=lambda x: x["createdDate"]) for _ in (installations, installers)
     ]
 
-    if not os.path.exists(str(PROJECT_DIR) + local_data_dump_dir):
-        os.mkdir(str(PROJECT_DIR) + local_data_dump_dir)
+    if not os.path.exists(base_config.ROOT_DATA_PATH + local_data_dump_dir):
+        os.mkdir(base_config.ROOT_DATA_PATH + local_data_dump_dir)
 
     for _ in (latest_installations, latest_installers):
         name, ext = _["title"].split(".")[0], _["title"].split(".")[1]
         print(name, ext)
         timestamp = str(_["createdDate"]).split(" ")[0].replace("-", "_")
         latest_dump_name = name + "_" + timestamp + "." + ext
-        output_path = str(PROJECT_DIR) + local_data_dump_dir + latest_dump_name
+        output_path = (
+            base_config.ROOT_DATA_PATH + local_data_dump_dir + latest_dump_name
+        )
         s3_path = s3_data_dump_dir + latest_dump_name
         file_id = _["id"]
         file = drive.CreateFile({"id": file_id})

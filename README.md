@@ -1,6 +1,6 @@
 # ASF Core Data <a name="core_data_overview"></a>
 
-Last updated: March 31 2022 by Chris Williamson
+Last updated: July 12 2022 by Chris Williamson
 
 ## Overview <a name="overview"></a>
 
@@ -212,11 +212,33 @@ The MCS datasets contain information on MCS-certified heat pump **installations*
 
 ### How to use <a name="instructions"></a>
 
-To pull installation data into a project, first install this repo as a package then run
+To pull installation data into a project, first install this repo as a package by adding this line to your project's `requirements.txt`, substituting `$BRANCH` for your desired branch name:
 
-    from asf_core_data.asf_core_data.pipeline.mcs.generate_mcs_data import get_mcs_installations
+    asf_core_data@ git+ssh://git@github.com/nestauk/asf_core_data.git@$BRANCH
 
-    installation_data = get_mcs_installations(...)
+The data can then be pulled in using:
+
+    from asf_core_data import get_mcs_installations
+
+    installation_data = get_mcs_installations()
+
+To update the data on the `asf-core-data` S3 bucket, run:
+
+    from asf_core_data import generate_and_save_mcs
+
+    generate_and_save_mcs(epc_data_path=...)
+
+This requires processed EPC data to be saved locally as set out by the requirements in the section above.
+
+To run checks on raw installations data:
+
+    from asf_core_data import test_installation_data
+
+    test_installation_data(filename)
+
+To produce a new processed version of installer data on S3, run `generate_and_save_mcs` as above, then using a Companies House API key run
+
+    python asf_core_data/pipeline/mcs/process/process_mcs_installers.py -key [API KEY]
 
 ### Installations <a name="mcs_installations"></a>
 
