@@ -69,8 +69,9 @@ def preprocess_data(
                 subset,
                 str(file_path),
             )
-        print("Saving to raw data to {}".format(file_path))
+        print("Saving raw data to {}".format(file_path))
         print()
+
         # Save unaltered_version
         df.to_csv(file_path, index=False)
 
@@ -102,7 +103,7 @@ def preprocess_data(
                 str(file_path),
             )
 
-        print("Saving to preprocessed data to {}".format(file_path))
+        print("Saving preprocessed data to {}".format(file_path))
         print()
         # Save unaltered_version
         df.to_csv(file_path, index=False)
@@ -134,9 +135,7 @@ def preprocess_data(
                     str(file_path),
                 )
 
-            print(
-                "Saving to preprocessed and deduplicated data to {}".format(file_path)
-            )
+            print("Saving preprocessed and deduplicated data to {}".format(file_path))
             print()
 
             # Save unaltered_version
@@ -194,7 +193,12 @@ def load_and_preprocess_epc_data(
             "You're not loading all samples so the processed data will not be saved!"
         )
 
-    if save_data or (save_data is not None and not os.path.isabs(save_data)):
+    if str(save_data) == "S3":
+        save_data = None
+
+    if (save_data or (save_data is not None and not os.path.isabs(save_data))) and (
+        save_data is not None
+    ):
 
         save_data = data_path / save_data
 

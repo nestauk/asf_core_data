@@ -14,7 +14,13 @@ from asf_core_data import Path
 from asf_core_data.getters.epc import data_batches
 from asf_core_data.config import base_config
 
+from asf_core_data.getters import data_getters
+
 # ---------------------------------------------------------------------------------
+
+
+# Set subset dict to select respective subset directories
+start_with_dict = {"Wales": "domestic-W", "England": "domestic-E"}
 
 
 def extract_data(file_path):
@@ -42,85 +48,100 @@ def extract_data(file_path):
         print("Done!")
 
 
-# TO DO: add way to get directly from S3
-def load_england_wales_recommendations(
-    data_path=base_config.ROOT_DATA_PATH,
-    rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
-    batch=None,
-    subset="Wales",
-    usecols=None,
-    n_samples=None,
-    dtype=base_config.dtypes_recom,
-    low_memory=True,
-):
-    """Load the England and/or Wales EPC data.
+def get_cert_rec_files(data_path, eng_wales_path):
 
-    Args:
-        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
-        rel_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_ENG_WALES_DATA_PATH.
-        batch (str, optional): Data batch to load. Defaults to None.
-        subset (str, optional): Nation subset: "England", "Wales". Defaults to 'Wales'.
-        usecols (list, optional): List of features/columns to load from EPC dataset. Defaults to None, loading all features.
-        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
-        dtype (dict, optional): Dict with dtypes for easier loading. Defaults to base_config.dtypes.
-        low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
-            If True, internally process the file in chunks, resulting in lower memory use while parsing,
-            but possibly mixed type inference.
-            To ensure no mixed types either set False, or specify the type with the dtype parameter.
+    if str(data_path) == "S3":
+        # directories = data_getters.get_dir_content(dir_name=str(eng_wales_path))
+        directories = data_getters.get_dir_content(
+            dir_name=str(eng_wales_path), base_name_only=True
+        )
+    else:
+        directories = [dir for dir in os.listdir(data_path / eng_wales_path)]
 
-    Returns:
-        pd.DataFrame: England/Wales EPC recommendations.
-    """
-
-    RAW_ENG_WALES_DATA_PATH = data_batches.get_batch_path(
-        data_path / rel_data_path, data_path=data_path, batch=batch
-    )
-    RAW_ENG_WALES_DATA_ZIP = data_batches.get_batch_path(
-        data_path / base_config.RAW_ENG_WALES_DATA_ZIP, data_path=data_path, batch=batch
-    )
-
-    # If sample file does not exist (probably just not unzipped), unzip the data
-    if not (
-        RAW_ENG_WALES_DATA_PATH / "domestic-W06000015-Cardiff/certificates.csv"
-    ).is_file():
-        extract_data(RAW_ENG_WALES_DATA_ZIP)
-
-    # Get all directories
     directories = [
         dir
-        for dir in os.listdir(RAW_ENG_WALES_DATA_PATH)
+        for dir in directories
         if not (dir.startswith(".") or dir.endswith(".txt") or dir.endswith(".zip"))
     ]
 
-    # Set subset dict to select respective subset directories
-    start_with_dict = {"Wales": "domestic-W", "England": "domestic-E"}
+    return directories
 
-    # Get directories for given subset
-    if subset in start_with_dict:
-        directories = [
-            dir for dir in directories if dir.startswith(start_with_dict[subset])
-        ]
 
-    # Load EPC certificates for given subset
-    # Only load columns of interest (if given)
-    epc_certs = [
-        pd.read_csv(
-            RAW_ENG_WALES_DATA_PATH / directory / "recommendations.csv",
-            dtype=dtype,
-            low_memory=low_memory,
-            usecols=usecols,
-        )
-        for directory in directories
-    ]
+# # TO DO: add way to get directly from S3
+# def load_england_wales_recommendations(
+#     data_path=base_config.ROOT_DATA_PATH,
+#     rel_data_path=base_config.RAW_ENG_WALES_DATA_PATH,
+#     batch=None,
+#     subset="Wales",
+#     usecols=None,
+#     n_samples=None,
+#     dtype=base_config.dtypes_recom,
+#     low_memory=True,
+# ):
+#     """Load the England and/or Wales EPC data.
 
-    # Concatenate single dataframes into dataframe
-    epc_certs = pd.concat(epc_certs, axis=0)
-    epc_certs["COUNTRY"] = subset
+#     Args:
+#         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
+#         rel_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_ENG_WALES_DATA_PATH.
+#         batch (str, optional): Data batch to load. Defaults to None.
+#         subset (str, optional): Nation subset: "England", "Wales". Defaults to 'Wales'.
+#         usecols (list, optional): List of features/columns to load from EPC dataset. Defaults to None, loading all features.
+#         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+#         dtype (dict, optional): Dict with dtypes for easier loading. Defaults to base_config.dtypes.
+#         low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
+#             If True, internally process the file in chunks, resulting in lower memory use while parsing,
+#             but possibly mixed type inference.
+#             To ensure no mixed types either set False, or specify the type with the dtype parameter.
 
-    if n_samples is not None:
-        epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]
+#     Returns:
+#         pd.DataFrame: England/Wales EPC recommendations.
+#     """
 
-    return epc_certs
+#     RAW_ENG_WALES_DATA_PATH = data_batches.get_batch_path(
+#         data_path / rel_data_path, data_path=data_path, batch=batch
+#     )
+#     RAW_ENG_WALES_DATA_ZIP = data_batches.get_batch_path(
+#         data_path / base_config.RAW_ENG_WALES_DATA_ZIP, data_path=data_path, batch=batch
+#     )
+
+#     # If sample file does not exist (probably just not unzipped), unzip the data
+#     if not (
+#         RAW_ENG_WALES_DATA_PATH / "domestic-W06000015-Cardiff/recommendations.csv"
+#     ).is_file():
+#         extract_data(RAW_ENG_WALES_DATA_ZIP)
+
+#     directories = get_cert_rec_files(data_path, RAW_ENG_WALES_DATA_PATH)
+
+#     directories = [
+#         dir for dir in directories if dir.startswith(start_with_dict[subset])
+#     ]
+#     # Get directories for given subset
+#     if subset in start_with_dict:
+#         directories = [
+#             dir for dir in directories if dir.startswith(start_with_dict[subset])
+#         ]
+
+#     # Load EPC recommendations for given subset
+#     # Only load columns of interest (if given)
+#     epc_certs = [
+#         data_getters.load_data(
+#             data_path,
+#             RAW_ENG_WALES_DATA_PATH / directory / "recommendations.csv",
+#             dtype=dtype,
+#             low_memory=low_memory,
+#             usecols=usecols,
+#         )
+#         for directory in directories
+#     ]
+
+#     # Concatenate single dataframes into dataframe
+#     epc_certs = pd.concat(epc_certs, axis=0)
+#     epc_certs["COUNTRY"] = subset
+
+#     if n_samples is not None:
+#         epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]
+
+#     return epc_certs
 
 
 def load_scotland_data(
@@ -227,7 +248,9 @@ def load_england_wales_data(
     subset=None,
     usecols=None,
     n_samples=None,
+    load_recs=False,
     dtype=base_config.dtypes,
+    data_check=True,
     low_memory=True,
 ):
     """Load the England and/or Wales EPC data.
@@ -248,6 +271,9 @@ def load_england_wales_data(
     Returns:
         pd.DataFrame:  England/Wales EPC certificate data for given features."""
 
+    data_to_load = "recommendations" if load_recs else "certificates"
+    dtype = base_config.dtypes_recom if load_recs else dtype
+
     if subset in [None, "GB", "all"]:
 
         additional_samples = 0
@@ -266,6 +292,8 @@ def load_england_wales_data(
             dtype=dtype,
             low_memory=low_memory,
             n_samples=n_samples,
+            load_recs=load_recs,
+            data_check=True,
         )
 
         england_epc = load_england_wales_data(
@@ -277,6 +305,8 @@ def load_england_wales_data(
             n_samples=None if n_samples is None else n_samples + additional_samples,
             dtype=dtype,
             low_memory=low_memory,
+            load_recs=load_recs,
+            data_check=False,
         )
 
         epc_certs = pd.concat([wales_epc, england_epc], axis=0)
@@ -284,29 +314,27 @@ def load_england_wales_data(
         return epc_certs
 
     RAW_ENG_WALES_DATA_PATH = data_batches.get_batch_path(
-        Path(data_path) / rel_data_path, data_path=data_path, batch=batch
+        rel_data_path, data_path, batch
     )
+
     RAW_ENG_WALES_DATA_ZIP = data_batches.get_batch_path(
-        Path(data_path) / base_config.RAW_ENG_WALES_DATA_ZIP,
-        data_path=data_path,
-        batch=batch,
+        base_config.RAW_ENG_WALES_DATA_ZIP,
+        data_path,
+        batch,
     )
 
     # If sample file does not exist (probably just not unzipped), unzip the data
-    if not Path(
-        RAW_ENG_WALES_DATA_PATH / "domestic-W06000015-Cardiff/certificates.csv"
-    ).is_file():
-        extract_data(RAW_ENG_WALES_DATA_ZIP)
+    if (
+        str(data_path) != "S3"
+        and not Path(
+            data_path
+            / RAW_ENG_WALES_DATA_PATH
+            / "domestic-W06000015-Cardiff/{}.csv".format(data_to_load)
+        ).is_file()
+    ):
+        extract_data(data_path / RAW_ENG_WALES_DATA_ZIP)
 
-    # Get all directories
-    directories = [
-        dir
-        for dir in os.listdir(RAW_ENG_WALES_DATA_PATH)
-        if not (dir.startswith(".") or dir.endswith(".txt") or dir.endswith(".zip"))
-    ]
-
-    # Set subset dict to select respective subset directories
-    start_with_dict = {"Wales": "domestic-W", "England": "domestic-E"}
+    directories = get_cert_rec_files(data_path, RAW_ENG_WALES_DATA_PATH)
 
     directories = [
         dir for dir in directories if dir.startswith(start_with_dict[subset])
@@ -319,9 +347,11 @@ def load_england_wales_data(
 
     # Load EPC certificates for given subset
     # Only load columns of interest (if given)
+
     epc_certs = [
-        pd.read_csv(
-            RAW_ENG_WALES_DATA_PATH / directory / "certificates.csv",
+        data_getters.load_data(
+            data_path,
+            RAW_ENG_WALES_DATA_PATH / directory / "{}.csv".format(data_to_load),
             dtype=dtype,
             low_memory=low_memory,
             usecols=usecols,
@@ -329,7 +359,7 @@ def load_england_wales_data(
         for directory in directories
     ]
 
-    # Concatenate single dataframes into dataframe
+    # # Concatenate single dataframes into dataframe
     epc_certs = pd.concat(epc_certs, axis=0)
     epc_certs["COUNTRY"] = subset
 
@@ -349,7 +379,9 @@ def load_raw_epc_data(
     subset="GB",
     usecols=None,
     n_samples=None,
+    load_recs=False,
     dtype=base_config.dtypes,
+    data_check=False,
     low_memory=True,
 ):
     """Load and return EPC dataset, or specific subset, as pandas dataframe.
@@ -371,7 +403,7 @@ def load_raw_epc_data(
     """
 
     RAW_DATA_PATH = data_batches.get_batch_path(
-        Path(data_path), data_path=data_path, batch=batch
+        Path(data_path), data_path=data_path, batch=batch, data_check=False
     )
 
     if rel_data_path != base_config.RAW_DATA_PATH:
@@ -392,10 +424,13 @@ def load_raw_epc_data(
     # Get Scotland data
     if subset in ["Scotland", "GB"]:
 
+        data_check = True if subset == "Scotland" else False
+
         epc_scotland_df = load_scotland_data(
             data_path=RAW_DATA_PATH,
             rel_data_path=scotland_path,
             usecols=usecols,
+            data_check=data_check,
             n_samples=None if n_samples is None else n_samples + additional_samples,
         )
 
@@ -412,7 +447,9 @@ def load_raw_epc_data(
             subset=subset,
             usecols=usecols,
             n_samples=n_samples,
+            load_recs=load_recs,
             dtype=dtype,
+            data_check=data_check,
             low_memory=low_memory,
         )
         return epc_df
@@ -428,7 +465,9 @@ def load_raw_epc_data(
                 subset=country,
                 usecols=usecols,
                 n_samples=n_samples,
+                load_recs=load_recs,
                 dtype=dtype,
+                data_check=False,
                 low_memory=low_memory,
             )
             all_epc_df.append(epc_df)

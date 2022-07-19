@@ -7,23 +7,20 @@ from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 import pandas as pd
 from asf_core_data.config import base_config
 
+from asf_core_data.getters import data_getters
+
 # ---------------------------------------------------------------------------------
 
 # Load config file
-config = get_yaml_config(
-    Path(str(PROJECT_DIR) + "/heat_pump_adoption_modelling/config/base.yaml")
-)
 
 country_path_dict = {
-    "England": base_config.IMD_ENGLAND_PATH.name,
-    "Wales": base_config.IMD_WALES_PATH.name,
-    "Scotland": base_config.IMD_SCOTLAND_PATH.name,
+    "England": base_config.IMD_ENGLAND_PATH,
+    "Wales": base_config.IMD_WALES_PATH,
+    "Scotland": base_config.IMD_SCOTLAND_PATH,
 }
 
 
-def get_country_imd_data(
-    country, data_path=PROJECT_DIR / base_config.IMD_PATH, usecols=None
-):
+def get_country_imd_data(country, data_path="S3", rel_path=None, usecols=None):
     """Get deprivation data for specific country.
 
     Args:
@@ -35,9 +32,10 @@ def get_country_imd_data(
         pandas.DataFrame: Deprivation data.
     """
 
-    file_path = data_path / country_path_dict[country]
+    if rel_path is None:
+        rel_path = country_path_dict[country]
 
-    imd_df = pd.read_csv(file_path, usecols=usecols)
+    imd_df = data_getters.load_data(data_path, rel_path, usecols=usecols)
     imd_df["Country"] = country
 
     return imd_df
@@ -68,11 +66,23 @@ def get_gb_imd_data(
         pandas.DataFrame:  Deprivation data for all countries.
     """
 
-    imd_path = Path(data_path) / rel_data_path
+    # imd_path = Path(data_path) / rel_data_path
 
-    england_imd = get_country_imd_data("England", data_path=imd_path, usecols=usecols)
-    wales_imd = get_country_imd_data("Wales", data_path=imd_path, usecols=usecols)
-    scotland_imd = get_country_imd_data("Scotland", data_path=imd_path, usecols=usecols)
+    england_imd = get_country_imd_data(
+        data_path=data_path,
+        rel_path=data_path["England"],
+        usecols=usecols,
+    )
+    wales_imd = get_country_imd_data(
+        data_path=data_path,
+        rel_path=data_path["Wales"],
+        usecols=usecols,
+    )
+    scotland_imd = get_country_imd_data(
+        data_path=data_path,
+        rel_path=data_path["Scotland"],
+        usecols=usecols,
+    )
 
     imd_df = pd.concat([england_imd, wales_imd, scotland_imd], axis=0)
 
