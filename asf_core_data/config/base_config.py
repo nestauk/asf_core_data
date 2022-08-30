@@ -18,10 +18,18 @@ ONLY_FIRST_EFF = False
 GLAZED_AREA_DTYPE = float if GLAZED_AREA_AS_NUM else str
 FLOOR_LEVEL_DTYPE = float if FLOOR_LEVEL_AS_NUM else str
 
+v0_batches = [
+    "2021_Q2_0721",
+]
+v1_batches = ["2022_Q3_1220", "2021_Q4_0721"]
+v2_batches = ["2022_Q1_complete"]
+
 
 POSTCODE_TO_COORD_PATH = Path(
     "inputs/supplementary_data/geospatial/ukpostcodes_to_coordindates.csv"
 )
+
+SUPPL_DATA_PATH = "inputs/supplementary_data/"
 
 EST_CLEANSED_EPC_DATA_DEDUPL_PATH = Path(
     "inputs/EPC/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
@@ -42,17 +50,13 @@ RAW_EPC_DATA_PATH = Path("outputs/EPC/preprocessed_data/{}/EPC_GB_raw.csv")
 PREPROC_EPC_DATA_DEDUPL_PATH = Path(
     "outputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed_and_deduplicated.csv"
 )
+
+OUTPUT_DATA_PATH = Path("outputs/EPC/preprocessed_data/")
+
 PREPROC_EPC_DATA_PATH = Path("outputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed.csv")
 
 PROCESSED_EPC_DATA_PATH = Path("./outputs/EPC/preprocessed_data/{}/")
 
-SNAPSHOT_RAW_EPC_DATA_PATH = Path("inputs/EPC/preprocessed_data/{}/EPC_GB_raw.csv")
-SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH = Path(
-    "inputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed_and_deduplicated.csv"
-)
-SNAPSHOT_PREPROC_EPC_DATA_PATH = Path(
-    "/EPC/preprocessed_data/{}/EPC_GB_preprocessed.csv"
-)
 
 RAW_ENG_WALES_DATA_ZIP = Path(
     "inputs/EPC/raw_data/{}/England_Wales/all-domestic-certificates.zip"
@@ -60,6 +64,8 @@ RAW_ENG_WALES_DATA_ZIP = Path(
 RAW_SCOTLAND_DATA_ZIP = Path("inputs/EPC/raw_data/{}/Scotland/D_EPC_data.zip")
 
 RAW_DATA_PATH = Path("inputs/EPC/raw_data/{}/")
+
+RAW_DATA_FILE = Path("inputs/EPC/raw_data/{}")
 
 RAW_ENG_WALES_DATA_PATH = Path("inputs/EPC/raw_data/{}/England_Wales/")
 RAW_SCOTLAND_DATA_PATH = Path("inputs/EPC/raw_data/{}/Scotland/")
@@ -270,6 +276,7 @@ dtypes = {
     "WATER_HEATING_DEMAND": float,
     "HEAT_LOSS_CORRIDOOR": str,
     "MAIN_HEATING_CATEGORY": str,
+    "Flat Location": str,
 }
 
 dtypes_prepr = {
@@ -419,6 +426,7 @@ dtypes_prepr = {
     "WATER_HEATING_DEMAND": float,
     "HEAT_LOSS_CORRIDOR": str,
     "MAIN_HEATING_CATEGORY": str,
+    "Flat Location": str,
 }
 
 
@@ -437,6 +445,7 @@ MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
 INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
 MCS_EPC_MATCHING_PARAMETER = 0.7
 MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_epc.csv")
+# MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_installations_epc_full_220725.csv")
 MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 parse_dates = [
@@ -485,3 +494,40 @@ england_wales_only_features = [
     "UPRN_SOURCE",
     "LODGEMENT_DATETIME",
 ]
+
+
+scotland_field_fix_dict = {
+    "UPRN": "ï»¿Property_UPRN",
+    # "UPRN": "Property_UPRN",
+    "POSTCODE": "Postcode",
+    "INSPECTION_DATE": "Date of Assessment",
+    "LODGEMENT_DATE": "Date of Certificate",
+    "TOTAL_FLOOR_AREA": "Total floor area (mÂ²)",
+    "CURRENT_ENERGY_RATING": "Current energy efficiency rating band",
+    "MAINS_GAS_FLAG": "Main Gas",
+    "TENURE": "Tenure",
+    "TRANSACTION_TYPE": "Transaction Type",
+    "BUILT_FORM": "Built Form",
+    "PROPERTY_TYPE": "Property Type",
+    "MAINHEAT_DESCRIPTION": "Main Heating 1 Category",
+    "OSG_REFERENCE_NUMBER": "OSG_UPRN",
+    "PHOTO_SUPPLY": "Photovoltaic Supply",
+    "ENERGY_CONSUMPTION_CURRENT": "Primary Energy Indicator (kWh/mÂ²/year)",
+    "POTENTIAL_ENERGY_RATING": "Potential energy efficiency rating band",
+    "LOCAL_AUTHORITY_LABEL": "Local Authority",
+    "MAIN_HEATING_CONTROLS": "Main Heating 1 Control",
+    "MULTI_GLAZE_PROPORTION": "Multiple Glazed Proportion",
+    "GLAZED_AREA": "Glazed Area",
+    "LOW_ENERGY_LIGHTING": "Low Energy Lighting %",
+    "CO2_EMISSIONS_CURRENT": "Current Emissions (T.CO2/yr)",
+    "FLOOR_LEVEL": "Flat Level",
+    "GLAZED_TYPE": "Multiple Glazing Type",
+    "CURRENT_ENERGY_EFFICIENCY": "Current energy efficiency rating",
+    "NUMBER_HABITABLE_ROOMS": "Habitable Room Count",
+    "CONSTRUCTION_AGE_BAND": "Part 1 Construction Age Band",
+    "SOLAR_WATER_HEATING_FLAG": "Solar Water Heating",
+    "CO2_EMISS_CURR_PER_FLOOR_AREA": "CO2 Emissions Current Per Floor Area (kg.CO2/mÂ²/yr)",
+    "OSG_REFERENCE_NUMBER": "OSG_UPRN",
+}
+
+rev_scotland_field_fix_dict = {v: k for k, v in scotland_field_fix_dict.items()}

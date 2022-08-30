@@ -375,7 +375,9 @@ def standardise_dates(
     for feature in date_features:
 
         # Fix years starting with 00 -> 20..
-        df[feature] = df[feature].str.replace(r"00(\d\d)", r"20\1", regex=True)
+        df[feature] = (
+            df[feature].astype(str).str.replace(r"00(\d\d)", r"20\1", regex=True)
+        )
         df[feature] = pd.to_datetime(df[feature], errors="coerce")
 
         df.loc[
@@ -507,6 +509,7 @@ def clean_epc_data(df):
     """
 
     df = remove_empty_features(df)
+
     df = standardise_unknowns(df)
     df = standardise_features(df)
     df = standardise_dates(df)

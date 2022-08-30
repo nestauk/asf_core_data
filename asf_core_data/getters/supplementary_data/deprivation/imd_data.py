@@ -42,8 +42,7 @@ def get_country_imd_data(country, data_path="S3", rel_path=None, usecols=None):
 
 
 def get_gb_imd_data(
-    data_path=base_config.ROOT_DATA_PATH,
-    rel_data_path=base_config.IMD_PATH,
+    data_path="S3",
     usecols=[
         "IMD Rank",
         "IMD Decile",
@@ -66,21 +65,19 @@ def get_gb_imd_data(
         pandas.DataFrame:  Deprivation data for all countries.
     """
 
-    # imd_path = Path(data_path) / rel_data_path
-
     england_imd = get_country_imd_data(
+        "England",
         data_path=data_path,
-        rel_path=data_path["England"],
         usecols=usecols,
     )
     wales_imd = get_country_imd_data(
+        "Wales",
         data_path=data_path,
-        rel_path=data_path["Wales"],
         usecols=usecols,
     )
     scotland_imd = get_country_imd_data(
+        "Scotland",
         data_path=data_path,
-        rel_path=data_path["Scotland"],
         usecols=usecols,
     )
 

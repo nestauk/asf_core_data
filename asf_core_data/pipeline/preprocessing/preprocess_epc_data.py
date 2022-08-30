@@ -3,14 +3,17 @@
 
 # ----------------------------------------------------------------------------------
 
+from imp import reload
 import re
 import time
 import os
 import logging
 
+
 from asf_core_data.pipeline.preprocessing import data_cleaning, feature_engineering
 from asf_core_data.getters.epc import epc_data, data_batches
 from asf_core_data.config import base_config
+from asf_core_data import Path
 
 # ----------------------------------------------------------------------------------
 
@@ -71,6 +74,8 @@ def preprocess_data(
             )
         print("Saving raw data to {}".format(file_path))
         print()
+
+        Path(file_path).parent.mkdir(parents=True, exist_ok=True)
 
         # Save unaltered_version
         df.to_csv(file_path, index=False)
@@ -162,6 +167,7 @@ def load_and_preprocess_epc_data(
     n_samples=None,
     remove_duplicates=True,
     save_data=base_config.PREPROC_EPC_DATA_PATH,
+    reload_raw=False,
 ):
     """Load and preprocess the EPC data.
 
@@ -186,15 +192,21 @@ def load_and_preprocess_epc_data(
     # Do not save/overwrite the preprocessed data when not loading entire GB dataset
     # in order to prevent confusion.
 
+    if str(save_data) == "S3":
+        save_data = None
+    else:
+        raw_data_path = data_batches.get_batch_path(
+            base_config.RAW_EPC_DATA_PATH, data_path, batch
+        )
+
+        raw_epc_exists = (Path(data_path) / raw_data_path).is_file()
+
     if n_samples is not None:
 
         save_data = None
         logging.warning(
             "You're not loading all samples so the processed data will not be saved!"
         )
-
-    if str(save_data) == "S3":
-        save_data = None
 
     if (save_data or (save_data is not None and not os.path.isabs(save_data))) and (
         save_data is not None
@@ -205,14 +217,32 @@ def load_and_preprocess_epc_data(
         if subset != "GB":
             logging.warning("Careful! You're not loading the complete GB dataset.")
 
-    epc_df = epc_data.load_raw_epc_data(
-        data_path=data_path,
-        rel_data_path=rel_data_path,
-        subset=subset,
-        batch=batch,
-        usecols=usecols,
-        n_samples=n_samples,
-    )
+    if subset != "GB" and n_samples is not None:
+        logging.warning(
+            "Nation subsets do not work well in combination with low n_samples. Set n_samples=None for best results."
+        )
+
+    if (raw_epc_exists and not reload_raw) or str(data_path) == "S3":
+
+        epc_df = epc_data.load_preprocessed_epc_data(
+            data_path=data_path,
+            subset=subset,
+            batch=batch,
+            version="raw",
+            usecols=usecols + ["COUNTRY"],
+            n_samples=n_samples,
+        )
+
+    else:
+
+        epc_df = epc_data.load_raw_epc_data(
+            data_path=data_path,
+            rel_data_path=rel_data_path,
+            subset=subset,
+            batch=batch,
+            usecols=usecols,
+            n_samples=n_samples,
+        )
 
     epc_df = preprocess_data(
         epc_df,
@@ -247,9 +277,6 @@ def main():
     runtime = round((end_time - start_time) / 60)
 
     print("\nLoading and preprocessing the EPC data took {} minutes.".format(runtime))
-
-    print(epc_df.shape)
-    print(epc_df.head())
 
 
 if __name__ == "__main__":
