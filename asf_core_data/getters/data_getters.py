@@ -10,11 +10,29 @@ import logging
 import pickle
 import json
 
+from asf_core_data.config import base_config
+from asf_core_data.getters.epc import data_batches
+
 # %%
 s3 = boto3.resource("s3")
 logger = logging.getLogger(__name__)
-# get config file with relevant paramenters
-# config_info = get_yaml_config(_base_config_path)
+
+
+data_dict = {
+    "epc_raw": base_config.RAW_DATA_FILE,
+    "epc_raw_combined": base_config.RAW_EPC_DATA_PATH,
+    "epc_preprocessed_dedupl": base_config.PREPROC_EPC_DATA_DEDUPL_PATH,
+    "epc_preprocessed": base_config.PREPROC_EPC_DATA_PATH,
+    "EST_cleansed": base_config.EST_CLEANSED_EPC_DATA_PATH,
+    "EST_cleansed_dedupl": base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH,
+    "supplementary_data": base_config.SUPPL_DATA_PATH,
+}
+
+
+def print_download_options():
+
+    for key in data_dict.keys():
+        print(key)
 
 
 def get_dir_content(dir_name, base_name_only=False):
@@ -24,7 +42,6 @@ def get_dir_content(dir_name, base_name_only=False):
     response = s3_client.list_objects_v2(Bucket="asf-core-data", Prefix=dir_name)
 
     for content in response.get("Contents", []):
-        # print(content)
         folders.add(os.path.dirname(content["Key"]))
 
     if base_name_only:
@@ -33,7 +50,16 @@ def get_dir_content(dir_name, base_name_only=False):
     return sorted(folders)
 
 
-def load_data(data_path="S3", file_path="", usecols=None, dtype=None, low_memory=False):
+def load_data(
+    data_path="S3",
+    file_path="",
+    usecols=None,
+    dtype=None,
+    low_memory=False,
+    skiprows=None,
+    encoding=None,
+    n_samples=None,
+):
 
     if str(data_path) == "S3":
         loaded_data = load_s3_data(
@@ -42,11 +68,20 @@ def load_data(data_path="S3", file_path="", usecols=None, dtype=None, low_memory
             usecols=usecols,
             dtype=dtype,
             low_memory=low_memory,
+            skiprows=skiprows,
+            encoding=encoding,
+            n_samples=n_samples,
         )
     else:
         file_path = data_path / file_path
         loaded_data = pd.read_csv(
-            file_path, usecols=usecols, dtype=dtype, low_memory=low_memory
+            file_path,
+            usecols=usecols,
+            dtype=dtype,
+            low_memory=low_memory,
+            skiprows=skiprows,
+            encoding=encoding,
+            nrows=n_samples,
         )
 
     return loaded_data
@@ -74,12 +109,19 @@ def get_s3_dir_files(
         result = s3.list_objects(Bucket=bucket_name, Prefix=dir_name, Delimiter="/")
         dir_files = [o for o in result]
 
-    print(dir_files)
-
     return dir_files
 
 
-def load_s3_data(bucket_name, file_name, usecols=None, dtype=None, low_memory=False):
+def load_s3_data(
+    bucket_name,
+    file_name,
+    usecols=None,
+    dtype=None,
+    low_memory=False,
+    skiprows=None,
+    encoding=None,
+    n_samples=None,
+):
     """
     Load data from S3 location.
     bucket_name: The S3 bucket name
@@ -101,6 +143,8 @@ def load_s3_data(bucket_name, file_name, usecols=None, dtype=None, low_memory=Fa
             usecols=usecols,
             dtype=dtype,
             low_memory=low_memory,
+            skiprows=skiprows,
+            nrows=n_samples,
         )
     elif fnmatch(file_name, "*.pickle") or fnmatch(file_name, "*.pkl"):
         obj = s3.Object(bucket_name, file_name)
@@ -135,3 +179,59 @@ def save_to_s3(s3, bucket_name, output_var, output_file_path):
         print(
             'Function not supported for file type other than "*.pkl", "*.json" and "*.csv"'
         )
+
+
+def download_s3_folder(s3_folder, local_dir):
+    """
+    Download the contents of a folder directory
+    Args:
+        bucket_name: the name of the s3 bucket
+        s3_folder: the folder path in the s3 bucket
+        local_dir: a relative or absolute directory path in the local file system
+    """
+    s3 = boto3.resource("s3")
+    bucket = s3.Bucket("asf-core-data")
+    for obj in bucket.objects.filter(Prefix=s3_folder):
+
+        target = os.path.join(local_dir, s3_folder, os.path.relpath(obj.key, s3_folder))
+        if not os.path.exists(os.path.dirname(target)):
+            os.makedirs(os.path.dirname(target))
+        if obj.key[-1] == "/":
+            continue
+        bucket.download_file(obj.key, target)
+
+
+def download_core_data(version, local_dir, batch=None, unzip=True):
+
+    if version.endswith(".csv"):
+        data_to_load = version + ".zip"
+    elif version.endswith(".zip"):
+        data_to_load = version
+    elif version == "supplementary_data":
+        download_s3_folder(data_dict[version], local_dir)
+        return
+    else:
+        data_to_load = str(data_dict[version]) + ".zip"
+
+    s3_path = data_batches.get_batch_path(data_to_load, "S3", batch=batch)
+
+    output_path = Path(local_dir) / s3_path
+
+    Path(output_path.parent).mkdir(parents=True, exist_ok=True)
+    download_from_s3(str(s3_path), str(output_path))
+
+    if unzip:
+        with ZipFile(output_path, "r") as zip_ref:
+            zip_ref.extractall(output_path.parent)
+
+        os.remove(output_path)
+
+        trash_dir = output_path.parent / "__MACOSX/"
+        if os.path.isfile(trash_dir):
+            os.rmdir(trash_dir)
+
+
+def download_from_s3(path_to_file, output_path):
+
+    s3 = boto3.client("s3")
+    s3.download_file(Bucket="asf-core-data", Key=path_to_file, Filename=output_path)
