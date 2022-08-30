@@ -93,12 +93,14 @@ def get_batch_path(rel_path, data_path, batch="newest", data_check=True):
                 )
 
     else:
-        path = str(path).format(batch.upper())
+        path = str(rel_path).format(batch.upper())
 
     return Path(path)
 
 
-def get_all_batch_names(data_path="S3", rel_path=base_config.RAW_DATA_PATH):
+def get_all_batch_names(
+    data_path="S3", rel_path=base_config.RAW_DATA_PATH, check_folder="input"
+):
     """Get all batch names for EPC versions stored on the S3 bucket 'asf-core-data'
     or in a specific directory.
 
@@ -109,6 +111,12 @@ def get_all_batch_names(data_path="S3", rel_path=base_config.RAW_DATA_PATH):
     Returns:
         list: All EPC batches.
     """
+
+    if check_folder == "outputs":
+        rel_path = base_config.OUTPUT_DATA_PATH
+    else:
+        rel_path = rel_path.parent
+
     if str(data_path) == "S3":
         client = boto3.client("s3")
         bucket = "asf-core-data"
@@ -124,13 +132,19 @@ def get_all_batch_names(data_path="S3", rel_path=base_config.RAW_DATA_PATH):
 
     else:
 
-        data_path = get_batch_path(data_path / rel_path.parent, data_path=data_path)
-        batches = [p.name for p in data_path.glob("*/") if not p.name.startswith(".")]
+        data_path = get_batch_path(data_path / rel_path, data_path=data_path)
+        batches = [
+            p.name
+            for p in data_path.glob("*/")
+            if not p.name.startswith(".") and not p.name.endswith(".zip")
+        ]
 
     return batches
 
 
-def get_most_recent_batch(data_path=None, rel_path=base_config.RAW_DATA_PATH):
+def get_most_recent_batch(
+    data_path=None, rel_path=base_config.RAW_DATA_PATH, check_folder="input"
+):
     """Get the most recent EPC data batch from ASF data directory or S3 bucket.
 
     Args:
@@ -146,13 +160,18 @@ def get_most_recent_batch(data_path=None, rel_path=base_config.RAW_DATA_PATH):
         batches = get_all_batch_names(data_path="S3")
 
     else:
-        batches = get_all_batch_names(data_path=data_path, rel_path=rel_path)
+        batches = get_all_batch_names(
+            data_path=data_path, rel_path=rel_path, check_folder=check_folder
+        )
+
+    if not batches:
+        raise IOError("Not batch found in {}.".format(data_path))
 
     return max(batches)
     # return sorted(batches, reverse=True)[0]
 
 
-def check_for_newest_batch(data_path=None, verbose=False):
+def check_for_newest_batch(data_path=None, check_folder="input", verbose=False):
     """Check whether the local data dir is up-to-date and includes the newest EPC data batch.
 
     Args:
@@ -164,7 +183,7 @@ def check_for_newest_batch(data_path=None, verbose=False):
     """
 
     # Get the latest batches on the local dir and S3
-    local_batch = get_most_recent_batch(data_path=data_path)
+    local_batch = get_most_recent_batch(data_path=data_path, check_folder=check_folder)
     s3_batch = get_most_recent_batch(data_path="S3")
 
     if local_batch == s3_batch:
