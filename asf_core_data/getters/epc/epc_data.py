@@ -252,6 +252,7 @@ def load_england_wales_data(
     dtype=base_config.dtypes,
     data_check=True,
     low_memory=True,
+    save_data_to=None,
 ):
     """Load the England and/or Wales EPC data.
 
