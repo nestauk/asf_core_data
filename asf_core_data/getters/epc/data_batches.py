@@ -136,7 +136,9 @@ def get_all_batch_names(
         batches = [
             p.name
             for p in data_path.glob("*/")
-            if not p.name.startswith(".") and not p.name.endswith(".zip")
+            if not p.name.startswith(".")
+            and not p.name.endswith(".zip")
+            and not p.name.startswith("__")
         ]
 
     return batches
