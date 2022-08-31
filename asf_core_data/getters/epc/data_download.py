@@ -10,6 +10,7 @@ from tabnanny import check
 from this import d
 from typing import final
 from zipfile import ZipFile
+import shutil
 
 import pandas as pd
 import numpy as np
@@ -83,6 +84,10 @@ def download_core_data(version, local_dir, batch=None, unzip=True):
     if unzip:
         with zipfile.ZipFile(output_path, "r") as zip_ref:
             zip_ref.extractall(output_path.parent)
+
+    dirpath = Path(output_path.parent / "__MACOSX")
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
 
 
 if __name__ == "__main__":
