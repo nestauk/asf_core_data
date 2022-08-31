@@ -337,7 +337,7 @@ def load_england_wales_data(
     batch = RAW_ENG_WALES_DATA_PATH.parent.name
 
     if batch in base_config.v0_batches:
-        if "UPRN" in usecols:
+        if usecols is not None and "UPRN" in usecols:
             usecols.remove("UPRN")
             usecols.append("BUILDING_REFERENCE_NUMBER")
 
