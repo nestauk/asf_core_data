@@ -4,7 +4,6 @@ MCS_RAW_S3_PATH = "inputs/MCS/mcs_heat_pumps.xlsx"
 MCS_RAW_LOCAL_PATH = "/inputs/MCS/mcs_heat_pumps.xlsx"
 
 CURRENT_YEAR = 2022
-LATEST_BATCH = "Q4_2021_0721"
 
 ROOT_DATA_PATH = "."
 BUCKET_NAME = "asf-core-data"
@@ -444,7 +443,7 @@ MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
 INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
 MCS_EPC_MATCHING_PARAMETER = 0.7
-MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_epc.csv")
+MCS_EPC_MERGED_PATH = Path("outputs/temp/mcs_epc.csv")
 # MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_installations_epc_full_220725.csv")
 MCS_EPC_MAX_TOKEN_LENGTH = 8
 
