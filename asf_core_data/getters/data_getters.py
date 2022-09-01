@@ -9,6 +9,8 @@ import pandas as pd
 import logging
 import pickle
 import json
+import shutil
+
 
 from asf_core_data.config import base_config
 from asf_core_data.getters.epc import data_batches
@@ -227,8 +229,8 @@ def download_core_data(version, local_dir, batch=None, unzip=True):
         os.remove(output_path)
 
         trash_dir = output_path.parent / "__MACOSX/"
-        if os.path.isfile(trash_dir):
-            os.rmdir(trash_dir)
+        if trash_dir.exists() and trash_dir.is_dir():
+            shutil.rmtree(trash_dir)
 
 
 def download_from_s3(path_to_file, output_path):

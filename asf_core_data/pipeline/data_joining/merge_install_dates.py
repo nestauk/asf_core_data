@@ -37,12 +37,12 @@ def get_mcs_install_dates(epc_df, additional_features=False):
         .replace(r"\s+", "", regex=True)
     )
 
-    # Load MCS
+    # # Load MCS
     mcs_data = data_getters.load_s3_data(
         base_config.BUCKET_NAME,
         base_config.MCS_EPC_MERGED_PATH,
         usecols=[
-            "date",
+            "cert-date",
             "tech_type",
             "compressed_epc_address",
             "address_1",
@@ -55,6 +55,23 @@ def get_mcs_install_dates(epc_df, additional_features=False):
             "# records",
         ],
     )
+
+    # mcs_data = pd.read_csv(
+    #     "/Users/juliasuter/Documents/ASF_data/outputs/MCS/mcs_epc.csv",
+    #     usecols=[
+    #         "date",
+    #         "tech_type",
+    #         "compressed_epc_address",
+    #         "address_1",
+    #         "address_2",
+    #         "address_3",
+    #         "postcode",
+    #         "version",
+    #         "alt_type",
+    #         "installation_type",
+    #         "# records",
+    #     ],
+    # )
 
     mcs_data.fillna({"address_1": "", "address_2": "", "address_3": ""}, inplace=True)
 
