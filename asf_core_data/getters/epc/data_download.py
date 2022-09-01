@@ -64,6 +64,8 @@ def download_s3_folder(s3_folder, local_dir):
 
 def download_core_data(version, local_dir, batch=None, unzip=True):
 
+    print("I get here")
+
     if version.endswith(".csv"):
         data_to_load = version + ".zip"
     elif version.endswith(".zip"):
