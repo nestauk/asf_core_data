@@ -86,6 +86,8 @@ def download_core_data(version, local_dir, batch=None, unzip=True):
             zip_ref.extractall(output_path.parent)
 
     dirpath = Path(output_path.parent / "__MACOSX")
+
+    print(dirpath)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
 
