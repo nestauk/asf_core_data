@@ -230,9 +230,7 @@ def download_core_data(version, local_dir, batch=None, unzip=True):
 
         trash_dir = output_path.parent / "__MACOSX/"
 
-        print("Removing", trash_dir, "...")
         if trash_dir.exists() and trash_dir.is_dir():
-            print("I get here")
             shutil.rmtree(trash_dir)
 
 
