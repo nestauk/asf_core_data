@@ -154,7 +154,10 @@ def concatenate_save_raw_installers(all_installer_data):
 
 
 def generate_processed_mcs_installations(
-    epc_version="none", epc_data_path=base_config.ROOT_DATA_PATH
+    epc_version="none",
+    epc_data_path=base_config.ROOT_DATA_PATH,
+    rel_data_path=base_config.RAW_EPC_DATA_PATH.parent,
+    extra_epc_cols=[],
 ):
     """Generates processed version of MCS installation data (with optional
     joined EPC data) from the raw data.
@@ -166,6 +169,8 @@ def generate_processed_mcs_installations(
         corresponding to the most recent inspection and "most_relevant" selects the
         most recent EPC from before the HP installation if one exists or the earliest EPC
         from after the HP installation otherwise. Defaults to "none".
+        extra_epc_cols (list, optional): List of additional EPC features to include in
+        joined dataset.
 
     Raises:
         ValueError: if epc_version is not one of the specified values.
@@ -184,7 +189,10 @@ def generate_processed_mcs_installations(
         return processed_mcs
     else:
         joined_mcs_epc = join_mcs_epc_data(
-            hps=processed_mcs, epc_data_path=epc_data_path
+            hps=processed_mcs,
+            epc_data_path=epc_data_path,
+            rel_data_path=rel_data_path,
+            extra_epc_cols=extra_epc_cols,
         )
         if epc_version == "newest":
             processed_mcs = joined_mcs_epc.loc[

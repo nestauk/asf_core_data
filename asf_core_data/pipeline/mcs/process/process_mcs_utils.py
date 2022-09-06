@@ -278,9 +278,9 @@ def extract_token_set(address, postcode, max_token_length):
         token
         for token in tokens
         if (
-            (len(token) < max_token_length)
-            & (token.lower() not in postcode.lower().split())
-            & (token.lower() != postcode.lower().replace(" ", ""))
+            (len(str(token)) < max_token_length)
+            & (str(token).lower() not in str(postcode).lower().split())
+            & (str(token).lower() != str(postcode).lower().replace(" ", ""))
         )
     ]
     valid_token_set = set(valid_tokens)

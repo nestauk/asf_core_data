@@ -273,8 +273,10 @@ def join_prepared_mcs_epc_data(
 
 def join_mcs_epc_data(
     epc_data_path=base_config.ROOT_DATA_PATH,
+    rel_data_path=base_config.RAW_EPC_DATA_PATH.parent,
     hps=None,
     epcs=None,
+    extra_epc_cols=[],
     all_records=True,
     drop_epc_address=True,
     verbose=True,
@@ -307,30 +309,10 @@ def join_mcs_epc_data(
         # TODO: load from S3 instead
         epcs = load_preprocessed_epc_data(
             data_path=epc_data_path,
+            rel_data_path=rel_data_path,
             # rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
             version=epc_version,
-            usecols=[
-                "LMK_KEY",
-                "ADDRESS1",
-                "ADDRESS2",
-                "POSTCODE",
-                "INSPECTION_DATE",
-                "TRANSACTION_TYPE",
-                "TENURE",
-                "CURRENT_ENERGY_RATING",
-                "POTENTIAL_ENERGY_RATING",
-                "PROPERTY_TYPE",
-                "BUILT_FORM",
-                "NUMBER_HABITABLE_ROOMS",
-                "CONSTRUCTION_AGE_BAND",
-                "TOTAL_FLOOR_AREA",
-                "LIGHTING_ENERGY_EFF",
-                "FLOOR_ENERGY_EFF",
-                "WINDOWS_ENERGY_EFF",
-                "WALLS_ENERGY_EFF",
-                "ROOF_ENERGY_EFF",
-                "MAINHEAT_DESCRIPTION",
-            ],
+            usecols=base_config.MCS_EPC_CHARACTERISTIC_FIELDS + extra_epc_cols,
         )
 
     prepared_hps = prepare_hps(hps)
