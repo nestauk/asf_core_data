@@ -54,6 +54,7 @@ def get_dir_content(dir_name, base_name_only=False):
 
 def load_data(
     data_path="S3",
+    bucket_name="asf-core-data",
     file_path="",
     usecols=None,
     dtype=None,
@@ -65,7 +66,7 @@ def load_data(
 
     if str(data_path) == "S3":
         loaded_data = load_s3_data(
-            "asf-core-data",
+            bucket_name,
             file_path,
             usecols=usecols,
             dtype=dtype,
