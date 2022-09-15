@@ -5,6 +5,7 @@ from urllib.request import urlretrieve
 from zipfile import ZipFile
 from asf_core_data import PROJECT_DIR
 from asf_core_data import Path
+import geopandas as gpd
 import pandas as pd
 import logging
 import pickle
@@ -149,6 +150,10 @@ def load_s3_data(
             skiprows=skiprows,
             nrows=n_samples,
         )
+
+    elif fnmatch(file_name, "*.geojson"):
+        return gpd.read_csv(os.path.join("s3://" + bucket_name, file_name))
+
     elif fnmatch(file_name, "*.pickle") or fnmatch(file_name, "*.pkl"):
         obj = s3.Object(bucket_name, file_name)
         file = obj.get()["Body"].read()
