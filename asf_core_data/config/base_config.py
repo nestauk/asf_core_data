@@ -527,6 +527,9 @@ scotland_field_fix_dict = {
     "SOLAR_WATER_HEATING_FLAG": "Solar Water Heating",
     "CO2_EMISS_CURR_PER_FLOOR_AREA": "CO2 Emissions Current Per Floor Area (kg.CO2/mÂ²/yr)",
     "OSG_REFERENCE_NUMBER": "OSG_UPRN",
+    "LOCAL_AUTHORITY": "Local Authority",
+    "WALLS_ENERGY_EFF": "WALL_ENERGY_EFF",
+    "WALLS_DESCRIPTION": "WALL_DESCRIPTION",
 }
 
 rev_scotland_field_fix_dict = {v: k for k, v in scotland_field_fix_dict.items()}

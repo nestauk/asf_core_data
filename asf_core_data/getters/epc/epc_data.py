@@ -140,36 +140,46 @@ def load_scotland_data(
     ]:
         extract_data(data_path / RAW_SCOTLAND_DATA_ZIP)
 
-    if scot_usecols is not None and v2_batch:
-
-        for i, col in enumerate(scot_usecols):
-            if col in base_config.scotland_field_fix_dict.keys():
-                scot_usecols[i] = base_config.scotland_field_fix_dict[col]
-
     if scot_usecols is not None:
-        # Fix columns ("WALLS" features are labeled differently here)
-        scot_usecols = [re.sub("WALLS_", "WALL_", col) for col in scot_usecols]
-        scot_usecols = [re.sub("POSTTOWN", "POST_TOWN", col) for col in scot_usecols]
 
-        if "ENERGY_TARIFF" in scot_usecols:
-            scot_usecols.remove("ENERGY_TARIFF")
-            scot_usecols.remove("BUILDING_REFERENCE_NUMBER")
+        if v2_batch:
 
-        if "UPRN" in scot_usecols:
+            for i, col in enumerate(scot_usecols):
+                if col in base_config.scotland_field_fix_dict.keys():
+                    scot_usecols[i] = base_config.scotland_field_fix_dict[col]
 
-            scot_usecols.remove("UPRN")
-            scot_usecols.remove("BUILDING_REFERENCE_NUMBER")
-            scot_usecols.append("Property_UPRN")
+            scot_usecols = [
+                col
+                for col in scot_usecols
+                if col not in ["ENERGY_TARIFF", "LMK_KEY", "BUILDING_REFERENCE_NUMBER"]
+            ]
 
-        if "LMK_KEY" in scot_usecols:
-            scot_usecols.remove("LMK_KEY")
-            scot_usecols.append("OSG_UPRN")
+        else:
+            # Fix columns ("WALLS" features are labeled differently here)
+            scot_usecols = [re.sub("WALLS_", "WALL_", col) for col in scot_usecols]
+            scot_usecols = [
+                re.sub("POSTTOWN", "POST_TOWN", col) for col in scot_usecols
+            ]
 
-        scot_usecols = [
-            col
-            for col in scot_usecols
-            if col not in base_config.england_wales_only_features
-        ]
+            if "ENERGY_TARIFF" in scot_usecols:
+                scot_usecols.remove("ENERGY_TARIFF")
+                scot_usecols.remove("BUILDING_REFERENCE_NUMBER")
+
+            if "UPRN" in scot_usecols:
+
+                scot_usecols.remove("UPRN")
+                scot_usecols.remove("BUILDING_REFERENCE_NUMBER")
+                scot_usecols.append("Property_UPRN")
+
+            if "LMK_KEY" in scot_usecols:
+                scot_usecols.remove("LMK_KEY")
+                scot_usecols.append("OSG_UPRN")
+
+            scot_usecols = [
+                col
+                for col in scot_usecols
+                if col not in base_config.england_wales_only_features
+            ]
 
     directories = get_cert_rec_files(
         data_path, RAW_SCOTLAND_DATA_PATH, scotland_data=True
@@ -197,6 +207,8 @@ def load_scotland_data(
 
     epc_certs["COUNTRY"] = "Scotland"
 
+    print(epc_certs.columns)
+
     epc_certs = epc_certs.rename(
         columns={
             "WALL_ENV_EFF": "WALLS_ENV_EFF",
@@ -204,8 +216,13 @@ def load_scotland_data(
             "WALL_DESCRIPTION": "WALLS_DESCRIPTION",
             "POST_TOWN": "POSTTOWN",
             "HEAT_LOSS_CORRIDOOR": "HEAT_LOSS_CORRIDOR",
-        }
+            "PROPERTY_UPRN": "UPRN",
+        },
+        errors="ignore",
     )
+
+    print(v2_batch)
+    print(epc_certs.columns)
 
     if v2_batch:
 
@@ -219,6 +236,8 @@ def load_scotland_data(
                     )
 
         epc_certs = epc_certs.rename(columns=base_config.rev_scotland_field_fix_dict)
+        epc_certs = epc_certs.rename(columns={"Property_UPRN": "UPRN"})
+        print(epc_certs.columns)
 
     # epc_certs["UPRN"] = epc_certs["Property_UPRN"]
     if n_samples is not None:
@@ -356,11 +375,11 @@ def load_england_wales_data(
     epc_certs = pd.concat(epc_certs, axis=0)
     epc_certs["COUNTRY"] = subset
 
-    if "UPRN" in epc_certs.columns:
+    if "UPRN" in epc_certs.columns and "BUILDING_REFERENCE_NUMBER" in epc_certs.columns:
         epc_certs["UPRN"].fillna(epc_certs.BUILDING_REFERENCE_NUMBER, inplace=True)
 
-    if batch in base_config.v0_batches:
-        epc_certs["UPRN"] = epc_certs["BUILDING_REFERENCE_NUMBER"]
+        if batch in base_config.v0_batches:
+            epc_certs["UPRN"] = epc_certs["BUILDING_REFERENCE_NUMBER"]
 
     if n_samples is not None:
         epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]

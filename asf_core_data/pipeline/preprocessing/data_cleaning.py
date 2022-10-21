@@ -230,7 +230,7 @@ def clean_GLAZED_AREA(area, as_numeric=base_config.GLAZED_AREA_AS_NUM):
 
 
 def clean_PHOTO_SUPPLY(df):
-    """Extract photo supply area from length descriptions.
+    """Extract photo supply area from lengthy descriptions.
 
     Args:
         df (pandas.DataFrame): Dataframe to modify.

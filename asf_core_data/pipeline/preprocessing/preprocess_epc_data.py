@@ -192,6 +192,8 @@ def load_and_preprocess_epc_data(
     # Do not save/overwrite the preprocessed data when not loading entire GB dataset
     # in order to prevent confusion.
 
+    print(usecols)
+
     if str(save_data) == "S3":
         save_data = None
     else:
@@ -243,6 +245,8 @@ def load_and_preprocess_epc_data(
             usecols=usecols,
             n_samples=n_samples,
         )
+
+    print(epc_df.columns)
 
     epc_df = preprocess_data(
         epc_df,

@@ -55,8 +55,8 @@ def get_dir_content(dir_name, base_name_only=False):
 
 def load_data(
     data_path="S3",
-    bucket_name="asf-core-data",
     file_path="",
+    bucket_name="asf-core-data",
     usecols=None,
     dtype=None,
     low_memory=False,
@@ -77,7 +77,8 @@ def load_data(
             n_samples=n_samples,
         )
     else:
-        file_path = data_path / file_path
+
+        file_path = Path(data_path) / file_path
         loaded_data = pd.read_csv(
             file_path,
             usecols=usecols,
