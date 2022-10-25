@@ -27,33 +27,36 @@ def get_mcs_install_dates(epc_df, additional_features=False):
     # TO DO:  This will be simplified shortly to work with UPRN instead of address
 
     # Get original address from EPC
-    epc_df["original_address"] = (
-        epc_df["ADDRESS1"] + epc_df["ADDRESS2"] + epc_df["POSTCODE"]
-    )
-    epc_df["original_address"] = (
-        epc_df["original_address"]
-        .str.strip()
-        .str.lower()
-        .replace(r"\s+", "", regex=True)
-    )
 
+    # epc_df["original_address"] = (
+    #     epc_df["ADDRESS1"] + epc_df["ADDRESS2"] + epc_df["POSTCODE"]
+    # )
+    # epc_df["original_address"] = (
+    #     epc_df["original_address"]
+    #     .str.strip()
+    #     .str.lower()
+    #     .replace(r"\s+", "", regex=True)
+    # )
+
+    print(base_config.MCS_EPC_MERGED_PATH)
     # # Load MCS
     mcs_data = data_getters.load_s3_data(
         base_config.BUCKET_NAME,
         base_config.MCS_EPC_MERGED_PATH,
         usecols=[
-            "cert-date",
+            "cert_date",
             "tech_type",
-            "compressed_epc_address",
-            "address_1",
-            "address_2",
-            "address_3",
-            "postcode",
+            # "compressed_epc_address",
+            # "address_1",
+            # "address_2",
+            # "address_3",
+            # "postcode",
             "version",
             "alt_type",
             "installation_type",
-            "# records",
+            "UPRN",
         ],
+        dtype={"UPRN": "str", "cert_date": "str"},
     )
 
     # mcs_data = pd.read_csv(
@@ -73,67 +76,95 @@ def get_mcs_install_dates(epc_df, additional_features=False):
     #     ],
     # )
 
-    mcs_data.fillna({"address_1": "", "address_2": "", "address_3": ""}, inplace=True)
+    # mcs_data.fillna({"address_1": "", "address_2": "", "address_3": ""}, inplace=True)
 
     # Rename columns
     mcs_data.rename(
         columns={
-            "date": "HP_INSTALL_DATE",
+            "cert_date": "HP_INSTALL_DATE",
             "tech_type": "Type of HP",
-            "compressed_epc_address": "compressed_epc_address",
-            "address_1": "MCS address 1",
-            "address_2": "MCS address 2",
-            "address_3": "MCS address 3",
-            "postcode": "MCS postcode",
+            # "compressed_epc_address": "compressed_epc_address",
+            # "address_1": "MCS address 1",
+            # "address_2": "MCS address 2",
+            # "address_3": "MCS address 3",
+            # "postcode": "MCS postcode",
         },
         inplace=True,
     )
 
-    # Get original EPC address from MCS/EPC match
-    mcs_data = mcs_data.loc[~mcs_data["compressed_epc_address"].isna()]
-    mcs_data["MCS_ADDRESS"] = (
-        mcs_data["MCS address 1"]
-        + " "
-        + mcs_data["MCS address 2"]
-        + " "
-        + mcs_data["MCS address 3"]
-        + " "
-        + mcs_data["MCS postcode"]
-    )
+    # # Get original EPC address from MCS/EPC match
+    # mcs_data = mcs_data.loc[~mcs_data["compressed_epc_address"].isna()]
+    # mcs_data["MCS_ADDRESS"] = (
+    #     mcs_data["MCS address 1"]
+    #     + " "
+    #     + mcs_data["MCS address 2"]
+    #     + " "
+    #     + mcs_data["MCS address 3"]
+    #     + " "
+    #     + mcs_data["MCS postcode"]
+    # )
 
-    mcs_data["compressed_epc_address"] = (
-        mcs_data["compressed_epc_address"]
-        .str.strip()
-        .str.lower()
-        .replace(r"\s+", "", regex=True)
-    )
+    # mcs_data["compressed_epc_address"] = (
+    #     mcs_data["compressed_epc_address"]
+    #     .str.strip()
+    #     .str.lower()
+    #     .replace(r"\s+", "", regex=True)
+    # )
 
     # Get the MCS install dates
     mcs_data["HP_INSTALL_DATE"] = pd.to_datetime(
         mcs_data["HP_INSTALL_DATE"]
         .str.strip()
         .str.lower()
+        .replace(r"\s.*", "", regex=True)
         .replace(r"-", "", regex=True),
         format="%Y%m%d",
     )
+    print(mcs_data["HP_INSTALL_DATE"].unique()[:5])
+
+    # mcs_data["UPRN"] = mcs_data["UPRN"].astype(int)
+    # mcs_data["UPRN"] = mcs_data["UPRN"].astype(str)
+    print(mcs_data["UPRN"].unique())
+
+    print(mcs_data.dtypes)
+    print(epc_df.dtypes)
 
     # no Nans or "" in compressed_epc_address
     mcs_data = mcs_data.sort_values("HP_INSTALL_DATE", ascending=True).drop_duplicates(
-        subset=["compressed_epc_address"], keep="first"
+        subset=["UPRN"], keep="first"
     )
+    print(mcs_data["HP_INSTALL_DATE"].unique()[:5])
+
+    print(mcs_data.shape)
 
     # Create a date dict from MCS data and apply to EPC data
     # If no install date is found for address, it assigns NaN
-    date_dict = mcs_data.set_index("compressed_epc_address").to_dict()[
-        "HP_INSTALL_DATE"
-    ]
+    date_dict = mcs_data.set_index("UPRN").to_dict()["HP_INSTALL_DATE"]
 
-    original_address_dict = mcs_data.set_index("compressed_epc_address").to_dict()[
-        "MCS_ADDRESS"
-    ]
+    # original_address_dict = mcs_data.set_index("compressed_epc_address").to_dict()[
+    #     "MCS_ADDRESS"
+    # ]
 
-    epc_df["HP_INSTALL_DATE"] = epc_df["original_address"].map(date_dict)
-    epc_df["MCS address"] = epc_df["original_address"].map(original_address_dict)
+    epc_df["HP_INSTALL_DATE"] = epc_df["UPRN"].map(date_dict)
+    # epc_df["MCS address"] = epc_df["UPRN"].map(original_address_dict)
+
+    print(epc_df.shape)
+    print(mcs_data.shape)
+
+    # overlap = [
+    #     a
+    #     for a in sorted(list(epc_df["UPRN"].unique()))
+    #     if a in sorted(list(mcs_data["UPRN"].unique()))
+    # ]
+    # print(overlap)
+
+    # epc_df = pd.merge(epc_df, mcs_data, on="UPRN")
+    print(epc_df.shape)
+    print("----")
+    print(epc_df.head())
+    print(epc_df["UPRN"].unique())
+    print(epc_df["HP_INSTALL_DATE"].value_counts(dropna=False))
+    # print(epc_df["version"].value_counts(dropna=False))
 
     if additional_features:
         for feat in [
@@ -335,5 +366,12 @@ def manage_hp_install_dates(df, identifier="UPRN", verbose=False):
     )
 
     df = pd.concat([df, no_future_hp_entry])
+
+    print("**********")
+    print(df.shape)
+    df = df.sort_values("INSPECTION_DATE", ascending=True).drop_duplicates(
+        subset=[identifier], keep="first"
+    )
+    print(df.shape)
 
     return df

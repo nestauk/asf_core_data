@@ -93,7 +93,7 @@ def get_batch_path(rel_path, data_path, batch="newest", data_check=True):
                 )
 
     else:
-        path = str(rel_path).format(batch.upper())
+        path = str(rel_path).format(batch.upper().replace("COMPLETE", "complete"))
 
     return Path(path)
 

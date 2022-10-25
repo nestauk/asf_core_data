@@ -142,6 +142,10 @@ def load_scotland_data(
 
     if scot_usecols is not None:
 
+        if "LOCAL_AUTHORITY_LABEL" in scot_usecols:
+            scot_usecols.append("DATA_ZONE")
+            scot_usecols = [col for col in scot_usecols if col != "LOCAL_AUTHORITY"]
+
         if v2_batch:
 
             for i, col in enumerate(scot_usecols):
@@ -180,6 +184,9 @@ def load_scotland_data(
                 for col in scot_usecols
                 if col not in base_config.england_wales_only_features
             ]
+
+    print("scotland usecols")
+    print(scot_usecols)
 
     directories = get_cert_rec_files(
         data_path, RAW_SCOTLAND_DATA_PATH, scotland_data=True
@@ -591,6 +598,8 @@ def load_preprocessed_epc_data(
     EPC_DATA_PATH = data_batches.get_batch_path(
         rel_data_path / version_path_dict[version], data_path, batch
     )
+
+    print(EPC_DATA_PATH)
 
     # If file does not exist (likely just not unzipped), unzip the data
     if (str(data_path) != "S3") and not (data_path / EPC_DATA_PATH).is_file():

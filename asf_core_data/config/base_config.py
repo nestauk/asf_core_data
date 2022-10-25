@@ -21,7 +21,7 @@ v0_batches = [
     "2021_Q2_0721",
 ]
 v1_batches = ["2022_Q3_1220", "2021_Q4_0721"]
-v2_batches = ["2022_Q1_complete"]
+v2_batches = ["2022_Q1_complete", "2022_Q2_complete"]
 
 
 POSTCODE_TO_COORD_PATH = Path(
@@ -443,8 +443,8 @@ MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
 INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
 MCS_EPC_MATCHING_PARAMETER = 0.7
-MCS_EPC_MERGED_PATH = Path("outputs/temp/mcs_epc.csv")
-# MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_installations_epc_full_220725.csv")
+# MCS_EPC_MERGED_PATH = Path("outputs/temp/mcs_epc.csv")
+MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_installations_epc_most_relevant_221021.csv")
 MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 parse_dates = [
@@ -527,9 +527,10 @@ scotland_field_fix_dict = {
     "SOLAR_WATER_HEATING_FLAG": "Solar Water Heating",
     "CO2_EMISS_CURR_PER_FLOOR_AREA": "CO2 Emissions Current Per Floor Area (kg.CO2/mÂ²/yr)",
     "OSG_REFERENCE_NUMBER": "OSG_UPRN",
-    "LOCAL_AUTHORITY": "Local Authority",
+    # "LOCAL_AUTHORITY": "Local Authority",
     "WALLS_ENERGY_EFF": "WALL_ENERGY_EFF",
     "WALLS_DESCRIPTION": "WALL_DESCRIPTION",
+    "DATA_ZONE": "Data Zone",
 }
 
 rev_scotland_field_fix_dict = {v: k for k, v in scotland_field_fix_dict.items()}
