@@ -6,6 +6,7 @@
 # Imports
 from asf_core_data import Path
 from asf_core_data.config import base_config
+from asf_core_data.getters import data_getters
 
 import warnings
 import boto3
@@ -142,6 +143,32 @@ def get_all_batch_names(
         ]
 
     return batches
+
+
+def get_latest_mcs_epc_joined_batch(version="most_relevant"):
+    """Get all batch names for EPC versions stored on the S3 bucket 'asf-core-data'
+    or in a specific directory.
+
+    Args:
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to None.
+        rel_path (str/Path, optional): Relative path to EPC data. Defaults to base_config.RAW_DATA_PATH.
+
+    Returns:
+        list: All EPC batches.
+    """
+
+    s3 = boto3.resource("s3")
+    bucket = "asf-core-data"
+    path = "outputs/MCS/"
+
+    batches = [
+        key
+        for key in data_getters.get_s3_dir_files(s3, bucket, path)
+        if "old" not in key
+    ]
+    batches = [batch for batch in batches if batch[:-11].endswith(version)]
+
+    return max(batches)
 
 
 def get_most_recent_batch(

@@ -172,7 +172,7 @@ def load_scotland_data(
             if "UPRN" in scot_usecols:
 
                 scot_usecols.remove("UPRN")
-                scot_usecols.remove("BUILDING_REFERENCE_NUMBER")
+                # scot_usecols.remove("BUILDING_REFERENCE_NUMBER")
                 scot_usecols.append("Property_UPRN")
 
             if "LMK_KEY" in scot_usecols:
@@ -184,9 +184,6 @@ def load_scotland_data(
                 for col in scot_usecols
                 if col not in base_config.england_wales_only_features
             ]
-
-    print("scotland usecols")
-    print(scot_usecols)
 
     directories = get_cert_rec_files(
         data_path, RAW_SCOTLAND_DATA_PATH, scotland_data=True
@@ -214,8 +211,6 @@ def load_scotland_data(
 
     epc_certs["COUNTRY"] = "Scotland"
 
-    print(epc_certs.columns)
-
     epc_certs = epc_certs.rename(
         columns={
             "WALL_ENV_EFF": "WALLS_ENV_EFF",
@@ -227,9 +222,6 @@ def load_scotland_data(
         },
         errors="ignore",
     )
-
-    print(v2_batch)
-    print(epc_certs.columns)
 
     if v2_batch:
 
@@ -244,7 +236,6 @@ def load_scotland_data(
 
         epc_certs = epc_certs.rename(columns=base_config.rev_scotland_field_fix_dict)
         epc_certs = epc_certs.rename(columns={"Property_UPRN": "UPRN"})
-        print(epc_certs.columns)
 
     # epc_certs["UPRN"] = epc_certs["Property_UPRN"]
     if n_samples is not None:
@@ -598,8 +589,6 @@ def load_preprocessed_epc_data(
     EPC_DATA_PATH = data_batches.get_batch_path(
         rel_data_path / version_path_dict[version], data_path, batch
     )
-
-    print(EPC_DATA_PATH)
 
     # If file does not exist (likely just not unzipped), unzip the data
     if (str(data_path) != "S3") and not (data_path / EPC_DATA_PATH).is_file():

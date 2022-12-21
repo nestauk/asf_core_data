@@ -5,6 +5,7 @@
 
 from asf_core_data.getters import data_getters
 from asf_core_data.config import base_config
+from asf_core_data.getters.epc import data_batches
 
 import numpy as np
 import pandas as pd
@@ -12,7 +13,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------------
 
 
-def get_mcs_install_dates(epc_df, additional_features=False):
+def get_mcs_install_dates(epc_df, additional_features=True):
     """Get MCS install dates and add them to the EPC data.
 
     Args:
@@ -23,93 +24,30 @@ def get_mcs_install_dates(epc_df, additional_features=False):
         pandas.DataFrame: EPC dataset with added MCS install dates.
     """
 
-    # Note
-    # TO DO:  This will be simplified shortly to work with UPRN instead of address
+    newest_joined_batch = data_batches.get_latest_mcs_epc_joined_batch()
 
-    # Get original address from EPC
-
-    # epc_df["original_address"] = (
-    #     epc_df["ADDRESS1"] + epc_df["ADDRESS2"] + epc_df["POSTCODE"]
-    # )
-    # epc_df["original_address"] = (
-    #     epc_df["original_address"]
-    #     .str.strip()
-    #     .str.lower()
-    #     .replace(r"\s+", "", regex=True)
-    # )
-
-    print(base_config.MCS_EPC_MERGED_PATH)
     # # Load MCS
     mcs_data = data_getters.load_s3_data(
         base_config.BUCKET_NAME,
-        base_config.MCS_EPC_MERGED_PATH,
+        newest_joined_batch,
         usecols=[
-            "cert_date",
+            "commission_date",
             "tech_type",
-            # "compressed_epc_address",
-            # "address_1",
-            # "address_2",
-            # "address_3",
-            # "postcode",
             "version",
-            "alt_type",
+            "tech_type",
             "installation_type",
             "UPRN",
+            "cluster",
+            "installer_name",
         ],
         dtype={"UPRN": "str", "cert_date": "str"},
     )
 
-    # mcs_data = pd.read_csv(
-    #     "/Users/juliasuter/Documents/ASF_data/outputs/MCS/mcs_epc.csv",
-    #     usecols=[
-    #         "date",
-    #         "tech_type",
-    #         "compressed_epc_address",
-    #         "address_1",
-    #         "address_2",
-    #         "address_3",
-    #         "postcode",
-    #         "version",
-    #         "alt_type",
-    #         "installation_type",
-    #         "# records",
-    #     ],
-    # )
-
-    # mcs_data.fillna({"address_1": "", "address_2": "", "address_3": ""}, inplace=True)
-
     # Rename columns
     mcs_data.rename(
-        columns={
-            "cert_date": "HP_INSTALL_DATE",
-            "tech_type": "Type of HP",
-            # "compressed_epc_address": "compressed_epc_address",
-            # "address_1": "MCS address 1",
-            # "address_2": "MCS address 2",
-            # "address_3": "MCS address 3",
-            # "postcode": "MCS postcode",
-        },
+        columns={"commission_date": "HP_INSTALL_DATE"},
         inplace=True,
     )
-
-    # # Get original EPC address from MCS/EPC match
-    # mcs_data = mcs_data.loc[~mcs_data["compressed_epc_address"].isna()]
-    # mcs_data["MCS_ADDRESS"] = (
-    #     mcs_data["MCS address 1"]
-    #     + " "
-    #     + mcs_data["MCS address 2"]
-    #     + " "
-    #     + mcs_data["MCS address 3"]
-    #     + " "
-    #     + mcs_data["MCS postcode"]
-    # )
-
-    # mcs_data["compressed_epc_address"] = (
-    #     mcs_data["compressed_epc_address"]
-    #     .str.strip()
-    #     .str.lower()
-    #     .replace(r"\s+", "", regex=True)
-    # )
 
     # Get the MCS install dates
     mcs_data["HP_INSTALL_DATE"] = pd.to_datetime(
@@ -120,22 +58,13 @@ def get_mcs_install_dates(epc_df, additional_features=False):
         .replace(r"-", "", regex=True),
         format="%Y%m%d",
     )
-    print(mcs_data["HP_INSTALL_DATE"].unique()[:5])
-
-    # mcs_data["UPRN"] = mcs_data["UPRN"].astype(int)
-    # mcs_data["UPRN"] = mcs_data["UPRN"].astype(str)
-    print(mcs_data["UPRN"].unique())
-
-    print(mcs_data.dtypes)
-    print(epc_df.dtypes)
 
     # no Nans or "" in compressed_epc_address
     mcs_data = mcs_data.sort_values("HP_INSTALL_DATE", ascending=True).drop_duplicates(
         subset=["UPRN"], keep="first"
     )
-    print(mcs_data["HP_INSTALL_DATE"].unique()[:5])
 
-    print(mcs_data.shape)
+    # print(mcs_data["HP_INSTALL_DATE"].unique()[:5])
 
     # Create a date dict from MCS data and apply to EPC data
     # If no install date is found for address, it assigns NaN
@@ -148,9 +77,6 @@ def get_mcs_install_dates(epc_df, additional_features=False):
     epc_df["HP_INSTALL_DATE"] = epc_df["UPRN"].map(date_dict)
     # epc_df["MCS address"] = epc_df["UPRN"].map(original_address_dict)
 
-    print(epc_df.shape)
-    print(mcs_data.shape)
-
     # overlap = [
     #     a
     #     for a in sorted(list(epc_df["UPRN"].unique()))
@@ -158,30 +84,21 @@ def get_mcs_install_dates(epc_df, additional_features=False):
     # ]
     # print(overlap)
 
-    # epc_df = pd.merge(epc_df, mcs_data, on="UPRN")
-    print(epc_df.shape)
-    print("----")
-    print(epc_df.head())
-    print(epc_df["UPRN"].unique())
-    print(epc_df["HP_INSTALL_DATE"].value_counts(dropna=False))
-    # print(epc_df["version"].value_counts(dropna=False))
-
     if additional_features:
-        for feat in [
-            "version",
-            "alt_type",
-            "installation_type",
-            "# records",
-        ]:
+        for feat in ["tech_type", "cluster", "installer_name"]:
 
-            epc_df[feat] = epc_df["original_address"].map(
-                mcs_data.set_index("compressed_epc_address").to_dict()[feat]
+            print(mcs_data.columns)
+
+            epc_df[feat] = epc_df["UPRN"].map(
+                mcs_data.set_index("UPRN").to_dict()[feat]
             )
 
     return epc_df
 
 
-def manage_hp_install_dates(df, identifier="UPRN", verbose=False):
+def manage_hp_install_dates(
+    df, identifier="UPRN", verbose=False, additional_features=False
+):
     """Manage heat pump install dates given by EPC and MCS.
 
     Args:
@@ -194,7 +111,7 @@ def manage_hp_install_dates(df, identifier="UPRN", verbose=False):
     """
 
     # Get the MCS install dates for EPC properties
-    df = get_mcs_install_dates(df)
+    df = get_mcs_install_dates(df, additional_features=additional_features)
 
     df = df[df["INSPECTION_DATE"].notna()]
 
@@ -367,11 +284,12 @@ def manage_hp_install_dates(df, identifier="UPRN", verbose=False):
 
     df = pd.concat([df, no_future_hp_entry])
 
-    print("**********")
-    print(df.shape)
+    # print("**********")
+    # print(df.shape)
+
     df = df.sort_values("INSPECTION_DATE", ascending=True).drop_duplicates(
         subset=[identifier], keep="first"
     )
-    print(df.shape)
+    # print(df.shape)
 
     return df

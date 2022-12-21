@@ -11,28 +11,23 @@ Overall process is as follows:
 - Join datasets using this matching
 """
 
+
 import recordlinkage as rl
 
-from asf_core_data import PROJECT_DIR, get_yaml_config
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
 from asf_core_data.getters.epc.epc_data import (
     load_preprocessed_epc_data,
 )
-from asf_core_data.getters.data_getters import load_s3_data
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     remove_punctuation,
     extract_token_set,
 )
 
-config = get_yaml_config(PROJECT_DIR / "asf_core_data/config/base.yaml")
+from asf_core_data.config import base_config
 
-max_token_length = config["MCS_EPC_MAX_TOKEN_LENGTH"]
-matching_parameter = config["MCS_EPC_MATCHING_PARAMETER"]
-bucket_name = config["BUCKET_NAME"]
-
-# ---------------------------------------------------------------------------------
+# %%
 
 #### PREPROCESSING
 
@@ -40,10 +35,8 @@ bucket_name = config["BUCKET_NAME"]
 def prepare_hps(hps):
     """Prepare Dataframe of HP installations by adding
     standardised_postcode, standardised_address and numeric_tokens fields.
-
     Args:
         hps (Dataframe): Dataframe with postcode, address_1 and address_2 fields.
-
     Returns:
         Dataframe: Domestic HP records with added fields.
     """
@@ -62,7 +55,7 @@ def prepare_hps(hps):
     ]
 
     hps["numeric_tokens"] = [
-        extract_token_set(address, postcode, max_token_length)
+        extract_token_set(address, postcode, base_config.MCS_EPC_MAX_TOKEN_LENGTH)
         for address, postcode in zip(hps["standardised_address"], hps["postcode"])
     ]
 
@@ -72,10 +65,8 @@ def prepare_hps(hps):
 def prepare_epcs(epcs):
     """Prepare Dataframe of EPC records by adding
     standardised_postcode, standardised_address and numeric_tokens fields.
-
     Args:
         epcs (Dataframe): EPC records with POSTCODE, ADDRESS1 and ADDRESS2 fields.
-
     Returns:
         Dataframe: EPC records with added fields.
     """
@@ -93,7 +84,7 @@ def prepare_epcs(epcs):
     ]
 
     epcs["numeric_tokens"] = [
-        extract_token_set(address, postcode, max_token_length)
+        extract_token_set(address, postcode, base_config.MCS_EPC_MAX_TOKEN_LENGTH)
         for address, postcode in zip(
             epcs["standardised_address"].fillna(""), epcs["POSTCODE"].fillna("")
         )
@@ -103,7 +94,6 @@ def prepare_epcs(epcs):
 
 
 # ---------------------------------------------------------------------------------
-
 
 #### JOINING
 
@@ -121,13 +111,11 @@ def form_matching(df1, df2):
     This feels better suited than e.g. Levenshtein as to not
     excessively punish the inclusion of extra information at
     the end of the address field e.g. town, county.
-
     Args:
         df1 (Dataframe): Dataframe with standardised_postcode,
         numeric_tokens and standardised_address fields.
         df2 (Dataframe): Dataframe with standardised_postcode,
         numeric_tokens and standardised_address fields.
-
     Returns:
         Dataframe: Indices of df1 and matched indices in df2
         along with similarity scores for numeric tokens (value in {0, 1})
@@ -166,7 +154,6 @@ def join_prepared_mcs_epc_data(
     verbose=True,
 ):
     """Join prepared MCS and EPC data.
-
     Args:
         hps (Dataframe): Dataframe with standardised_postcode,
         numeric_tokens and standardised_address fields.
@@ -180,7 +167,6 @@ def join_prepared_mcs_epc_data(
         matches are sensible. Defaults to True.
         verbose (bool, optional): Whether or not to print diagnostic information
         about the matching, e.g. number of matched records. Defaults to True.
-
     Returns:
         Dataframe: Merged MCS and EPC records.
     """
@@ -190,7 +176,8 @@ def join_prepared_mcs_epc_data(
 
     # First ensure that all matches are above the matching parameter
     good_matches = matching[
-        (matching["numerics"] == 1) & (matching["address_score"] >= matching_parameter)
+        (matching["numerics"] == 1)
+        & (matching["address_score"] >= base_config.MCS_EPC_MATCHING_PARAMETER)
     ].reset_index()
 
     if all_records:
@@ -276,11 +263,16 @@ def join_prepared_mcs_epc_data(
 
 
 def join_mcs_epc_data(
-    hps=None, epcs=None, all_records=True, drop_epc_address=True, verbose=True
+    # epc_data_path=base_config.ROOT_DATA_PATH,
+    hps=None,
+    epcs=None,
+    all_records=True,
+    drop_epc_address=True,
+    verbose=True,
 ):
     """Produce joined MCS-EPC dataframe from "unprepared" data.
-
     Args:
+        epc_data_path (string): Path to local top-level EPC data folder.
         hps (Dataframe, optional): MCS installation records.
         If None, records are fetched automatically. Defaults to None.
         epcs (Dataframe, optional): EPC records. If None, records
@@ -291,7 +283,6 @@ def join_mcs_epc_data(
         from the EPC records used for matching. Defaults to True.
         verbose (bool, optional): Whether or not to print diagnostic information.
         Defaults to True.
-
     Returns:
         Dataframe: Matched MCS-EPC records.
     """
@@ -302,14 +293,48 @@ def join_mcs_epc_data(
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        # TODO: replace with line that loads most recent full EPC data
+        # TODO: load from S3 instead
+
+        # prep_epc = epc_data.load_preprocessed_epc_data(data_path="S3", version='preprocessed_dedupl',
+        #                                           usecols=['UPRN', 'CURRENT_ENERGY_RATING', 'INSPECTION_DATE',
+        #                                                    'PROPERTY_TYPE', 'CONSTRUCTION_AGE_BAND'],
+        #                                           batch='2021_Q4_0721',
+        #                                           n_samples=5000)
+
         epcs = load_preprocessed_epc_data(
-            data_path="../ASF_data", version=epc_version, usecols=None
+            data_path="S3",
+            version=epc_version,
+            batch="newest",
+            usecols=[
+                "UPRN",
+                "LMK_KEY",
+                "ADDRESS1",
+                "ADDRESS2",
+                "POSTCODE",
+                "INSPECTION_DATE",
+                "TRANSACTION_TYPE",
+                "TENURE",
+                "CURRENT_ENERGY_RATING",
+                "POTENTIAL_ENERGY_RATING",
+                "PROPERTY_TYPE",
+                "BUILT_FORM",
+                "NUMBER_HABITABLE_ROOMS",
+                "CONSTRUCTION_AGE_BAND",
+                "TOTAL_FLOOR_AREA",
+                "LIGHTING_ENERGY_EFF",
+                "FLOOR_ENERGY_EFF",
+                "WINDOWS_ENERGY_EFF",
+                "WALLS_ENERGY_EFF",
+                "ROOF_ENERGY_EFF",
+                "MAINHEAT_DESCRIPTION",
+            ],
         )
-        # epcs = load_s3_data(
-        #     bucket_name,
-        #     "outputs/EPC/EPC_GB_preprocessed_and_deduplicated_sample_prox.csv",
-        #     usecols=None,
+
+        # epcs = load_preprocessed_epc_data(
+        #     data_path=epc_data_path,
+        #     # rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
+        #     version=epc_version,
+
         # )
 
     prepared_hps = prepare_hps(hps)
@@ -332,11 +357,9 @@ def select_most_relevant_epc(joined_df):
     to best reflect the status of the property at the time of HP installation).
     The EPC chosen is the latest one before the installation if it exists;
     otherwise it is the earliest one after the installation.
-
     Args:
         joined_df (Dataframe): Joined MCS-EPC data. Assumed to
         contain INSPECTION_DATE, commission_date and original_mcs_index columns.
-
     Returns:
         Dataframe: Most relevant MCS-EPC records.
     """
