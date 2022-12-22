@@ -14,49 +14,7 @@ import boto3
 # ---------------------------------------------------------------------------------
 
 
-def get_batch_path_old(path, data_path, batch="newest"):
-    """Create path to specific batch, e.g. to the newest batch.
-
-    Args:
-        path (str/Path): Path that needs to be updated with batch name.
-        data_path (str/Path, optional): Path to ASF core data directory. Defaults to None.
-        batch (str, optional): Which batch to use, either specific batch name or relative indicator. Defaults to "newest".
-
-    Returns:
-        Path: Path with specific batch name integrated.
-    """
-
-    # If batch does not need to be filled in
-    if not "{}" in str(path):
-        return Path(path)
-
-    # Get most recent batch
-    if batch is None or batch.lower() in [
-        "newest",
-        "most recent",
-        "most_recent",
-        "latest",
-    ]:
-
-        newest_batch = get_most_recent_batch(data_path=data_path)
-        path = str(path).format(newest_batch)
-
-        # Warn if not the newest batch
-        is_newest, newest_s3_batch = check_for_newest_batch(data_path=data_path)
-        if not is_newest:
-            warnings.warn(
-                "You are loading the newest local batch - but a newer batch ({}) is available on S3.".format(
-                    newest_s3_batch
-                )
-            )
-
-    else:
-        path = str(path).format(batch.upper())
-
-    return Path(path)
-
-
-def get_batch_path(rel_path, data_path, batch="newest", data_check=True):
+def get_batch_path(rel_path, data_path, batch="newest"):
     """Create path to specific batch, e.g. to the newest batch.
 
     Args:
@@ -108,12 +66,18 @@ def get_all_batch_names(
     Args:
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to None.
         rel_path (str/Path, optional): Relative path to EPC data. Defaults to base_config.RAW_DATA_PATH.
+        check_folder (str, optional): Whether to check in the input or output folder. Options: input(s), output(s).
 
     Returns:
         list: All EPC batches.
     """
 
-    if check_folder == "outputs":
+    if check_folder not in ["input", "inputs", "output", "outputs"]:
+        raise IOError(
+            'The value for check_folder has to be "input", "inputs", "output" or "outputs".'
+        )
+
+    if check_folder in ["output", "outputs"]:
         rel_path = base_config.OUTPUT_DATA_PATH
     else:
         rel_path = rel_path.parent
@@ -146,15 +110,14 @@ def get_all_batch_names(
 
 
 def get_latest_mcs_epc_joined_batch(version="most_relevant"):
-    """Get all batch names for EPC versions stored on the S3 bucket 'asf-core-data'
-    or in a specific directory.
+    """Get the filename for the latest batch of MCS-EPC joined data for given version.
 
     Args:
-        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to None.
-        rel_path (str/Path, optional): Relative path to EPC data. Defaults to base_config.RAW_DATA_PATH.
+        version (str, optional): Which merging type is used for EPC. Defaults to most_relevant.
+            All options: most_relevant, newest, full.
 
     Returns:
-        list: All EPC batches.
+        str: Latest EPC/MCS batch filename for given version.
     """
 
     s3 = boto3.resource("s3")
@@ -168,6 +131,10 @@ def get_latest_mcs_epc_joined_batch(version="most_relevant"):
     ]
     batches = [batch for batch in batches if batch[:-11].endswith(version)]
 
+    if not batches:
+        raise IOError("No batch suitable baches found.")
+
+    # Return highest value since files are marked with date stamps in format yyyymmdd
     return max(batches)
 
 
@@ -179,6 +146,7 @@ def get_most_recent_batch(
     Args:
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to None.
         rel_path (str/Path, optional): Relative path to EPC data. Defaults to base_config.RAW_DATA_PATH.
+        check_folder (str, optional): Whether to check in the input or output folder. Options: input(s), output(s).
 
     Returns:
         str: Most recent batch name.
@@ -194,10 +162,9 @@ def get_most_recent_batch(
         )
 
     if not batches:
-        raise IOError("Not batch found in {}.".format(data_path))
+        raise IOError("No batch found in {}.".format(data_path))
 
     return max(batches)
-    # return sorted(batches, reverse=True)[0]
 
 
 def check_for_newest_batch(data_path=None, check_folder="input", verbose=False):
@@ -205,6 +172,7 @@ def check_for_newest_batch(data_path=None, check_folder="input", verbose=False):
 
     Args:
         data_path (str/Path, optional): Path to ASF core data directory. Defaults to None.
+        check_folder (str, optional): Whether to check in the input or output folder. Options: input(s), output(s).
         verbose (bool, optional): Whether to print results. Defaults to True.
 
     Returns:

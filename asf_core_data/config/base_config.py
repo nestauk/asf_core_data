@@ -20,7 +20,7 @@ FLOOR_LEVEL_DTYPE = float if FLOOR_LEVEL_AS_NUM else str
 v0_batches = [
     "2021_Q2_0721",
 ]
-v1_batches = ["2022_Q3_1220", "2021_Q4_0721"]
+# v1_batches = ["2022_Q3_1220", "2021_Q4_0721"]
 v2_batches = [
     "2022_Q1_complete",
     "2022_Q2_complete",

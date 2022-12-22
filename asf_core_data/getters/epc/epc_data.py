@@ -3,12 +3,8 @@
 
 # ---------------------------------------------------------------------------------
 
-from email.contentmanager import raw_data_manager
 import os
 import re
-from tabnanny import check
-from typing import final
-from zipfile import ZipFile
 
 import pandas as pd
 import numpy as np
@@ -17,6 +13,7 @@ import copy
 from asf_core_data import Path
 from asf_core_data.getters.epc import data_batches
 from asf_core_data.config import base_config
+from asf_core_data.getters.epc import data_download
 
 from asf_core_data.getters import data_getters
 
@@ -27,32 +24,19 @@ from asf_core_data.getters import data_getters
 start_with_dict = {"Wales": "domestic-W", "England": "domestic-E"}
 
 
-def extract_data(file_path):
-    """Extract data from zip file.
+def get_cert_rec_files(data_path, dir_name, scotland_data=False):
+    """Get set of EPC certification and recommendation directories or files in given directory.
+    For Scotland, the files storing the EPC records per quarter are returned.
+    For England/Wales, the directories in which the EPC data is stored for each area is returned.
 
     Args:
-        file_path (str): Path to the file to unzip.
+        data_path(str/Path): Path to ASF core data directory or 'S3'.
+        dir_name (str/Path): Path to directory where EPC data is stored.
+        scotland_data (bool, optional): Whether or not Scotland data is loaded. Defaults to False.
 
     Returns:
-        None
+        directories: Directory names/filenames where EPC data is stored for different areas/quarters.
     """
-
-    # Check whether file exists
-    if not Path(file_path).is_file():
-        raise IOError("The file '{}' does not exist.".format(file_path))
-
-    # Get directory
-    zip_dir = file_path.parent
-
-    # Unzip the data
-    with ZipFile(file_path, "r") as zip:
-
-        print("Extracting...\n{}".format(zip.filename))
-        zip.extractall(zip_dir)
-        print("Done!")
-
-
-def get_cert_rec_files(data_path, dir_name, scotland_data=False):
 
     if str(data_path) == "S3":
 
@@ -66,7 +50,6 @@ def get_cert_rec_files(data_path, dir_name, scotland_data=False):
             ]
 
         else:
-            # directories = data_getters.get_dir_content(dir_name=str(eng_wales_path))
             directories = data_getters.get_dir_content(
                 dir_name=str(dir_name), base_name_only=True
             )
@@ -79,7 +62,6 @@ def get_cert_rec_files(data_path, dir_name, scotland_data=False):
         for dir in directories
         if not (dir.startswith(".") or dir.endswith(".txt") or dir.endswith(".zip"))
     ]
-
     return directories
 
 
@@ -92,7 +74,6 @@ def load_scotland_data(
     load_recs=False,
     dtype=base_config.dtypes,
     low_memory=True,
-    data_check=False,
 ):
     """Load the Scotland EPC data.
 
@@ -102,6 +83,7 @@ def load_scotland_data(
         batch (str, optional): Data batch to load. Defaults to None.
         usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        load_recs (boolean, optional): Load recommendations instead of certificates (for England/Wales).
         dtype (dict, optional): Dict with dtypes for easier loading.. Defaults to base_config.dtypes.
         low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
             If True, internally process the file in chunks, resulting in lower memory use while parsing,
@@ -127,7 +109,8 @@ def load_scotland_data(
     )
 
     batch = RAW_SCOTLAND_DATA_PATH.parent.name
-    v2_batch = batch in base_config.v2_batches
+    batch_year = str(batch[:4])
+    v2_batch = batch_year > 2021
     skiprows = None if v2_batch else 1
 
     scot_usecols = copy.copy(usecols)
@@ -138,7 +121,7 @@ def load_scotland_data(
         for file in os.listdir(data_path / RAW_SCOTLAND_DATA_PATH)
         if file.endswith(".csv") and file != "Header.csv"
     ]:
-        extract_data(data_path / RAW_SCOTLAND_DATA_ZIP)
+        data_download.extract_data(data_path / RAW_SCOTLAND_DATA_ZIP)
 
     if scot_usecols is not None:
 
@@ -185,12 +168,8 @@ def load_scotland_data(
                 if col not in base_config.england_wales_only_features
             ]
 
-    directories = get_cert_rec_files(
-        data_path, RAW_SCOTLAND_DATA_PATH, scotland_data=True
-    )
-    directories = [
-        file for file in directories if file.endswith(".csv") and file != "Header.csv"
-    ]
+    files = get_cert_rec_files(data_path, RAW_SCOTLAND_DATA_PATH, scotland_data=True)
+    files = [file for file in files if file.endswith(".csv") and file != "Header.csv"]
 
     epc_certs = [
         data_getters.load_data(
@@ -201,9 +180,8 @@ def load_scotland_data(
             usecols=scot_usecols,
             skiprows=skiprows,  # don't load first row (more ellaborate feature names),
             encoding="latin-1",
-            # encoding="ISO-8859-1",
         )
-        for file in directories
+        for file in files
     ]
 
     # Concatenate single dataframes into dataframe
@@ -253,7 +231,6 @@ def load_england_wales_data(
     n_samples=None,
     load_recs=False,
     dtype=base_config.dtypes,
-    data_check=True,
     low_memory=True,
 ):
     """Load the England and/or Wales EPC data.
@@ -265,6 +242,7 @@ def load_england_wales_data(
         subset (str, optional): Nation subset: 'GB', 'Wales', 'England'. Defaults to None, loading all nation's data.
         usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        load_recs (boolean, optional): Load recommendations instead of certificates (for England/Wales).
         dtype (dict, optional): Dict with dtypes for easier loading.. Defaults to base_config.dtypes.
         low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
             If True, internally process the file in chunks, resulting in lower memory use while parsing,
@@ -335,7 +313,7 @@ def load_england_wales_data(
             / "domestic-W06000015-Cardiff/{}.csv".format(data_to_load)
         ).is_file()
     ):
-        extract_data(data_path / RAW_ENG_WALES_DATA_ZIP)
+        data_download.extract_data(data_path / RAW_ENG_WALES_DATA_ZIP)
 
     directories = get_cert_rec_files(data_path, RAW_ENG_WALES_DATA_PATH)
 
@@ -406,6 +384,7 @@ def load_raw_epc_data(
         subset (str, optional): Nation subset: 'GB', 'Wales', 'England', 'Scotland'. Defaults to "GB", loading all nation's data.
         usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        load_recs (boolean, optional): Load recommendations instead of certificates (for England/Wales).
         dtype (dict, optional): Dict with dtypes for easier loading.. Defaults to base_config.dtypes.
         low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
             If True, internally process the file in chunks, resulting in lower memory use while parsing,
@@ -520,7 +499,7 @@ def load_cleansed_epc(
 
     # If file does not exist (probably just not unzipped), unzip the data
     if str(data_path) != "S3" and not (data_path / rel_data_path).is_file():
-        extract_data(data_path / rel_data_path + ".zip")
+        data_download.extract_data(data_path / rel_data_path + ".zip")
 
     print("Loading cleansed EPC data... This will take a moment.")
     cleansed_epc = data_getters.load_data(
@@ -564,12 +543,11 @@ def load_preprocessed_epc_data(
     Args:
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
         rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_EPC_DATA_PATH.parent.
-        batch (str, optional): Data batch to load. Defaults to None.
         subset (str, optional): Nation subset: 'GB', 'Wales', 'England', 'Scotland'. Defaults to "GB", loading all nation's data.
+        batch (str, optional): Data batch to load. Defaults to None.
         version (str, optional): Data version to use. Defaults to "preprocessed_dedupl".
         usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
-        snapshot_data (bool, optional): Use snapshot data, which might not be up-to-date [legacy]. Defaults to False.
         low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
             If True, internally process the file in chunks, resulting in lower memory use while parsing,
             but possibly mixed type inference.
@@ -592,7 +570,9 @@ def load_preprocessed_epc_data(
 
     # If file does not exist (likely just not unzipped), unzip the data
     if (str(data_path) != "S3") and not (data_path / EPC_DATA_PATH).is_file():
-        extract_data(data_path / EPC_DATA_PATH.parent / (EPC_DATA_PATH.name + ".zip"))
+        data_download.extract_data(
+            data_path / EPC_DATA_PATH.parent / (EPC_DATA_PATH.name + ".zip")
+        )
 
     epc_df = data_getters.load_data(
         data_path,

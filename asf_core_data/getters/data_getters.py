@@ -1,18 +1,16 @@
 import boto3
 import os
 from fnmatch import fnmatch
-from urllib.request import urlretrieve
 from zipfile import ZipFile
-from asf_core_data import PROJECT_DIR
-from asf_core_data import Path
-import geopandas as gpd
-import pandas as pd
 import logging
 import pickle
 import json
 import shutil
 
+import geopandas as gpd
+import pandas as pd
 
+from asf_core_data import Path
 from asf_core_data.config import base_config
 from asf_core_data.getters.epc import data_batches
 
@@ -33,37 +31,66 @@ data_dict = {
 
 
 def print_download_options():
+    """Print datasets that can be downloaded from asf-core-data S3 bucket."""
 
     for key in data_dict.keys():
         print(key)
 
 
-def get_dir_content(dir_name, base_name_only=False):
+def get_dir_content(path_to_dir, base_name_only=False):
+    """Get contents of directory on S3 bucket asf-core-data.
+
+    Args:
+        path_to_dir (str/Path): Path to directory on S3 bucket.
+        base_name_only (bool, optional): Get only name of files/subfolders, instead of full path. Defaults to False.
+
+    Returns:
+        contents (list): List of files or subfolders.
+    """
 
     s3_client = boto3.client("s3")
-    folders = set()
-    response = s3_client.list_objects_v2(Bucket="asf-core-data", Prefix=dir_name)
+    contents = set()
+    response = s3_client.list_objects_v2(Bucket="asf-core-data", Prefix=path_to_dir)
 
     for content in response.get("Contents", []):
-        folders.add(os.path.dirname(content["Key"]))
+        contents.add(os.path.path_to_dir(content["Key"]))
 
     if base_name_only:
-        folders = [Path(f).name for f in folders]
+        contents = [Path(f).name for f in contents]
 
-    return sorted(folders)
+    return sorted(contents)
 
 
 def load_data(
+    file_path,
     data_path="S3",
-    file_path="",
     bucket_name="asf-core-data",
     usecols=None,
+    n_samples=None,
     dtype=None,
-    low_memory=False,
     skiprows=None,
     encoding=None,
-    n_samples=None,
+    low_memory=False,
 ):
+    """Load files from S3 bucket or local directory.
+
+    Args:
+        file_path (str, optional): Relative path to file to load.
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to "S3".
+        bucket_name (str, optional): S3 bucket name. Defaults to "asf-core-data".
+        usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
+        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        dtype (dict, optional): Dict with dtypes for easier loading. Defaults to None.
+        skiprows (int, optional): Which rows in csv file to skip loading. Defaults to None.
+        encoding (str, optional): Encoding for loading data. Defaults to None.
+        low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
+            If True, internally process the file in chunks, resulting in lower memory use while parsing,
+            but possibly mixed type inference.
+            To ensure no mixed types either set False, or specify the type with the dtype parameter.
+
+    Returns:
+        loaded_data (pd.DataFrame): Data loaded as pandas dataframe.
+    """
 
     if str(data_path) == "S3":
         loaded_data = load_s3_data(
@@ -93,25 +120,29 @@ def load_data(
 
 
 def get_s3_dir_files(
-    s3=boto3.resource("s3"),
     bucket_name="asf-core-data",
-    dir_name=".",
+    path_to_dir=".",
     direct_child_only=False,
 ):
+    """Get a list of all files in given bucket directory.
+
+    Args:
+        bucket_name (str, optional): Bucket name on S3. Defaults to "asf-core-data".
+        path_to_dir (str, optional): Path to directory of interest. Defaults to ".".
+        direct_child_only (bool, optional): Whether to only consider direct children (no subfolders). Defaults to False.
+
+    Returns:
+        dir_files (list): Files in given directory.
     """
-    get a list of all files in bucket directory.
-    s3: S3 boto3 resource
-    bucket_name: The S3 bucket name
-    dir_name: bucket directory name
-    """
+
     dir_files = []
     my_bucket = s3.Bucket(bucket_name)
-    for object_summary in my_bucket.objects.filter(Prefix=dir_name):
+    for object_summary in my_bucket.objects.filter(Prefix=path_to_dir):
         dir_files.append(object_summary.key)
 
     if direct_child_only:
         s3 = boto3.client("s3")
-        result = s3.list_objects(Bucket=bucket_name, Prefix=dir_name, Delimiter="/")
+        result = s3.list_objects(Bucket=bucket_name, Prefix=path_to_dir, Delimiter="/")
         dir_files = [o for o in result]
 
     return dir_files
@@ -124,15 +155,24 @@ def load_s3_data(
     dtype=None,
     low_memory=False,
     skiprows=None,
-    encoding=None,
     n_samples=None,
 ):
+    """Load data from S3 location.
+
+    Args:
+        bucket_name (str): Name of S3 bucket.
+        file_name (str/Path): File to load.
+        usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
+        dtype (dict, optional): Dict with dtypes for easier loading. Defaults to None.
+        low_memory (bool, optional): _description_. Defaults to False.
+        skiprows (int, optional): Which rows in csv file to skip loading. Defaults to None.
+        n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
+            If True, internally process the file in chunks, resulting in lower memory use while parsing,
+            but possibly mixed type inference.
+            To ensure no mixed types either set False, or specify the type with the dtype parameter.
     """
-    Load data from S3 location.
-    bucket_name: The S3 bucket name
-    file_name: S3 key to load
-    usecols: Columns of data to use. Defaults to None, loading all columns.
-    """
+
     if fnmatch(file_name, "*.xlsx"):
         data = pd.read_excel(
             os.path.join("s3://" + bucket_name, file_name), sheet_name=None
@@ -166,14 +206,15 @@ def load_s3_data(
         )
 
 
-def save_to_s3(s3, bucket_name, output_var, output_file_path):
+def save_to_s3(bucket_name, output_var, output_file_path):
+    """Save object to S3 bucket.
+
+    Args:
+        bucket_name (str): Name of S3 bucket.
+        output_var (str/Path): Object to save to S3.
+        output_file_path (str/Path): Path for where to save file to.
     """
-    Save data to S3 location.
-    s3: S3 boto3 resource
-    bucket_name: The S3 bucket name
-    output_var: Object to save
-    output_file_dir: S3 Directory to save object.
-    """
+
     obj = s3.Object(bucket_name, output_file_path)
 
     if fnmatch(output_file_path, "*.pkl") or fnmatch(output_file_path, "*.pickle"):
@@ -194,7 +235,6 @@ def download_s3_folder(s3_folder, local_dir):
     """
     Download the contents of a folder directory
     Args:
-        bucket_name: the name of the s3 bucket
         s3_folder: the folder path in the s3 bucket
         local_dir: a relative or absolute directory path in the local file system
     """
@@ -210,38 +250,13 @@ def download_s3_folder(s3_folder, local_dir):
         bucket.download_file(obj.key, target)
 
 
-def download_core_data(version, local_dir, batch=None, unzip=True):
-
-    if version.endswith(".csv"):
-        data_to_load = version + ".zip"
-    elif version.endswith(".zip"):
-        data_to_load = version
-    elif version == "supplementary_data":
-        download_s3_folder(data_dict[version], local_dir)
-        return
-    else:
-        data_to_load = str(data_dict[version]) + ".zip"
-
-    s3_path = data_batches.get_batch_path(data_to_load, "S3", batch=batch)
-
-    output_path = Path(local_dir) / s3_path
-
-    Path(output_path.parent).mkdir(parents=True, exist_ok=True)
-    download_from_s3(str(s3_path), str(output_path))
-
-    if unzip:
-        with ZipFile(output_path, "r") as zip_ref:
-            zip_ref.extractall(output_path.parent)
-
-        os.remove(output_path)
-
-        trash_dir = output_path.parent / "__MACOSX/"
-
-        if trash_dir.exists() and trash_dir.is_dir():
-            shutil.rmtree(trash_dir)
-
-
 def download_from_s3(path_to_file, output_path):
+    """Download dataset from S3 bucket to local directory.
+
+    Args:
+        path_to_file (str/Path): Path to file or object to download.
+        output_path (str/Path): Where to save it to.
+    """
 
     s3 = boto3.client("s3")
     s3.download_file(Bucket="asf-core-data", Key=path_to_file, Filename=output_path)

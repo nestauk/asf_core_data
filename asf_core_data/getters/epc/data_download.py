@@ -3,25 +3,17 @@
 
 # ---------------------------------------------------------------------------------
 
-from email.contentmanager import raw_data_manager
-import os
-import re
-from tabnanny import check
-from this import d
-from typing import final
-from zipfile import ZipFile
-import shutil
 
-import pandas as pd
-import numpy as np
+import shutil
+import boto3
+import os
+import zipfile
 
 from asf_core_data import Path
 from asf_core_data.getters.epc import data_batches
 from asf_core_data.config import base_config
-
 from asf_core_data.getters import data_getters
 
-import zipfile
 
 # ---------------------------------------------------------------------------------
 
@@ -38,18 +30,14 @@ data_dict = {
 }
 
 
-import boto3
-import os
-
-
 def download_s3_folder(s3_folder, local_dir):
     """
-    Download the contents of a folder directory
+    Download the contents of a folder directory on the asf-core-data S3 bucket into a local directory.
     Args:
-        bucket_name: the name of the s3 bucket
         s3_folder: the folder path in the s3 bucket
         local_dir: a relative or absolute directory path in the local file system
     """
+
     s3 = boto3.resource("s3")
     bucket = s3.Bucket("asf-core-data")
     for obj in bucket.objects.filter(Prefix=s3_folder):
@@ -62,19 +50,29 @@ def download_s3_folder(s3_folder, local_dir):
         bucket.download_file(obj.key, target)
 
 
-def download_core_data(version, local_dir, batch=None, unzip=True):
+def download_core_data(dataset, local_dir, batch=None, unzip=True):
+    """Download the ASF core data from the S3 bucket to local directory.
 
-    print("I get here")
+    Args:
+        dataset (str): Which dataset to download.
+            Options: epc_raw, epc_raw_combined, epc_preprocessed_dedupl, epc_preprocessed,
+            EST_cleansed, EST_cleansed_dedupl, supplementary_data
+        local_dir (str/Path): Path to local directory.
+        batch (str, optional): Batch name. Defaults to None (=newest).
+        unzip (bool, optional): Whether or not to unzip downloaded folder (if zip file). Defaults to True.
+    """
 
-    if version.endswith(".csv"):
-        data_to_load = version + ".zip"
-    elif version.endswith(".zip"):
-        data_to_load = version
-    elif version == "supplementary_data":
-        download_s3_folder(data_dict[version], local_dir)
+    if dataset.endswith(".csv"):
+        data_to_load = dataset + ".zip"
+    elif dataset.endswith(".zip"):
+        data_to_load = dataset
+
+    # Download entire folder
+    elif dataset == "supplementary_data":
+        download_s3_folder(data_dict[dataset], local_dir)
         return
     else:
-        data_to_load = str(data_dict[version]) + ".zip"
+        data_to_load = str(data_dict[dataset]) + ".zip"
 
     s3_path = data_batches.get_batch_path(data_to_load, "S3", batch=batch)
 
@@ -89,9 +87,33 @@ def download_core_data(version, local_dir, batch=None, unzip=True):
 
     dirpath = Path(output_path.parent / "__MACOSX")
 
-    print(dirpath)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
+
+
+def extract_data(file_path):
+    """Extract data from zip file.
+
+    Args:
+        file_path (str): Path to the file to unzip.
+
+    Returns:
+        None
+    """
+
+    # Check whether file exists
+    if not Path(file_path).is_file():
+        raise IOError("The file '{}' does not exist.".format(file_path))
+
+    # Get directory
+    zip_dir = file_path.parent
+
+    # Unzip the data
+    with zipfile.ZipFile(file_path, "r") as zip:
+
+        print("Extracting...\n{}".format(zip.filename))
+        zip.extractall(zip_dir)
+        print("Done!")
 
 
 if __name__ == "__main__":

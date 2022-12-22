@@ -3,7 +3,6 @@
 
 # ---------------------------------------------------------------------------------
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 import pandas as pd
 from asf_core_data.config import base_config
 
@@ -26,6 +25,7 @@ def get_country_imd_data(country, data_path="S3", rel_path=None, usecols=None):
     Args:
         country (str): Country for which to load IMD: 'England', 'Scotland', 'Wales'.
         data_path (str/Path, optional): Path to IMD data in local dir or 'S3'. Defaults to PROJECT_DIR / base_config.IMD_PATH.
+        rel_data_path (str/Path, optional): Relative path to IMD data. Defaults to None, leading to loading from default location.
         usecols (list, optional): List of features/columns to load. Defaults to None, loading all features.
 
     Returns:
@@ -56,7 +56,6 @@ def get_gb_imd_data(
 
     Args:
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
-        rel_data_path (str/Path, optional): Relative path to IMD data. Defaults to base_config.IMD_PATH.
         usecols (list, optional):  List of features/columns to load.
             Defaults to ["IMD Rank", "IMD Decile", "Postcode", "Income Score", "Employment Score", "Country"].
             This selection works for all countries. None will load all features.
