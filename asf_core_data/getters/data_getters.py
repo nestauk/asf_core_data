@@ -105,9 +105,10 @@ def load_data(
         )
     else:
 
-        file_path = Path(data_path) / file_path
+        full_path = Path(data_path) / file_path
+
         loaded_data = pd.read_csv(
-            file_path,
+            full_path,
             usecols=usecols,
             dtype=dtype,
             low_memory=low_memory,

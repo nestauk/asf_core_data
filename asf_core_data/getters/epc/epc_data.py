@@ -110,7 +110,7 @@ def load_scotland_data(
 
     batch = RAW_SCOTLAND_DATA_PATH.parent.name
     batch_year = str(batch[:4])
-    v2_batch = batch_year > 2021
+    v2_batch = int(batch_year) > 2021
     skiprows = None if v2_batch else 1
 
     scot_usecols = copy.copy(usecols)
@@ -173,8 +173,8 @@ def load_scotland_data(
 
     epc_certs = [
         data_getters.load_data(
-            data_path,
             RAW_SCOTLAND_DATA_PATH / file,
+            data_path=data_path,
             dtype=dtype,
             low_memory=low_memory,
             usecols=scot_usecols,
@@ -274,7 +274,7 @@ def load_england_wales_data(
             low_memory=low_memory,
             n_samples=n_samples,
             load_recs=load_recs,
-            data_check=True,
+            # data_check=True,
         )
 
         england_epc = load_england_wales_data(
@@ -338,8 +338,8 @@ def load_england_wales_data(
 
     epc_certs = [
         data_getters.load_data(
-            data_path,
             RAW_ENG_WALES_DATA_PATH / directory / "{}.csv".format(data_to_load),
+            data_path=data_path,
             dtype=dtype,
             low_memory=low_memory,
             usecols=usecols,
@@ -419,7 +419,6 @@ def load_raw_epc_data(
             data_path=data_path,
             rel_data_path=scotland_path,
             usecols=usecols,
-            data_check=data_check,
             n_samples=None if n_samples is None else n_samples + additional_samples,
             batch=batch,
         )
@@ -439,7 +438,7 @@ def load_raw_epc_data(
             n_samples=n_samples,
             load_recs=load_recs,
             dtype=dtype,
-            data_check=data_check,
+            # data_check=data_check,
             low_memory=low_memory,
             batch=batch,
         )
@@ -458,7 +457,7 @@ def load_raw_epc_data(
                 n_samples=n_samples,
                 load_recs=load_recs,
                 dtype=dtype,
-                data_check=False,
+                # data_check=False,
                 low_memory=low_memory,
             )
             all_epc_df.append(epc_df)
@@ -503,7 +502,7 @@ def load_cleansed_epc(
 
     print("Loading cleansed EPC data... This will take a moment.")
     cleansed_epc = data_getters.load_data(
-        data_path, rel_data_path, usecols=usecols, n_samples=n_samples
+        rel_data_path, data_path=data_path, usecols=usecols, n_samples=n_samples
     )
 
     # Drop first column
@@ -575,8 +574,8 @@ def load_preprocessed_epc_data(
         )
 
     epc_df = data_getters.load_data(
-        data_path,
         EPC_DATA_PATH,
+        data_path=data_path,
         dtype=dtype,
         low_memory=low_memory,
         usecols=usecols,
