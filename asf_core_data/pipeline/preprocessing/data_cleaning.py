@@ -516,3 +516,19 @@ def clean_epc_data(df):
     df = custom_clean_features(df)
 
     return df
+
+
+def reformat_postcode(df):
+    """Reformat postcode (remove empty space).
+    Legacy code for backwards-compatibility.
+
+    Args:
+        df (pd.DataFrame): Dataframe with postcode column.
+
+    Returns:
+        df (pd.DataFrame): Updated dataframe with formatted postcode.
+    """
+
+    df["POSTCODE"] = df["POSTCODE"].str.replace(r" ", "")
+
+    return df
