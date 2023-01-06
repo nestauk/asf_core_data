@@ -35,7 +35,7 @@ def get_country_imd_data(country, data_path="S3", rel_path=None, usecols=None):
     if rel_path is None:
         rel_path = country_path_dict[country]
 
-    imd_df = data_getters.load_data(data_path, rel_path, usecols=usecols)
+    imd_df = data_getters.load_data(rel_path, data_path=data_path, usecols=usecols)
     imd_df["Country"] = country
 
     return imd_df

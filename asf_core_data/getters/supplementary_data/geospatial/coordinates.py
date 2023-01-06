@@ -22,7 +22,7 @@ def get_postcode_coordinates(
         pandas.DateFrame: Location data (postcode, latitude, longitude).
     """
 
-    postcode_coordinates_df = data_getters.load_data(data_path, rel_data_path)
+    postcode_coordinates_df = data_getters.load_data(rel_data_path, data_path=data_path)
 
     # Remove ID (not necessary and conflicts with EPC dataframe)
     del postcode_coordinates_df["id"]
