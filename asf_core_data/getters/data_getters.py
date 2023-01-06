@@ -100,7 +100,6 @@ def load_data(
             dtype=dtype,
             low_memory=low_memory,
             skiprows=skiprows,
-            encoding=encoding,
             n_samples=n_samples,
         )
     else:
