@@ -125,9 +125,7 @@ def get_latest_mcs_epc_joined_batch(version="most_relevant"):
     path = "outputs/MCS/"
 
     batches = [
-        key
-        for key in data_getters.get_s3_dir_files(s3, bucket, path)
-        if "old" not in key
+        key for key in data_getters.get_s3_dir_files(bucket, path) if "old" not in key
     ]
     batches = [batch for batch in batches if batch[:-11].endswith(version)]
 

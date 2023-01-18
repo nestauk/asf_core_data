@@ -199,6 +199,7 @@ def load_and_preprocess_epc_data(
             base_config.RAW_EPC_DATA_PATH, data_path, batch
         )
 
+        # Raw EPC can be found in data path?
         raw_epc_exists = (Path(data_path) / raw_data_path).is_file()
 
     if n_samples is not None:
@@ -222,8 +223,11 @@ def load_and_preprocess_epc_data(
             "Nation subsets do not work well in combination with low n_samples. Set n_samples=None for best results."
         )
 
+    # Load raw data (from 'preprocessed' raw data or 'untouched' raw data)
+    # Shouldn't make a difference but sometimes useful when debugging
     if (raw_epc_exists and not reload_raw) or str(data_path) == "S3":
 
+        # Load raw EPC from preprocessed batch (England/Wales/Scotland combines in EPC_GB_raw.csv)
         epc_df = epc_data.load_preprocessed_epc_data(
             data_path=data_path,
             subset=subset,
@@ -234,7 +238,7 @@ def load_and_preprocess_epc_data(
         )
 
     else:
-
+        # Load raw EPC data from England/Wales and Scotland data from raw data folders
         epc_df = epc_data.load_raw_epc_data(
             data_path=data_path,
             rel_data_path=rel_data_path,
@@ -243,8 +247,6 @@ def load_and_preprocess_epc_data(
             usecols=usecols,
             n_samples=n_samples,
         )
-
-    print(epc_df.columns)
 
     epc_df = preprocess_data(
         epc_df,

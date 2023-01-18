@@ -14,6 +14,7 @@ from asf_core_data import Path
 from asf_core_data.config import base_config
 from asf_core_data.getters.epc import data_batches
 
+
 # %%
 s3 = boto3.resource("s3")
 logger = logging.getLogger(__name__)
@@ -28,6 +29,47 @@ data_dict = {
     "EST_cleansed_dedupl": base_config.EST_CLEANSED_EPC_DATA_DEDUPL_PATH,
     "supplementary_data": base_config.SUPPL_DATA_PATH,
 }
+
+
+def download_core_data(dataset, local_dir, batch=None, unzip=True):
+    """Download the ASF core data from the S3 bucket to local directory.
+
+    Args:
+        dataset (str): Which dataset to download.
+            Options: epc_raw, epc_raw_combined, epc_preprocessed_dedupl, epc_preprocessed,
+            EST_cleansed, EST_cleansed_dedupl, supplementary_data
+        local_dir (str/Path): Path to local directory.
+        batch (str, optional): Batch name. Defaults to None (=newest).
+        unzip (bool, optional): Whether or not to unzip downloaded folder (if zip file). Defaults to True.
+    """
+
+    if dataset.endswith(".csv"):
+        data_to_load = dataset + ".zip"
+    elif dataset.endswith(".zip"):
+        data_to_load = dataset
+
+    # Download entire folder
+    elif dataset == "supplementary_data":
+        download_s3_folder(data_dict[dataset], local_dir)
+        return
+    else:
+        data_to_load = str(data_dict[dataset]) + ".zip"
+
+    s3_path = data_batches.get_batch_path(data_to_load, "S3", batch=batch)
+
+    output_path = Path(local_dir) / s3_path
+
+    Path(output_path.parent).mkdir(parents=True, exist_ok=True)
+    download_from_s3(str(s3_path), str(output_path))
+
+    if unzip:
+        with ZipFile(output_path, "r") as zip_ref:
+            zip_ref.extractall(output_path.parent)
+
+    dirpath = Path(output_path.parent / "__MACOSX")
+
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
 
 
 def print_download_options():
@@ -136,6 +178,8 @@ def get_s3_dir_files(
     """
 
     dir_files = []
+
+    s3 = boto3.resource("s3")
     my_bucket = s3.Bucket(bucket_name)
     for object_summary in my_bucket.objects.filter(Prefix=path_to_dir):
         dir_files.append(object_summary.key)

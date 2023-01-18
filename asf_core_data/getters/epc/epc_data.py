@@ -13,7 +13,7 @@ import copy
 from asf_core_data import Path
 from asf_core_data.getters.epc import data_batches
 from asf_core_data.config import base_config
-from asf_core_data.getters.epc import data_download
+from asf_core_data.getters import data_download
 
 from asf_core_data.getters import data_getters
 
@@ -354,8 +354,10 @@ def load_england_wales_data(
     if "UPRN" in epc_certs.columns and "BUILDING_REFERENCE_NUMBER" in epc_certs.columns:
         epc_certs["UPRN"].fillna(epc_certs.BUILDING_REFERENCE_NUMBER, inplace=True)
 
-        if batch in base_config.v0_batches:
-            epc_certs["UPRN"] = epc_certs["BUILDING_REFERENCE_NUMBER"]
+    if batch in base_config.v0_batches and (
+        usecols is None or "BUILDING_REFERENCE_NUMBER" in usecols
+    ):
+        epc_certs["UPRN"] = epc_certs["BUILDING_REFERENCE_NUMBER"]
 
     if n_samples is not None:
         epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]

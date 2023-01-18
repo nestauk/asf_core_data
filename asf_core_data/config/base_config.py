@@ -21,12 +21,12 @@ v0_batches = [
     "2021_Q2_0721",
 ]
 # v1_batches = ["2022_Q3_1220", "2021_Q4_0721"]
-v2_batches = [
-    "2022_Q1_complete",
-    "2022_Q2_complete",
-    "2022_Q3_complete",
-    "2022_Q5_test",
-]
+# v2_batches = [
+#     "2022_Q1_complete",
+#     "2022_Q2_complete",
+#     "2022_Q3_complete",
+#     "2022_Q5_test",
+# ]
 
 
 POSTCODE_TO_COORD_PATH = Path(

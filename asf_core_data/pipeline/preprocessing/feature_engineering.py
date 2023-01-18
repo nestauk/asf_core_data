@@ -27,6 +27,7 @@ from asf_core_data.pipeline.preprocessing import data_cleaning
 
 def short_hash(text):
     """Generate a unique short hash for given string.
+    Legacy code. No longer used in newer versions.
 
     Args:
         text (str):  String for which to get ID.
@@ -43,6 +44,7 @@ def short_hash(text):
 
 def get_unique_building_id(df, short_code=False):
     """Add unique building ID column to dataframe.
+    Legacy code. No longer used in newer versions.
 
     Args:
         df (str): String for which to get ID.
