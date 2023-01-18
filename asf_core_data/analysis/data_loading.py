@@ -1,19 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     cell_metadata_filter: -all
-#     comment_magics: true
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.13.7
-#   kernelspec:
-#     display_name: Python 3
-#     language: python
-#     name: python3
-# ---
-
 # %% [markdown]
 # ## ASF Core Data Infrastructure -  Data Loaders
 #
@@ -21,13 +5,13 @@
 # The data can be loaded directly from the S3 bucket named [`asf-core-data`](https://s3.console.aws.amazon.com/s3/buckets/asf-core-data?region=eu-west-2&tab=objects) or it can be downloaded to a local directory, from where it will be loaded when needed.
 
 # %%
-# %load_ext autoreload
-# %autoreload 2
 
-
+import sys
 import os
 import asf_core_data
 
+
+from asf_core_data import load_preprocessed_epc_data
 from asf_core_data.getters.epc import epc_data, data_batches
 from asf_core_data.getters.supplementary_data.deprivation import imd_data
 from asf_core_data.getters.supplementary_data.geospatial import coordinates
@@ -35,11 +19,13 @@ from asf_core_data.pipeline.preprocessing import preprocess_epc_data
 from asf_core_data.utils.visualisation import easy_plotting
 from asf_core_data.getters import data_getters
 
+
 from asf_core_data.config import base_config
 
 from asf_core_data.pipeline.data_joining import merge_install_dates
 
 from asf_core_data import Path
+
 
 # %% [markdown]
 # ## Local Data Dir
@@ -69,7 +55,7 @@ if not os.path.exists(LOCAL_DATA_DIR):
 print("Local dir\n---------------")
 print(
     "Available batches:",
-    data_batches.get_all_batch_names(data_path=LOCAL_DATA_DIR, check_folder="inputs"),
+    data_batches.get_all_batch_names(data_path=LOCAL_DATA_DIR, check_folder="input"),
 )
 
 # %% [markdown]
@@ -83,15 +69,15 @@ print(
 data_getters.print_download_options()
 
 # %%
-# %%time
+#%%time
 data_getters.download_core_data("epc_raw", LOCAL_DATA_DIR, batch="2021_Q2_0721")
 
 # %%
-# %%time
+#%%time
 data_getters.download_core_data("epc_raw_combined", LOCAL_DATA_DIR, batch="newest")
 
 # %%
-# %%time
+#%%time
 data_getters.download_core_data(
     "epc_preprocessed_dedupl", LOCAL_DATA_DIR, batch="newest"
 )
@@ -219,28 +205,28 @@ scotland_epc.shape
 # %%
 # # Commented out to reduce runtime
 
-# # %%time
+# %%time
 # epc_data.load_raw_epc_data(
 #     data_path="S3", subset="Wales")
 
 # %%
 # #Commented out to reduce runtime
 
-# # %%time
+# %%time
 # epc_data.load_raw_epc_data(
 #     data_path="S3", subset="Scotland")
 
 # %%
 # # Commented out to reduce runtime
 
-# # %%time
+# %%time
 # epc_data.load_raw_epc_data(
 #     data_path="S3", subset="England")
 
 # %%
 # # Commented out to reduce runtime
 
-# # %%time
+# %%time
 # epc_data.load_raw_epc_data(
 #     data_path="S3", subset="GB")
 
@@ -262,19 +248,18 @@ prep_epc = epc_data.load_preprocessed_epc_data(
     ],
 )
 
+prep_epc.shape
+
 # %%
-prep_epc = epc_data.load_preprocessed_epc_data(
+prep_epc_dedupl = load_preprocessed_epc_data(
     data_path=LOCAL_DATA_DIR,
     version="preprocessed_dedupl",
-    usecols=[
-        "UPRN",
-        "CURRENT_ENERGY_RATING",
-        "INSPECTION_DATE",
-        "PROPERTY_TYPE",
-        "CONSTRUCTION_AGE_BAND",
-    ],
+    usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
+    batch="newest",
     n_samples=5000,
 )
+
+prep_epc_dedupl.shape
 
 # %% [markdown]
 # ### Loading data from directly from S3
@@ -294,6 +279,8 @@ prep_epc = epc_data.load_preprocessed_epc_data(
     n_samples=5000,
 )
 
+prep_epc.shape
+
 # %% [markdown]
 # Pro tip: you can filter the data by entry year.
 
@@ -308,7 +295,7 @@ sorted(prep_epc_2015["INSPECTION_DATE"].dt.year.unique())
 
 # %%
 wales_epc_reduced = preprocess_epc_data.load_and_preprocess_epc_data(
-    data_path=LOCAL_DATA_DIR, batch="2021_Q2_0721", subset="Wales"
+    data_path=LOCAL_DATA_DIR, batch="2021_Q2_0721", subset="Wales", reload_raw=True
 )
 
 # %%
@@ -363,5 +350,11 @@ data_getters.download_core_data("EST_cleansed_dedupl", LOCAL_DATA_DIR)
 # %%
 est_cleansed = epc_data.load_cleansed_epc(data_path=LOCAL_DATA_DIR, n_samples=5)
 est_cleansed.head()
+
+# %%
+
+
+# %%
+
 
 # %%
