@@ -18,7 +18,7 @@ from asf_core_data.getters import data_getters
 # ---------------------------------------------------------------------------------
 
 
-def download_s3_folder(s3_folder, local_dir):
+def download_s3_folder(s3_folder, local_dir, bucket_name="asf-core-data"):
     """
     Download the contents of a folder directory on the asf-core-data S3 bucket into a local directory.
     Args:
@@ -27,7 +27,7 @@ def download_s3_folder(s3_folder, local_dir):
     """
 
     s3 = boto3.resource("s3")
-    bucket = s3.Bucket("asf-core-data")
+    bucket = s3.Bucket(bucket_name)
     for obj in bucket.objects.filter(Prefix=s3_folder):
 
         target = os.path.join(local_dir, s3_folder, os.path.relpath(obj.key, s3_folder))
