@@ -14,7 +14,7 @@ import boto3
 # ---------------------------------------------------------------------------------
 
 
-def get_batch_path(rel_path, data_path, batch="newest"):
+def get_batch_path(rel_path, data_path, batch="newest", check_folder="input"):
     """Create path to specific batch, e.g. to the newest batch.
 
     Args:
@@ -38,12 +38,16 @@ def get_batch_path(rel_path, data_path, batch="newest"):
         "latest",
     ]:
 
-        newest_batch = get_most_recent_batch(data_path=data_path)
+        newest_batch = get_most_recent_batch(
+            data_path=data_path, check_folder=check_folder
+        )
         path = str(rel_path).format(newest_batch)
 
         # Warn if not the newest batch
         if data_path != "S3":
-            is_newest, newest_s3_batch = check_for_newest_batch(data_path=data_path)
+            is_newest, newest_s3_batch = check_for_newest_batch(
+                data_path=data_path, check_folder=check_folder
+            )
             if not is_newest:
                 warnings.warn(
                     "You are loading the newest local batch - but a newer batch ({}) is available on S3.".format(
@@ -97,7 +101,9 @@ def get_all_batch_names(
 
     else:
 
-        data_path = get_batch_path(data_path / rel_path, data_path=data_path)
+        data_path = get_batch_path(
+            data_path / rel_path, data_path=data_path, check_folder="input"
+        )
         batches = [
             p.name
             for p in data_path.glob("*/")
@@ -152,7 +158,7 @@ def get_most_recent_batch(
 
     if str(data_path) == "S3":
 
-        batches = get_all_batch_names(data_path="S3")
+        batches = get_all_batch_names(data_path="S3", check_folder=check_folder)
 
     else:
         batches = get_all_batch_names(

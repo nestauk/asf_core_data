@@ -99,13 +99,11 @@ def load_scotland_data(
         )
 
     RAW_SCOTLAND_DATA_PATH = data_batches.get_batch_path(
-        rel_data_path, data_path, batch
+        rel_data_path, data_path, batch, check_folder="input"
     )
 
     RAW_SCOTLAND_DATA_ZIP = data_batches.get_batch_path(
-        base_config.RAW_SCOTLAND_DATA_ZIP,
-        data_path,
-        batch,
+        base_config.RAW_SCOTLAND_DATA_ZIP, data_path, batch, check_folder="input"
     )
 
     batch = RAW_SCOTLAND_DATA_PATH.parent.name
@@ -295,13 +293,11 @@ def load_england_wales_data(
         return
 
     RAW_ENG_WALES_DATA_PATH = data_batches.get_batch_path(
-        rel_data_path, data_path, batch
+        rel_data_path, data_path, batch, check_folder="input"
     )
 
     RAW_ENG_WALES_DATA_ZIP = data_batches.get_batch_path(
-        base_config.RAW_ENG_WALES_DATA_ZIP,
-        data_path,
-        batch,
+        base_config.RAW_ENG_WALES_DATA_ZIP, data_path, batch, check_folder="input"
     )
 
     # If sample file does not exist (probably just not unzipped), unzip the data
@@ -397,7 +393,9 @@ def load_raw_epc_data(
     """
 
     if rel_data_path != base_config.RAW_DATA_PATH:
-        RAW_DATA_PATH = data_batches.get_batch_path(rel_data_path, data_path, batch)
+        RAW_DATA_PATH = data_batches.get_batch_path(
+            rel_data_path, data_path, batch, check_folder="input"
+        )
         wales_england_path = RAW_DATA_PATH / "England_Wales/"
         scotland_path = RAW_DATA_PATH / "Scotland/"
 
@@ -566,7 +564,10 @@ def load_preprocessed_epc_data(
     dtype = base_config.dtypes if version == "raw" else base_config.dtypes_prepr
 
     EPC_DATA_PATH = data_batches.get_batch_path(
-        rel_data_path / version_path_dict[version], data_path, batch
+        rel_data_path / version_path_dict[version],
+        data_path,
+        batch,
+        check_folder="output",
     )
 
     # If file does not exist (likely just not unzipped), unzip the data

@@ -180,6 +180,7 @@ def get_s3_dir_files(
     dir_files = []
 
     s3 = boto3.resource("s3")
+
     my_bucket = s3.Bucket(bucket_name)
     for object_summary in my_bucket.objects.filter(Prefix=path_to_dir):
         dir_files.append(object_summary.key)

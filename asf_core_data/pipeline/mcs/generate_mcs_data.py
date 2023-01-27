@@ -55,7 +55,7 @@ def get_latest_mcs_from_s3():
 
     mcs_files = [
         key
-        for key in get_s3_dir_files(s3, bucket_name, raw_data_s3_folder)
+        for key in get_s3_dir_files(path_to_dir=raw_data_s3_folder)
         if "installations" or "installer" in key
     ]
 
@@ -138,7 +138,7 @@ def concatenate_save_raw_installations(all_installations_data):
 
     concat_installations = concat_installations.rename(columns=colnames_dict)
 
-    save_to_s3(s3, bucket_name, concat_installations, "/" + installations_raw_s3_path)
+    save_to_s3(bucket_name, concat_installations, "/" + installations_raw_s3_path)
 
 
 def concatenate_save_raw_installers(all_installer_data):
@@ -148,7 +148,7 @@ def concatenate_save_raw_installers(all_installer_data):
     concat_installers = pd.concat(installer_dfs)
     concat_installers.drop_duplicates(inplace=True, ignore_index=True)
 
-    save_to_s3(s3, bucket_name, concat_installers, "/" + installers_raw_s3_path)
+    save_to_s3(bucket_name, concat_installers, "/" + installers_raw_s3_path)
 
 
 def generate_processed_mcs_installations(
@@ -259,11 +259,11 @@ def generate_and_save_mcs():
     concatenate_save_raw_installers(all_installer_data)
 
     processed_mcs = get_processed_installations_data()
-    save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
+    save_to_s3(bucket_name, processed_mcs, no_epc_path)
     print("Saved in S3: " + no_epc_path)
 
     fully_joined_mcs_epc = join_mcs_epc_data(hps=processed_mcs, all_records=True)
-    save_to_s3(s3, bucket_name, fully_joined_mcs_epc, full_epc_path)
+    save_to_s3(bucket_name, fully_joined_mcs_epc, full_epc_path)
     print("Saved in S3: " + full_epc_path)
 
     # avoid completely regenerating the joined df by just filtering it
@@ -276,7 +276,7 @@ def generate_and_save_mcs():
     # print("Saved in S3: " + newest_epc_path)
 
     most_relevant_mcs_epc = select_most_relevant_epc(fully_joined_mcs_epc)
-    save_to_s3(s3, bucket_name, most_relevant_mcs_epc, most_relevant_epc_path)
+    save_to_s3(bucket_name, most_relevant_mcs_epc, most_relevant_epc_path)
     print("Saved in S3: " + most_relevant_epc_path)
 
 
