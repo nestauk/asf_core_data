@@ -9,7 +9,7 @@ filelock
 typer
 sh
 openpyxl
-boto3
+boto3==1.24.93
 recordlinkage
 requests
 pandera
