@@ -454,7 +454,7 @@ def remove_empty_features(df):
     return df
 
 
-def custom_clean_features(df):
+def custom_clean_features(df, cap_features=False):
     """Custom clean features.
     For instances, standardise values and cap at max value.
 
@@ -473,11 +473,6 @@ def custom_clean_features(df):
         "GLAZED_AREA": clean_GLAZED_AREA,
     }
 
-    cap_value_dict = {
-        "NUMBER_HABITABLE_ROOMS": 10,
-        "NUMBER_HEATED_ROOMS": 10,
-    }
-
     # Custom cleaning by value (B1)
     for feat in df.columns:
         if feat in custom_cleaning_dict.keys():
@@ -488,11 +483,18 @@ def custom_clean_features(df):
     df = clean_EFF_SCORES(df)
     # [Additional cleaning functions here]
 
-    # Cap features
-    for feat in df.columns:
-        if feat in cap_value_dict.keys():
-            cap_value = cap_value_dict[feat]
-            df = cap_feature_values(df, feat, cap_value=cap_value)
+    if cap_features:
+
+        cap_value_dict = {
+            "NUMBER_HABITABLE_ROOMS": 10,
+            "NUMBER_HEATED_ROOMS": 10,
+        }
+
+        # Cap features
+        for feat in df.columns:
+            if feat in cap_value_dict.keys():
+                cap_value = cap_value_dict[feat]
+                df = cap_feature_values(df, feat, cap_value=cap_value)
 
     return df
 
