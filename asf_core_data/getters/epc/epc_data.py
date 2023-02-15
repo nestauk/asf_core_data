@@ -285,7 +285,7 @@ def load_england_wales_data(
             dtype=dtype,
             low_memory=low_memory,
             load_recs=load_recs,
-            data_check=False,
+            # data_check=False,
         )
 
         epc_certs = pd.concat([wales_epc, england_epc], axis=0)
@@ -370,7 +370,7 @@ def load_raw_epc_data(
     n_samples=None,
     load_recs=False,
     dtype=base_config.dtypes,
-    data_check=False,
+    # data_check=False,
     low_memory=True,
 ):
     """Load and return EPC dataset, or specific subset, as pandas dataframe.
@@ -413,7 +413,7 @@ def load_raw_epc_data(
     # Get Scotland data
     if subset in ["Scotland", "GB"]:
 
-        data_check = True if subset == "Scotland" else False
+        # data_check = True if subset == "Scotland" else False
 
         epc_scotland_df = load_scotland_data(
             data_path=data_path,
@@ -438,7 +438,6 @@ def load_raw_epc_data(
             n_samples=n_samples,
             load_recs=load_recs,
             dtype=dtype,
-            # data_check=data_check,
             low_memory=low_memory,
             batch=batch,
         )
@@ -457,12 +456,11 @@ def load_raw_epc_data(
                 n_samples=n_samples,
                 load_recs=load_recs,
                 dtype=dtype,
-                # data_check=False,
                 low_memory=low_memory,
             )
             all_epc_df.append(epc_df)
 
-        epc_df = pd.concat(all_epc_df, axis=0)
+        epc_df = pd.concat(all_epc_df, axis=0).reset_index()
 
         return epc_df
 
@@ -563,6 +561,23 @@ def load_preprocessed_epc_data(
 
     dtype = base_config.dtypes if version == "raw" else base_config.dtypes_prepr
 
+    if usecols == base_config.EPC_PREPROC_FEAT_SELECTION and version == "raw":
+        usecols = [
+            col
+            for col in usecols
+            if col
+            not in [
+                "N_SAME_UPRN_ENTRIES",
+                "HEATING_FUEL",
+                "HP_TYPE",
+                "HEATING_SYSTEM",
+                "ENERGY_RATING_CAT",
+                "HP_INSTALLED",
+                "DIFF_POT_ENERGY_RATING",
+                "CURR_ENERGY_RATING_NUM",
+            ]
+        ]
+
     EPC_DATA_PATH = data_batches.get_batch_path(
         rel_data_path / version_path_dict[version],
         data_path,
@@ -590,7 +605,14 @@ def load_preprocessed_epc_data(
             epc_df[col] = pd.to_datetime(epc_df[col], errors="coerce")
 
     if subset is not None and subset != "GB":
-        epc_df = epc_df.loc[epc_df["COUNTRY"] == subset]
+        if "COUNTRY" in usecols:
+            epc_df = epc_df.loc[epc_df["COUNTRY"] == subset]
+        else:
+            raise UserWarning(
+                "COUNTRY feature is not loaded so we cannot filter by subset '{}'".format(
+                    subset
+                )
+            )
 
     return epc_df
 
