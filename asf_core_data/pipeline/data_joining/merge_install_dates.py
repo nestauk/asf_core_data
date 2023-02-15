@@ -64,25 +64,11 @@ def get_mcs_install_dates(epc_df, additional_features=True):
         subset=["UPRN"], keep="first"
     )
 
-    # print(mcs_data["HP_INSTALL_DATE"].unique()[:5])
-
     # Create a date dict from MCS data and apply to EPC data
     # If no install date is found for address, it assigns NaN
     date_dict = mcs_data.set_index("UPRN").to_dict()["HP_INSTALL_DATE"]
 
-    # original_address_dict = mcs_data.set_index("compressed_epc_address").to_dict()[
-    #     "MCS_ADDRESS"
-    # ]
-
     epc_df["HP_INSTALL_DATE"] = epc_df["UPRN"].map(date_dict)
-    # epc_df["MCS address"] = epc_df["UPRN"].map(original_address_dict)
-
-    # overlap = [
-    #     a
-    #     for a in sorted(list(epc_df["UPRN"].unique()))
-    #     if a in sorted(list(mcs_data["UPRN"].unique()))
-    # ]
-    # print(overlap)
 
     if additional_features:
         for feat in ["tech_type", "cluster", "installer_name"]:
@@ -97,8 +83,13 @@ def get_mcs_install_dates(epc_df, additional_features=True):
 
 
 def manage_hp_install_dates(
-    df, identifier="UPRN", verbose=False, additional_features=False
+    df,
+    identifier="UPRN",
+    verbose=False,
+    additional_features=False,
+    add_hp_features=False,
 ):
+
     """Manage heat pump install dates given by EPC and MCS.
 
     Args:
@@ -122,34 +113,36 @@ def manage_hp_install_dates(
 
     df["FIRST_HP_MENTION"] = df[identifier].map(dict(first_hp_mention))
 
-    df["ANY_HP"] = df[identifier].map(
-        dict(df.groupby(identifier)["HP_INSTALLED"].max())
-    )
+    # Additional features about heat pump history of property
+    if add_hp_features:
 
-    df["HP_AT_FIRST"] = df[identifier].map(
-        df.loc[df.groupby(identifier)["INSPECTION_DATE"].idxmin()]
-        .set_index(identifier)
-        .to_dict()["HP_INSTALLED"]
-    )
+        df["ANY_HP"] = df[identifier].map(
+            dict(df.groupby(identifier)["HP_INSTALLED"].max())
+        )
 
-    df["HP_AT_LAST"] = df[identifier].map(
-        df.loc[df.groupby(identifier)["INSPECTION_DATE"].idxmax()]
-        .set_index(identifier)
-        .to_dict()["HP_INSTALLED"]
-    )
+        df["HP_AT_FIRST"] = df[identifier].map(
+            df.loc[df.groupby(identifier)["INSPECTION_DATE"].idxmin()]
+            .set_index(identifier)
+            .to_dict()["HP_INSTALLED"]
+        )
 
-    df["HP_LOST"] = df["HP_AT_FIRST"] & ~df["HP_AT_LAST"]
-    df["HP_ADDED"] = ~df["HP_AT_FIRST"] & df["HP_AT_LAST"]
-    df["HP_IN_THE_MIDDLE"] = (
-        ~df["HP_AT_FIRST"] & ~df["HP_AT_LAST"] & ~df["FIRST_HP_MENTION"].isna()
-    )
+        df["HP_AT_LAST"] = df[identifier].map(
+            df.loc[df.groupby(identifier)["INSPECTION_DATE"].idxmax()]
+            .set_index(identifier)
+            .to_dict()["HP_INSTALLED"]
+        )
+
+        df["HP_LOST"] = df["HP_AT_FIRST"] & ~df["HP_AT_LAST"]
+        df["HP_ADDED"] = ~df["HP_AT_FIRST"] & df["HP_AT_LAST"]
+        df["HP_IN_THE_MIDDLE"] = (
+            ~df["HP_AT_FIRST"] & ~df["HP_AT_LAST"] & ~df["FIRST_HP_MENTION"].isna()
+        )
 
     # If no HP Install date, set MCS availabibility to False
     df["MCS_AVAILABLE"] = ~df["HP_INSTALL_DATE"].isna()
 
-    # If no first mention of HP, then set has
+    # If no first mention of HP, then set has no heat pump
     df["HAS_HP_AT_SOME_POINT"] = ~df["FIRST_HP_MENTION"].isna()
-    df["ARTIFICIALLY_DUPL"] = False
 
     # HP entry conditions
     no_mcs_or_epc = (~df["MCS_AVAILABLE"]) & (~df["HP_INSTALLED"])
@@ -158,6 +151,8 @@ def manage_hp_install_dates(
     no_epc_but_mcs_hp = (df["MCS_AVAILABLE"]) & (~df["HP_INSTALLED"])
     either_hp = (df["MCS_AVAILABLE"]) | (df["HP_INSTALLED"])
     epc_entry_before_mcs = df["INSPECTION_DATE"] < df["HP_INSTALL_DATE"]
+
+    df["ARTIFICIALLY_DUPL"] = False
 
     if verbose:
 
@@ -284,12 +279,9 @@ def manage_hp_install_dates(
 
     df = pd.concat([df, no_future_hp_entry])
 
-    # print("**********")
-    # print(df.shape)
-
+    # Deduplicate and only keep latest record
     df = df.sort_values("INSPECTION_DATE", ascending=True).drop_duplicates(
-        subset=[identifier], keep="first"
+        subset=[identifier], keep="last"
     )
-    # print(df.shape)
 
     return df
