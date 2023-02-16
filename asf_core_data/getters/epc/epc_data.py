@@ -522,7 +522,9 @@ def load_preprocessed_epc_data(
     version="preprocessed_dedupl",
     usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
     n_samples=None,
+    skiprows=None,
     low_memory=True,
+    get_country_indices=False,
 ):
     """Load the EPC dataset including England, Wales and Scotland.
     Select one of the following versions:
@@ -558,6 +560,20 @@ def load_preprocessed_epc_data(
         "preprocessed_dedupl": base_config.PREPROC_EPC_DATA_DEDUPL_PATH.name,
         "preprocessed": base_config.PREPROC_EPC_DATA_PATH.name,
     }
+
+    if subset in ["England", "Wales", "Scotland"] and not get_country_indices:
+        country_df = load_preprocessed_epc_data(
+            data_path=data_path,
+            rel_data_path=rel_data_path,
+            subset=subset,
+            batch=batch,
+            version=version,
+            usecols=["COUNTRY"],
+            get_country_indices=True,
+        ).reset_index()
+        skiprows = [
+            r + 1 for r in country_df.index[country_df["COUNTRY"] != subset].tolist()
+        ]
 
     dtype = base_config.dtypes if version == "raw" else base_config.dtypes_prepr
 
@@ -598,21 +614,12 @@ def load_preprocessed_epc_data(
         low_memory=low_memory,
         usecols=usecols,
         n_samples=n_samples,
+        skiprows=skiprows,
     )
 
     for col in base_config.parse_dates:
         if col in epc_df.columns:
             epc_df[col] = pd.to_datetime(epc_df[col], errors="coerce")
-
-    if subset is not None and subset != "GB":
-        if "COUNTRY" in usecols:
-            epc_df = epc_df.loc[epc_df["COUNTRY"] == subset]
-        else:
-            raise UserWarning(
-                "COUNTRY feature is not loaded so we cannot filter by subset '{}'".format(
-                    subset
-                )
-            )
 
     return epc_df
 
