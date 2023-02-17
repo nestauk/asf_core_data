@@ -542,3 +542,66 @@ S3_NEW_MCS_DATA_DUMP_DIR = "inputs/MCS/latest_raw_data/"
 INSTALLATIONS_RAW_S3_PATH = "inputs/MCS/mcs_installations.csv"
 INSTALLATIONS_RAW_LOCAL_PATH = "/inputs/data/mcs/installations"
 RAW_DATA_S3_FOLDER = "inputs/MCS/latest_raw_data"
+
+
+# HISTORICAL INSTALLERS
+PREPROCESSED_MCS_HISTORICAL_INSTALLERS_PATH = (
+    "/outputs/MCS/installers/mcs_historical_installers_{}.csv"
+)
+
+historical_installers_columns_order = [
+    "company_unique_id",
+    "company_name",
+    "mcs_certificate_number",
+    "certification_body",
+    "address_1",
+    "address_2",
+    "town",
+    "county",
+    "postcode",
+    "latitude",
+    "longitude",
+    "full_address",
+    "original_record",
+    "effective_from",
+    "effective_to",
+    "biomass_start_date",
+    "biomass_end_date",
+    "hydro_start_date",
+    "hydro_end_date",
+    "micro_chp_start_date",
+    "micro_chp_end_date",
+    "solar_pv_start_date",
+    "solar_pv_end_date",
+    "wind_turbine_start_date",
+    "wind_turbine_end_date",
+    "solar_thermal_start_date",
+    "solar_thermal_end_date",
+    "battery_storage_start_date",
+    "battery_storage_end_date",
+    "air_source_hp_start_date",
+    "air_source_hp_end_date",
+    "ground_water_source_hp_start_date",
+    "ground_water_source_hp_end_date",
+    "hot_water_hp_start_date",
+    "hot_water_hp_end_date",
+    "exhaust_air_hp_start_date",
+    "exhaust_air_hp_end_date",
+    "gas_absorbtion_hp_start_date",
+    "gas_absorbtion_hp_end_date",
+    "solar_assisted_hp_start_date",
+    "solar_assisted_hp_end_date",
+    "biomass_certified",
+    "hydro_certified",
+    "micro_chp_certified",
+    "solar_pv_certified",
+    "wind_turbine_certified",
+    "solar_thermal_certified",
+    "battery_storage_certified",
+    "air_source_hp_certified",
+    "ground_water_source_hp_certified",
+    "hot_water_hp_certified",
+    "exhaust_air_hp_certified",
+    "gas_absorbtion_hp_certified",
+    "solar_assisted_hp_certified",
+]
