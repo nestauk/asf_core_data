@@ -98,6 +98,12 @@ def load_scotland_data(
             "Loading recommendations is not implemented yet for Scotland. Loading certificates instead."
         )
 
+    if usecols is not None:
+        add_country_f = "COUNTRY" in usecols
+        usecols = [col for col in usecols if col != "COUNTRY"]
+    else:
+        add_country_f = True
+
     RAW_SCOTLAND_DATA_PATH = data_batches.get_batch_path(
         rel_data_path, data_path, batch, check_folder="input"
     )
@@ -123,10 +129,6 @@ def load_scotland_data(
 
     if scot_usecols is not None:
 
-        if "LOCAL_AUTHORITY_LABEL" in scot_usecols:
-            scot_usecols.append("DATA_ZONE")
-            scot_usecols = [col for col in scot_usecols if col != "LOCAL_AUTHORITY"]
-
         if v2_batch:
 
             for i, col in enumerate(scot_usecols):
@@ -136,7 +138,22 @@ def load_scotland_data(
             scot_usecols = [
                 col
                 for col in scot_usecols
-                if col not in ["ENERGY_TARIFF", "LMK_KEY", "BUILDING_REFERENCE_NUMBER"]
+                if col
+                not in [
+                    "LMK_KEY",
+                    "ADDRESS",
+                    "LOCAL_AUTHORITY",
+                    "COUNTY",
+                    "LIGHTING_COST_CURRENT",
+                    "HEATING_COST_CURRENT",
+                    "HEATING_COST_POTENTIAL",
+                    "HOT_WATER_COST_CURRENT",
+                    "HOT_WATER_COST_POTENTIAL",
+                    "FLAT_TOP_STOREY",
+                    "ADDRESS",
+                    "LODGEMENT_DATETIME",
+                    "UPRN_SOURCE",
+                ]
             ]
 
         else:
@@ -185,35 +202,29 @@ def load_scotland_data(
     # Concatenate single dataframes into dataframe
     epc_certs = pd.concat(epc_certs, axis=0)
 
-    epc_certs["COUNTRY"] = "Scotland"
-
-    epc_certs = epc_certs.rename(
-        columns={
-            "WALL_ENV_EFF": "WALLS_ENV_EFF",
-            "WALL_ENERGY_EFF": "WALLS_ENERGY_EFF",
-            "WALL_DESCRIPTION": "WALLS_DESCRIPTION",
-            "POST_TOWN": "POSTTOWN",
-            "HEAT_LOSS_CORRIDOOR": "HEAT_LOSS_CORRIDOR",
-            "PROPERTY_UPRN": "UPRN",
-        },
-        errors="ignore",
-    )
+    if add_country_f:
+        epc_certs["COUNTRY"] = "Scotland"
 
     if v2_batch:
 
-        clean_dict = {"mÂ²": "m2", "Â£": "£", "ï»¿": ""}
-        for col in epc_certs.columns:
-            for enc_issue in clean_dict.keys():
-                if enc_issue in col:
-                    epc_certs.rename(
-                        columns={col: col.replace(enc_issue, clean_dict[enc_issue])},
-                        inplace=True,
-                    )
+        # clean_dict = {"mÂ²": "m2", "Â£": "£", "ï»¿": ""}
+        # for col in epc_certs.columns:
+        #     for enc_issue in clean_dict.keys():
+        #         if enc_issue in col:
+        #             epc_certs.rename(
+        #                 columns={col: col.replace(enc_issue, clean_dict[enc_issue])},
+        #                 inplace=True,
+        #             )
 
         epc_certs = epc_certs.rename(columns=base_config.rev_scotland_field_fix_dict)
-        epc_certs = epc_certs.rename(columns={"Property_UPRN": "UPRN"})
+        epc_certs = epc_certs.rename(
+            columns={
+                "CO2 Emissions Current Per Floor Area (kg.CO2/m2/yr)": "ENERGY_CONSUMPTION_CURRENT",
+                "CO2 Emissions Current Per Floor Area (kg.CO2/mÂ²/yr)": "CO2_EMISS_CURR_PER_FLOOR_AREA",
+                "Total floor area (mÂ²)": "TOTAL_FLOOR_AREA",
+            }
+        )
 
-    # epc_certs["UPRN"] = epc_certs["Property_UPRN"]
     if n_samples is not None:
         epc_certs = epc_certs.sample(frac=1).reset_index(drop=True)[:n_samples]
 
@@ -239,6 +250,7 @@ def load_england_wales_data(
         batch (str, optional): Data batch to load. Defaults to None.
         subset (str, optional): Nation subset: 'GB', 'Wales', 'England'. Defaults to None, loading all nation's data.
         usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
+            The feature COUNTRY will be added at the end, no matter the selection.
         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
         load_recs (boolean, optional): Load recommendations instead of certificates (for England/Wales).
         dtype (dict, optional): Dict with dtypes for easier loading.. Defaults to base_config.dtypes.
@@ -252,6 +264,12 @@ def load_england_wales_data(
 
     data_to_load = "recommendations" if load_recs else "certificates"
     dtype = base_config.dtypes_recom if load_recs else dtype
+
+    if usecols is not None:
+        add_country_f = "COUNTRY" in usecols
+        usecols = [col for col in usecols if col != "COUNTRY"]
+    else:
+        add_country_f = True
 
     if subset in [None, "GB", "all"]:
 
@@ -288,7 +306,7 @@ def load_england_wales_data(
             # data_check=False,
         )
 
-        epc_certs = pd.concat([wales_epc, england_epc], axis=0)
+        epc_certs = pd.concat([wales_epc, england_epc], axis=0, ignore_index=True)
 
         return
 
@@ -345,7 +363,8 @@ def load_england_wales_data(
 
     # # Concatenate single dataframes into dataframe
     epc_certs = pd.concat(epc_certs, axis=0)
-    epc_certs["COUNTRY"] = subset
+    if add_country_f:
+        epc_certs["COUNTRY"] = subset
 
     if "UPRN" in epc_certs.columns and "BUILDING_REFERENCE_NUMBER" in epc_certs.columns:
         epc_certs["UPRN"].fillna(epc_certs.BUILDING_REFERENCE_NUMBER, inplace=True)
@@ -370,7 +389,6 @@ def load_raw_epc_data(
     n_samples=None,
     load_recs=False,
     dtype=base_config.dtypes,
-    # data_check=False,
     low_memory=True,
 ):
     """Load and return EPC dataset, or specific subset, as pandas dataframe.
@@ -460,7 +478,7 @@ def load_raw_epc_data(
             )
             all_epc_df.append(epc_df)
 
-        epc_df = pd.concat(all_epc_df, axis=0).reset_index()
+        epc_df = pd.concat(all_epc_df, axis=0, ignore_index=True)
 
         return epc_df
 
@@ -542,7 +560,7 @@ def load_preprocessed_epc_data(
     Args:
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
         rel_data_path (str/Path, optional): Relative path to specific EPC data. Defaults to base_config.RAW_EPC_DATA_PATH.parent.
-        subset (str, optional): Nation subset: 'GB', 'Wales', 'England', 'Scotland'. Defaults to "GB", loading all nation's data.
+        subset (str, optional): Nation subset: 'GB', 'Wales', 'England', 'Scotland'. Defaults to "GB", loading all nation's data. Loading isn't that much faster than loading the entire dataset.
         batch (str, optional): Data batch to load. Defaults to None.
         version (str, optional): Data version to use. Defaults to "preprocessed_dedupl".
         usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
@@ -578,21 +596,7 @@ def load_preprocessed_epc_data(
     dtype = base_config.dtypes if version == "raw" else base_config.dtypes_prepr
 
     if usecols == base_config.EPC_PREPROC_FEAT_SELECTION and version == "raw":
-        usecols = [
-            col
-            for col in usecols
-            if col
-            not in [
-                "N_SAME_UPRN_ENTRIES",
-                "HEATING_FUEL",
-                "HP_TYPE",
-                "HEATING_SYSTEM",
-                "ENERGY_RATING_CAT",
-                "HP_INSTALLED",
-                "DIFF_POT_ENERGY_RATING",
-                "CURR_ENERGY_RATING_NUM",
-            ]
-        ]
+        usecols = base_config.EPC_FEAT_SELECTION
 
     EPC_DATA_PATH = data_batches.get_batch_path(
         rel_data_path / version_path_dict[version],
