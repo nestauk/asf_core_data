@@ -52,6 +52,7 @@ colnames_dict = {
     "Alternative Heating System Fuel Type": "alt_fuel",
     "Overall Cost": "cost",
     "Fuel Type": "fuel_type",
+    "Installation Company MCS Number": "installation_company_mcs_number",  # new var provided now in installations
 }
 
 mcs_companies_dict = {

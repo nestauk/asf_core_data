@@ -10,6 +10,9 @@ import datetime as dt
 from asf_core_data.getters.mcs_getters.get_mcs_installations import (
     get_raw_installations_data,
 )
+from asf_core_data.getters.mcs_getters.get_mcs_installers import (
+    get_processed_historical_installers_data,
+)
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
 
 from asf_core_data.config import base_config
@@ -117,7 +120,22 @@ def identify_clusters(hps, time_interval=base_config.MCS_CLUSTER_TIME_INTERVAL):
     return hps
 
 
-#####
+def get_installer_unique_id(installations, installers):
+    """
+    Updates installations table by adding the unique installer ID.
+    Args:
+        installations: installations table
+        installers: historical installers table
+    """
+
+    installations = installations.merge(
+        right=installers[["company_name", "company_unique_id"]],
+        how="left",
+        left_on=["Installation Company Name"],
+        right_on="company_name",
+    )
+
+    installations.drop(["company_name"], axis=1, inplace=True)
 
 
 def get_processed_installations_data(refresh=True):
@@ -133,11 +151,16 @@ def get_processed_installations_data(refresh=True):
 
     installations_data = get_raw_installations_data(refresh=refresh)
 
+    # we need to change this later to account for other versions
+    historical_installers_processed_data = get_processed_historical_installers_data(
+        "20230207"
+    )
+
     installations_data = add_hp_features(installations_data)
     installations_data = mask_outliers(installations_data)
     installations_data = identify_clusters(installations_data)
-    # installations_data["installer_name"] = installations_data["installer_name"].apply(
-    #     clean_company_name
-    # )
+
+    # Adding variable with unique installer ID
+    get_installer_unique_id(installations_data, historical_installers_processed_data)
 
     return installations_data
