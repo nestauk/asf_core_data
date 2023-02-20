@@ -70,3 +70,26 @@ def get_raw_installations_data(
         print("Shape of loaded data:", hps.shape)
 
     return hps
+
+
+def get_raw_historical_installations_data(
+    raw_historical_installations_file_name: str,
+) -> pd.DataFrame:
+    """
+    Get raw MCS historical installation data (both domestic and non-domestic)
+    for S3 bucket.
+
+    Args:
+        raw_historical_mcs_installations_file_name: name of file in S3 bucket, raw_historical_installations_YYYYMMDD.xlsx
+        where YYYY/MM/DD is the date MCS shared the file in the Data Dumps Google Drive folder.
+    Returns:
+        Raw historical installation data
+    """
+    return load_s3_data(
+        bucket_name=base_config.BUCKET_NAME,
+        file_name=os.path.join(
+            base_config.MCS_HISTORICAL_DATA_INPUTS_PATH,
+            raw_historical_installations_file_name,
+        ),
+        dtypes=base_config.raw_historical_installations_dtypes,
+    )

@@ -25,16 +25,22 @@ def get_s3_dir_files(s3, bucket_name, dir_name):
     return dir_files
 
 
-def load_s3_data(bucket_name, file_name, usecols=None):
+def load_s3_data(
+    bucket_name, file_name, usecols=None, dtypes=None, columns_to_parse_as_dates=None
+):
     """
     Load data from S3 location.
     bucket_name: The S3 bucket name
     file_name: S3 key to load
     usecols: Columns of data to use. Defaults to None, loading all columns.
+    dtypes: data types
+    columns_to_parse_as_dates: columns that should be parsed as dates (when reading as csv)
     """
     if fnmatch(file_name, "*.xlsx"):
         data = pd.read_excel(
-            os.path.join("s3://" + bucket_name, file_name), sheet_name=None
+            os.path.join("s3://" + bucket_name, file_name),
+            sheet_name=None,
+            dtype=dtypes,
         )
         if len(data) > 1:
             return data
@@ -45,6 +51,8 @@ def load_s3_data(bucket_name, file_name, usecols=None):
             os.path.join("s3://" + bucket_name, file_name),
             encoding="latin-1",
             usecols=usecols,
+            dtype=dtypes,
+            parse_dates=columns_to_parse_as_dates,
         )
     elif fnmatch(file_name, "*.pickle") or fnmatch(file_name, "*.pkl"):
         obj = s3.Object(bucket_name, file_name)

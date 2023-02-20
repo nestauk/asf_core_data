@@ -1,8 +1,39 @@
-"""Processing historical MCS installer company data.
+"""
+Script for pre-processing historical MCS heat pump installer company data:
+- Dropping duplicate instances (if they exist);
+- Renaming columns;
+- Joining installation and design variables;
+- Adding instances for installers with installations but with info missing from installers table;
+- Creating flag variables for whether an installer is certified for a certain technology;
+- Geocoding data by mapping postcode to latitude and longitude values;
+- Creating a variable that uniquely identifies installers;
+- Adding certification body information.
 
-Installer name/ company name/ installation company name are used interchangebly throughout the whole script.
+Note that:
+- installer name/ company name/ installation company name are used interchangebly throughout the whole script;
+- the dataset(s) being processed contain information about installers who are or have been MCS certified for heat
+pump installations. Hence, even if we have information about other types of certification (e.g. biomass) this
+does not represent the whole dataset for those types of installers.
 
-To run script, (in activated conda environment) python process_historical_mcs_installers.py -key API KEY
+To run script, in activated conda environment do:
+
+1) To process the raw historical MCS installers data received on the 7th of Feb 2023:
+`export COMPANIES_HOUSE_API_KEY="YOUR_API_KEY"`
+`python3 process_historical_mcs_installers.py`
+OR
+`python3 process_historical_mcs_installers.py -api_key "YOUR_API_KEY"`
+
+2) To process another version of the raw historical installers data
+(where YYYYMMDD corresponds to the date the data was shared by MCS in the data dumps Google Drive folder, e.g. 20230207):
+`export COMPANIES_HOUSE_API_KEY="YOUR_API_KEY"`
+`python3 process_historical_mcs_installers.py -raw_historical_installers_filename "raw_historical_mcs_installers_YYYYMMDD.xlsx" -raw_historical_installations_filename "raw_historical_mcs_installations_YYYYMMDD.xlsx"`
+OR
+`python3 process_historical_mcs_installers.py -api_key "YOUR_API_KEY" -raw_historical_installers_filename "raw_historical_mcs_installers_YYYYMMDD.xlsx" -raw_historical_installations_filename "raw_historical_mcs_installations_YYYYMMDD.xlsx"`
+
+Companies House API additional info:
+- https://developer-specs.company-information.service.gov.uk/companies-house-public-data-api/reference/search/search-companies
+- https://developer-specs.company-information.service.gov.uk/companies-house-public-data-api/resources/companysearch?v=latest
+
 """
 
 import pandas as pd
@@ -15,7 +46,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 from asf_core_data.config import base_config
 from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
-from asf_core_data.getters.mcs_getters.get_historical_mcs_installers import (
+from asf_core_data.getters.mcs_getters.get_mcs_installers import (
     get_raw_historical_mcs_installers,
 )
 from asf_core_data.getters.mcs_getters.get_mcs_installations import (
@@ -25,9 +56,9 @@ from asf_core_data.getters.mcs_getters.get_mcs_installations import (
 
 def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFrame):
     """
-    Applies basic preprocessing to raw installations to make it easier to work with:
+    Applies basic preprocessing to raw installations data:
     - Renaming columns (lower case, spaces to underscore, etc.);
-    - Extracting certification body and certification number info from original var
+    - Extracting certification body and certification number info from original var.
     Args:
         raw_historical_installations: raw historical installations table
     """
@@ -53,9 +84,9 @@ def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFr
 def rename_columns(cols: list) -> list:
     """
     Renames a list of strings, e.g. a list of column names, by:
-    - applying lower case
-    - replacing "heat pump" by "hp"
-    - replacing " " and "/" by "_"
+    - applying lower case;
+    - replacing "heat pump" by "hp";
+    - replacing " " and "/" by "_";
     - correcting the word address.
 
     Args:
@@ -71,11 +102,14 @@ def rename_columns(cols: list) -> list:
     return cols
 
 
-def joining_installation_and_design_vars(data: pd.DataFrame):
+def join_installation_and_design_vars(data: pd.DataFrame):
     """
     Joins together installation and design date variables and drops original variables.
+    E.g.
+    Original variables: air_source_hp_installation_start_date, air_source_hp_design_start_date
+    New variable: air_source_hp_start_date
 
-    If installation date exist, we keep installation date. Otherwise, we keep design date.
+    If installation start/end date exist, we keep installation date. Otherwise, we use the design date.
 
     Args:
         data: historical installer data
@@ -83,9 +117,9 @@ def joining_installation_and_design_vars(data: pd.DataFrame):
 
     installation_cols = [col for col in data.columns if "installation" in col]
     for col in installation_cols:
-        date_var = col.replace("installation_", "")
+        new_date_var = col.replace("installation_", "")
         correspondent_design_var_name = col.replace("installation", "design")
-        data[date_var] = data.apply(
+        data[new_date_var] = data.apply(
             lambda x: x[col]
             if not pd.isnull(x[col])
             else x[correspondent_design_var_name],
@@ -121,12 +155,12 @@ def deal_with_versions_of_trading_as(installer_name: str) -> str:
 # copied from process_mcs_utils.py and changed slightly
 def match_companies_house(company_name: str, api_key: str) -> pd.Series:
     """
-    Fuzzy matches company name with company house API and
-    returns Companies House information: company full address and date of creation.
+    Fuzzy match between MCS company name and Companies House API company names and
+    returns Companies House information: company full address and company date of creation.
 
     Args:
-        company_name: Company name to query company house API with.
-        api_key: API key to call live company house API endpoint.
+        company_name: Company name used to query company house API
+        api_key: API key to request data from live company house API endpoint
     Returns:
         company_info: pandas Series with 2 values, full address and creation date
     """
@@ -138,6 +172,7 @@ def match_companies_house(company_name: str, api_key: str) -> pd.Series:
             " trading as "
         )[1]
 
+    # endpoint url
     base_url = f"https://api.company-information.service.gov.uk/search/companies?q={company_name}"
 
     response = requests.get(base_url, auth=(api_key, ""))
@@ -148,14 +183,14 @@ def match_companies_house(company_name: str, api_key: str) -> pd.Series:
 
     response_status_code = response.status_code
 
-    if response_status_code == 200:
+    if response_status_code == 200:  # status code 200 means all good with request
         company_data = response.json()
         if (
             (company_data is not None)
             and ("items" in company_data.keys())
             and len(company_data["items"]) > 0
         ):
-            # return that for the closest match, the one found in index 0
+            # return data for the closest match, the one found in index 0
             if ("address_snippet" in company_data["items"][0].keys()) and (
                 "date_of_creation" in company_data["items"][0].keys()
             ):
@@ -203,18 +238,19 @@ def match_companies_house(company_name: str, api_key: str) -> pd.Series:
 def recompute_full_adress(date_creation, first_commisioning_date, full_address):
     """
     If company date of creation happens before the first HP comissioning date
-    then we keep the full address (good match), otherwise address to None (bad batch).
+    then we keep the full address (good match), otherwise address to None (meaning a bad
+    fuzzy match with Companies House API).
+
     Args:
         date_creation: date company was created, according to match from Companies House
         first_comissioning_date: first HP comissioning date according to HP installations data
         full_address: full address retrieved from Companies House match
     Returns:
-        recomputed full address.
+        recomputed full address
     """
     if pd.isnull(date_creation) or pd.isnull(first_commisioning_date):
         return full_address
-    else:
-        return full_address if date_creation <= first_commisioning_date else None
+    return full_address if date_creation <= first_commisioning_date else None
 
 
 def get_missing_installers_info(
@@ -223,16 +259,17 @@ def get_missing_installers_info(
     """
     Gets information about installers missing from historical installers table, i.e.
     installers with installations but with no info in installers table.
-    Information comes from two sources: 1) historicak installations table and from 2) Companies House API.
+    Information comes from two sources: 1) historicaL installations table and from 2) Companies House API.
 
-    1)  historical installations:
+    1) From historical installations data:
     - Start by merging installations and installers to identify missing installers info;
-    - Get company name, certification number, certification body, technology type and min
-    and max comission dates (to then infer certification start and end dates)
+    - Get company name, certification number;
+    - Get certification body, technology type and min and max comission dates, which are
+    used to infer certification start and end dates.
 
-    2) Companies House API:
+    2) From Companies House API:
     - Full address;
-    - Company date of creation (comparing this to min HP commission date serves as a check for a good match)
+    - Company date of creation (comparing this to first HP commission date serves as a check for a good match).
 
     Args:
         installations: historical installations table
@@ -257,7 +294,7 @@ def get_missing_installers_info(
         | pd.isnull(merged_data["mcs_certificate_number"])
     ]
 
-    # Info we know about missing installers from the installations table
+    # Info we get about missing installers from the installations table
     missing_installers = missing_installers[
         [
             "installation_company_name",
@@ -268,7 +305,7 @@ def get_missing_installers_info(
         ]
     ]
 
-    # We infer the certification start and end dates from the min and max commisioning dates for each technology
+    # We infer the certification start and end dates from the first and last commisioning dates for each technology
     missing_installers = (
         missing_installers.groupby(
             [
@@ -307,6 +344,8 @@ def get_missing_installers_info(
         ),
         axis=1,
     )
+
+    # date_of_creation type change: str -> datetime
     missing_installers["date_of_creation"] = missing_installers[
         "date_of_creation"
     ].apply(lambda x: datetime.strptime(x, "%Y-%m-%d") if not pd.isnull(x) else x)
@@ -362,7 +401,8 @@ def update_full_address(
     full_address: str,
 ) -> str:
     """
-    Updates full_address variable with full address for original records (when original_records is True).
+    Computes full_address by putting together the different lines in address
+    (address_1, address_2, town, county and postcode) for original records.
 
     Args:
         address_1: first line of address
@@ -370,7 +410,7 @@ def update_full_address(
         town: town
         county: county
         postcode: postcode
-        original_record: True if record originally in
+        original_record: True if record originally in installers table
     Returns:
         full adress
     """
@@ -385,13 +425,13 @@ def update_full_address(
         if not pd.isnull(postcode):
             temp = temp + postcode + ", "
         return temp[:-2]
-    else:  # if not original record, we have the full address from Companies House
-        return full_address
+    # if not original record, we have the full address from Companies House
+    return full_address
 
 
 def create_certified_flags(data: pd.DataFrame):
     """
-    Updates historical installers data by creates flags representing whether
+    Updates historical installers data by creating flags representing whether
     installer is certified or not for a certain technology.
 
     If a start date exists, then if means installer is certified.
@@ -405,7 +445,7 @@ def create_certified_flags(data: pd.DataFrame):
 
     for col in start_date_cols:
         # example of flag_var: air_source_hp_certified
-        flag_var = col.split("start_date")[0] + "certified"
+        flag_var = col.replace("start_date", "certified")
         data[flag_var] = ~pd.isnull(data[col])
 
 
@@ -413,16 +453,16 @@ def create_certified_flags(data: pd.DataFrame):
 def clean_company_name(company_name: str) -> str:
     """
     Cleans installation company name by:
-        - company name to lower case;
-        - removes punctuation;
-        - removing "company" stopwords like ltd, limited;
+        - changing company name to lower case;
+        - removing punctuation;
+        - removing company-related stopwords like "ltd", "limited", etc.;
 
     Args:
         company_name: Name of company to clean.
     Returns:
         company_name: Cleaned company name.
     """
-    company_stopwords = ["ltd", "ltd.", "limited", "limited.", "old", "account"]
+    company_stopwords = ["ltd", "limited", "old", "account"]
 
     company_name = company_name.lower().translate(str.maketrans("", "", "()-,/.&"))
     company_name = [
@@ -435,7 +475,7 @@ def clean_company_name(company_name: str) -> str:
 def from_list_to_dictionary(list_values):
     """
     Transforms a list into a dictionary where each key is matched to the first
-    value in the list.
+    value in the list. Creates a mapping between each item in the list and the first one.
     Arg:
         list_values: a list of values e.g. ["Company A", "Company B", "Company A trading as Company B"]
     Returns:
@@ -443,7 +483,7 @@ def from_list_to_dictionary(list_values):
         e.g. {"Company B":"Company A", "Company A trading as Company B": "Company A"}
     """
     dictionary = dict()
-    for value in list_values:
+    for value in list_values[1:]:
         dictionary[value] = list_values[0]
     return dictionary
 
@@ -458,7 +498,7 @@ def dictionary_mapping_trading_as_company_names(
     - "Company A"
     - "Company B"
     - "Company A trading as Company B"
-    They should all be mapped identified the same company, e.g. identified as "Company A".
+    They should all be identified as the same company, e.g. identified as "Company A".
 
     Args:
         trading_as_companies: dataframe containing a processed_company_name variable where
@@ -467,11 +507,13 @@ def dictionary_mapping_trading_as_company_names(
         A dictionary mapping company names.
     """
 
-    # List with all possible company names: "A trading as B" -> ["A", "B"]
+    # For each instance in data, it creates a ist with all possible versions of each company names
+    # splitting string by "trading as". E.g. "A trading as B" -> ["A", "B"]
     trading_as_companies["list"] = trading_as_companies[
         "processed_company_name"
     ].str.split(" trading as ")
-    # Adding full name as well : ["A", "B", "A trading as B"]
+
+    # Adding full name to the list as well : ["A", "B", "A trading as B"]
     trading_as_companies["list"] = trading_as_companies.apply(
         lambda x: x["list"] + [x["processed_company_name"]], axis=1
     )
@@ -490,17 +532,18 @@ def dictionary_mapping_trading_as_company_names(
     return trading_as_dictionary
 
 
-def matching_position_of_subset_items(list_of_strings: list) -> dict:
+def map_position_of_subset_items(list_of_strings: list) -> dict:
     """
-    Returns a dictionary matching the position of strings in a list which are a subset of each other.
-    Example
-    set_of_strings = {"company a ltd", "a ltd", "a"}
-    Output: {0: 2, 1: 2} (note that initially, 0 is mapped to 1 but then that's overwritten by 0 being mapped to 2)
+    Returns a mapping between the position of strings in a list which are a subset of each other.
+    Example:
+    set_of_strings = ["company a ltd", "a ltd", "a"]
+    Outputs {0: 2, 1: 2}
+    Note that, in the example above, 0 is initially mapped to 1 but then that's overwritten by 0 being mapped to 2.
 
     Args:
         list_of_strings: a list of strings
     Returns:
-        A dictionary matching the position of strings that are subset of another.
+        A dictionary mapping the position of strings that are subset of another.
     """
     return {
         i: j
@@ -515,7 +558,7 @@ def position_to_value(list_of_strings: list, indices_dict: dict) -> dict:
     """
     Returns dictionary resulting from mapping a dictionary with indices as key-value pairs to a list of strings.
     Args:
-        list_of_strings: list of strings, e.g. ["a", "b", "c]
+        list_of_strings: list of strings, e.g. ["a", "b", "c"]
         indices_dict: dictionary of indices, e.g. {0:2, 1:2}
     Returns:
         The mapped dictionary e.g. {"a":"c", "b":"c"}
@@ -527,9 +570,10 @@ def position_to_value(list_of_strings: list, indices_dict: dict) -> dict:
     }
 
 
-def match_places_same_location_different_id(postcodes, installer_data):
+def map_installers_same_location_different_id(postcodes, installer_data):
     """
-    Returns a dictionary with a mapping between company unique IDs.
+    Returns a dictionary with a mapping between company unique IDs for companies that have the same
+    address but are not originally identified as the same company.
 
     Given companies that have the same company postcode and address_1, but different company unique IDs,
     we create a map between the IDs.
@@ -544,7 +588,8 @@ def match_places_same_location_different_id(postcodes, installer_data):
     # Installer data with potential for mapping
     installers_not_matched = installer_data[installer_data["postcode"].isin(postcodes)]
 
-    # removing any punctuation and spaces: e.g. both "Unit 1, ABC Road" and "Unit1 ABC Road" will translate to "unit1abcroad"
+    # Creates a comparable address_1 by removing any punctuation and spaces
+    # e.g. both "Unit 1, ABC Road" and "Unit1 ABC Road" will translate to "unit1abcroad"
     installers_not_matched["comparable_address_1"] = (
         installers_not_matched["address_1"]
         .str.lower()
@@ -552,25 +597,32 @@ def match_places_same_location_different_id(postcodes, installer_data):
         .str.replace(" ", "")
     )
 
+    # list of comparable addresses and unique IDs
     installers_not_matched = installers_not_matched.groupby("postcode").agg(
         comparable_address_1=("comparable_address_1", list),
         company_unique_id=("company_unique_id", list),
     )
 
-    possible_adresses_and_names = installers_not_matched[
+    # Discard instances when postcode has only one instance associated to it
+    installers_not_matched = installers_not_matched[
         installers_not_matched["comparable_address_1"].apply(len) > 1
     ]
-    possible_adresses_and_names["indices_mapping"] = possible_adresses_and_names[
+
+    # Creates a mapping between indices of comparable addresses that are the same
+    installers_not_matched["indices_mapping"] = installers_not_matched[
         "comparable_address_1"
-    ].apply(matching_position_of_subset_items)
-    possible_adresses_and_names["matches"] = possible_adresses_and_names.apply(
+    ].apply(map_position_of_subset_items)
+
+    # Maps the position to the company IDs so that company IDs corresponding
+    # to the same address are mapped together
+    installers_not_matched["matches"] = installers_not_matched.apply(
         lambda x: position_to_value(x["company_unique_id"], x["indices_mapping"]),
         axis=1,
     )
 
-    # Transforms the pd.Series trading_as_companies["dictionary"] into one dictionary
+    # Transforms the pd.Series installers_not_matched["matches"] into one dictionary
     new_matches = {
-        k: v for d in possible_adresses_and_names["matches"] for k, v in d.items()
+        k: v for d in installers_not_matched["matches"] for k, v in d.items()
     }
 
     return new_matches
@@ -583,9 +635,9 @@ def create_installer_unique_id(installer_data: pd.DataFrame):
     E.g. "Company A Ltd", "Company A Limited", "Company A (old account), "Company A t/a Company B"
     all refer to the same company which will be identified by the unique ID "company a".
 
-    Identifiers are created from the original company names by:
-    - cleaning the company name (lowe case, removing stopwords and punctuation);
-    - Merge all different "trading as" expressions into one;
+    Identifiers are created by transforming the original company names:
+    - Cleaning the company name (strings to lowe case, removing stopwords and punctuation);
+    - Merge all different "trading as" expressions together;
     - Creating a dictionary to map companies trading as other companies to be identified as the same;
     - Creating a dictionary to map companies with slightly different names with address in the same location;
 
@@ -620,17 +672,19 @@ def create_installer_unique_id(installer_data: pd.DataFrame):
         lambda x: trading_as_dictionary[x] if x in trading_as_dictionary.keys() else x
     )
 
-    # Droping processed_company_name as no longer needed
+    # Dropping processed_company_name as no longer needed
     installer_data.drop("processed_company_name", axis=1, inplace=True)
 
-    # Check for those that have the same location but not identified as being the same
+    # Companies have the same location but not currently identified as being the same
     same_postcode_no_match = installer_data.groupby("postcode", as_index=False)[
         ["company_unique_id"]
     ].nunique()
     same_postcode_no_match = same_postcode_no_match[
         same_postcode_no_match["company_unique_id"] > 1
     ]["postcode"].unique()
-    new_matches = match_places_same_location_different_id(
+
+    # New unique ID matches based on companies with same location
+    new_matches = map_installers_same_location_different_id(
         same_postcode_no_match, installer_data
     )
     installer_data["company_unique_id"] = installer_data["company_unique_id"].apply(
@@ -638,10 +692,12 @@ def create_installer_unique_id(installer_data: pd.DataFrame):
     )
 
 
+# copied from process_mcs_utils.py and changed slightly
 def geocode_postcode(data: pd.DataFrame, geodata: pd.DataFrame) -> pd.DataFrame:
     """
     Updates data with latitude and longitude columns, by merging with geodata
-    on postode column. Also transforms postcode column by removing the space.
+    on postode column (left merge, not to loose any data).
+    Also transforms postcode column by removing the space.
 
     Args:
         data: DataFrame with postcode column.
@@ -658,29 +714,40 @@ def geocode_postcode(data: pd.DataFrame, geodata: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def add_certification_body_info(installer_data, installations_data):
+def add_certification_body_info(
+    installer_data: pd.DataFrame, installations_data: pd.DataFrame
+) -> pd.DataFrame:
     """
     Adds certification body information to each instance of the historical installers table.
 
     Historical installers data does not come with certification body information, only with certification number.
-    Hence, we can use the company name and the certification number to match to the installations table and get the
+    Company name and the certification number are used to merge and match to the installations table and get the
     certification body from there.
 
-
+    Args:
+        installer_data: historical installers data
+        installations_data: historical installations data
+    Returns:
+        Updated table of installers
     """
+
     installations_match_vars = [
         "installation_company_name",
         "installation_company_mcs_number",
     ]
     installers_match_vars = ["company_name", "mcs_certificate_number"]
 
-    # Unique pairs (installation_company_name, installation_company_mcs_number)
+    # dataframe with unique pairs (installation_company_name, installation_company_mcs_number)
+    # and corresponding certification body
     unique_pairs_in_installations = installations_data.drop_duplicates(
         installations_match_vars
-    )[installations_match_vars]
-
-    # Certification number as float in both tables in order to be able to compare
-    # installer_data["mcs_certificate_number"] = installer_data["mcs_certificate_number"].astype(float)
+    )[
+        [
+            "installation_company_name",
+            "installation_company_mcs_number",
+            "certification_body",
+        ]
+    ]
 
     # Merge installer with installation data to add the certification_body to the installer data
     installer_data = installer_data.merge(
@@ -690,30 +757,36 @@ def add_certification_body_info(installer_data, installations_data):
         left_on=installers_match_vars,
     )
 
+    # Dropping installation variables used to merge and match
     installer_data.drop(installations_match_vars, axis=1, inplace=True)
+
+    return installer_data
 
 
 def preprocess_historical_installers(
-    raw_historical_installers,
-    raw_historical_installations,
-    geographical_data,
-    companies_house_api_key,
-):
+    raw_historical_installers: pd.DataFrame,
+    raw_historical_installations: pd.DataFrame,
+    geographical_data: pd.DataFrame,
+    companies_house_api_key: str,
+) -> pd.DataFrame:
     """
     Pre-processes raw historical installers data by:
-    - Droping duplicate instances;
+    - Dropping duplicate instances (if they exist);
     - Renaming columns;
     - Joining installation and design variables;
+    - Adding instances for installers with installations but with info missing from installers table;
     - Creating flag variables for whether an installer is certified for a certain technology;
-    - Geocoding data by adding latitude and longitude;
+    - Geocoding data by mapping postcode to latitude and longitude values;
     - Creating a variable that uniquely identifies installers;
-    - Adding certification body information;
+    - Adding certification body information.
 
     Args:
         raw_historical_installers: raw historical installers data
         raw_historical_installations: raw historical installations data
-        geographical_data: geographical data
-        companies_house_api_key: companies house API key
+        geographical_data: geographical data with postcode, latitude and longitude information
+        companies_house_api_key: Companies House API key
+    Returns:
+        Processed historical installers data
     """
 
     # Apply basic preprocessing to table of installations
@@ -728,14 +801,14 @@ def preprocess_historical_installers(
     )
 
     # Joining installation and design variables
-    joining_installation_and_design_vars(raw_historical_installers)
+    join_installation_and_design_vars(raw_historical_installers)
 
     # flag "original_records" (if originally in installers or inputed from installations)
     raw_historical_installers["original_record"] = [
         True for i in range(len(raw_historical_installers))
     ]
 
-    # Get info installers with installations but with info missing from installers
+    # Get info about installers with installations but with info missing from installers
     missing_installers = get_missing_installers_info(
         raw_historical_installations, raw_historical_installers, companies_house_api_key
     )
@@ -745,7 +818,7 @@ def preprocess_historical_installers(
     )
     raw_historical_installers.reset_index(drop=True, inplace=True)
 
-    # Updating address_snippet variable
+    # Updating full_address variable
     raw_historical_installers["full_address"] = raw_historical_installers.apply(
         lambda x: update_full_address(
             x["address_1"],
@@ -771,9 +844,13 @@ def preprocess_historical_installers(
     create_installer_unique_id(raw_historical_installers)
 
     # Certification body information
-    add_certification_body_info(raw_historical_installers, raw_historical_installations)
+    raw_historical_installers = add_certification_body_info(
+        raw_historical_installers, raw_historical_installations
+    )
 
-    return raw_historical_installers[base_config.historical_installers_columns_order]
+    return raw_historical_installers[
+        base_config.processed_historical_installers_columns_order
+    ]
 
 
 def create_argparser():
@@ -782,13 +859,13 @@ def create_argparser():
     parser.add_argument(
         "--raw_historical_installers_filename",
         help="Raw historical installers file name",
-        default="raw_historical_mcs_installers_20230207",
+        default="raw_historical_mcs_installers_20230207.xlsx",
         type=str,
     )
     parser.add_argument(
         "--raw_historical_installations_filename",
         help="Raw historical installations file name",
-        default="raw_historical_mcs_installers_20230207",
+        default="raw_historical_mcs_installations_20230119.xlsx",
         type=str,
     )
     parser.add_argument(
@@ -803,35 +880,47 @@ def create_argparser():
 
 
 if __name__ == "__main__":
-    bucket_name = base_config.BUCKET_NAME
-    uk_geo_path = base_config.POSTCODE_TO_COORD_PATH
-
-    uk_geo_data = load_s3_data(bucket_name, uk_geo_path)
-    mcs_raw_data_path = base_config.S3_NEW_MCS_DATA_DUMP_DIR
+    s3_bucket_name = base_config.BUCKET_NAME
 
     parser = create_argparser()
     args = parser.parse_args()
 
-    raw_historical_installers = get_raw_historical_mcs_installers()
+    # Loading geodata
+    uk_geo_path = base_config.POSTCODE_TO_COORD_PATH
+    uk_geo_data = load_s3_data(s3_bucket_name, uk_geo_path)
 
-    raw_historical_installations = get_raw_historical_installations_data()
+    # Getting raw installations and installers data from S3
+    mcs_raw_data_path = base_config.MCS_HISTORICAL_DATA_INPUTS_PATH
+    raw_historical_installers_filename = args.raw_historical_installers_filename
+    raw_historical_installations_filename = args.raw_historical_installations_filename
 
-    processed_historical_installers = preprocess_historical_installers(
-        raw_historical_installers,
-        raw_historical_installations,
-        uk_geo_data,
-        args.api_key,
+    raw_historical_installers = get_raw_historical_mcs_installers(
+        raw_historical_installers_filename
+    )
+    raw_historical_installations = get_raw_historical_installations_data(
+        raw_historical_installations_filename
     )
 
-    processed_data_path = base_config.PREPROCESSED_MCS_HISTORICAL_INSTALLERS_PATH
+    # Process raw historical installers data
+    processed_historical_installers = preprocess_historical_installers(
+        raw_historical_installers=raw_historical_installers,
+        raw_historical_installations=raw_historical_installations,
+        geographical_data=uk_geo_data,
+        companies_house_api_key=args.api_key,
+    )
 
-    # date when data was shared by MCS in MCS data dumps
-    date = args.raw_historical_installations_filename.split("installers_")[1]
+    # Saving processed data to S3
+    processed_data_path = base_config.PREPROCESSED_MCS_HISTORICAL_INSTALLERS_FILE_PATH
 
-    # saving data to S3
+    date = args.raw_historical_installers_filename.split("installers_")[1].split(
+        ".xlsx"
+    )[
+        0
+    ]  # date when data was shared by MCS in MCS data dumps
+
     save_to_s3(
-        s3,
-        bucket_name,
-        processed_historical_installers,
-        processed_data_path.format(date),
+        s3=s3,
+        bucket_name=s3_bucket_name,
+        output_var=processed_historical_installers,
+        output_file_path=processed_data_path.format(date),
     )
