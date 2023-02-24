@@ -56,7 +56,7 @@ def get_latest_mcs_from_s3():
     mcs_files = [
         key
         for key in get_s3_dir_files(path_to_dir=raw_data_s3_folder)
-        if "installations" or "installer" in key
+        if ("installations" or "installer" in key) and ("historic" not in key)
     ]
 
     installer_data = []
@@ -64,6 +64,7 @@ def get_latest_mcs_from_s3():
 
     for file in mcs_files:
         if "installations" in file:
+            print(file)
             installations = load_s3_data(bucket_name, file)
             if type(installations) == pd.DataFrame:
                 installations_data.append((file, installations))
@@ -99,6 +100,7 @@ def concatenate_save_raw_installations(all_installations_data):
     year and quarter stated in the filename, and flags if file columns differ.
     """
     for key_and_df in all_installations_data:
+
         year_quarter_search = re.search(r"20[0-9][0-9]_q[1-4]", key_and_df[0])
         if year_quarter_search:  # ignore mcs_installations_2021.xlsx
             year_quarter = year_quarter_search[0]  # get match
