@@ -40,7 +40,7 @@ def get_mcs_install_dates(epc_df, additional_features=True):
             "cluster",
             "installer_name",
         ],
-        dtype={"UPRN": "str", "cert_date": "str"},
+        dtype={"UPRN": "str"},
     )
 
     # Rename columns
@@ -59,7 +59,6 @@ def get_mcs_install_dates(epc_df, additional_features=True):
         format="%Y%m%d",
     )
 
-    # no Nans or "" in compressed_epc_address
     mcs_data = mcs_data.sort_values("HP_INSTALL_DATE", ascending=True).drop_duplicates(
         subset=["UPRN"], keep="first"
     )
