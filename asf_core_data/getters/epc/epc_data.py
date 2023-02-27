@@ -543,6 +543,7 @@ def load_preprocessed_epc_data(
     skiprows=None,
     low_memory=True,
     get_country_indices=False,
+    verbose=False,
 ):
     """Load the EPC dataset including England, Wales and Scotland.
     Select one of the following versions:
@@ -569,6 +570,9 @@ def load_preprocessed_epc_data(
             If True, internally process the file in chunks, resulting in lower memory use while parsing,
             but possibly mixed type inference.
             To ensure no mixed types either set False, or specify the type with the dtype parameter.
+
+        get_country_indices (bool, optional): Whether to load only country field to compute which rows to keep and discard when loading subset. Defaults to False.
+        verbose (bool, optional): Print path to what EPC file is loaded. Defaults to False.
     Returns:
         pd.DataFrame: EPC data in the given version
     """
@@ -589,6 +593,7 @@ def load_preprocessed_epc_data(
             usecols=["COUNTRY"],
             get_country_indices=True,
         ).reset_index()
+
         skiprows = [
             r + 1 for r in country_df.index[country_df["COUNTRY"] != subset].tolist()
         ]
@@ -610,6 +615,9 @@ def load_preprocessed_epc_data(
         data_download.extract_data(
             data_path / EPC_DATA_PATH.parent / (EPC_DATA_PATH.name + ".zip")
         )
+
+    if verbose:
+        print("Loading EPC data from {}".format(EPC_DATA_PATH))
 
     epc_df = data_getters.load_data(
         EPC_DATA_PATH,
