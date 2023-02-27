@@ -64,7 +64,6 @@ def get_latest_mcs_from_s3():
 
     for file in mcs_files:
         if "installations" in file:
-            print(file)
             installations = load_s3_data(bucket_name, file)
             if type(installations) == pd.DataFrame:
                 installations_data.append((file, installations))
@@ -235,13 +234,17 @@ def get_mcs_installations(epc_version="none", refresh=False):
     return mcs_installations
 
 
-def generate_and_save_mcs():
+def generate_and_save_mcs(verbose=False):
     """Concatenates, generates and saves the different versions of the MCS-EPC data to S3.
     Different versions are a) just installation data, b) installation data with
     each property's entire EPC history attached, c) with the EPC corresponding
     to the most recent inspection and d) with the most recent EPC from before
     the HP installation if one exists or the earliest EPC from after the HP
     installation otherwise.
+
+    Args:
+        verbose (bool, optional): Whether to print paths to loaded files (for debugging). Defaults to False.
+
     """
     today = date.today().strftime("%y%m%d")
 
@@ -257,6 +260,12 @@ def generate_and_save_mcs():
 
     all_installations_data, all_installer_data = get_latest_mcs_from_s3()
 
+    if verbose:
+        print("Installations files")
+        print("\n".join([file[0] for file in all_installations_data]))
+        print("\nInstaller files")
+        print("\n".join([file[0] for file in all_installer_data]))
+
     concatenate_save_raw_installations(all_installations_data)
     concatenate_save_raw_installers(all_installer_data)
 
@@ -264,7 +273,9 @@ def generate_and_save_mcs():
     save_to_s3(bucket_name, processed_mcs, no_epc_path)
     print("Saved in S3: " + no_epc_path)
 
-    fully_joined_mcs_epc = join_mcs_epc_data(hps=processed_mcs, all_records=True)
+    fully_joined_mcs_epc = join_mcs_epc_data(
+        hps=processed_mcs, all_records=True, verbose=verbose
+    )
     save_to_s3(bucket_name, fully_joined_mcs_epc, full_epc_path)
     print("Saved in S3: " + full_epc_path)
 
