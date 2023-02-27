@@ -345,8 +345,8 @@ def cap_feature_values(df, feature, cap_value=10, as_cat=False):
     """
 
     # Cap at given limit (i.e. 10)
-    cap_n = str(cap_n) + "+" if as_cat else cap_value
-    df.loc[(df[feature] >= cap_n), feature] = cap_value
+    cap = str(cap_value) + "+" if as_cat else cap_value
+    df.loc[(df[feature] >= cap_value), feature] = cap
 
     if as_cat:
         df[feature] = df[feature].astype(str)
@@ -520,9 +520,8 @@ def clean_epc_data(df):
     return df
 
 
-def reformat_postcode(df):
-    """Reformat postcode (remove empty space).
-    Legacy code for backwards-compatibility.
+def reformat_postcode(df, postcode_var_name="POSTCODE", white_space="remove"):
+    """Reformat postcode (remove or add empty space) and UPPERCASE..
 
     Args:
         df (pd.DataFrame): Dataframe with postcode column.
@@ -531,6 +530,13 @@ def reformat_postcode(df):
         df (pd.DataFrame): Updated dataframe with formatted postcode.
     """
 
-    df["POSTCODE"] = df["POSTCODE"].str.replace(r" ", "")
+    if white_space == "remove":
+        df[postcode_var_name] = df[postcode_var_name].str.upper().str.replace(r" ", "")
+    elif white_space == "add":
+        df[postcode_var_name] = df[postcode_var_name].str.upper().map(clean_POSTCODE)
+    else:
+        raise NotImplementedError(
+            "Invalid input for kwarg 'white_space'. Valid values are 'remove' or 'add'."
+        )
 
     return df

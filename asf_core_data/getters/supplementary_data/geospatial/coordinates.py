@@ -13,9 +13,10 @@ def get_postcode_coordinates(
     data_path="S3", rel_data_path=base_config.POSTCODE_TO_COORD_PATH
 ):
     """Load location data (postcode, latitude, longitude).
+    Field names are POSTCODE, LATITUDE and LONGITUDE.
 
     Args:
-        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to PROJECT_DIR.
+        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to "S3".
         rel_data_path (str/Path, optional): Relative path for geographical data. Defaults to base_config.POSTCODE_TO_COORD_PATH.
 
     Returns:

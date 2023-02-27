@@ -356,9 +356,11 @@ def get_heating_features(df, fine_grained_HP_types=False):
 def get_postcode_coordinates(df):
     """Add coordinates (longitude and latitude) to the dataframe
     based on the postcode.
+    Postcode fields must be named POSTCODE.
 
     Args:
         df (pandas.DataFrame): EPC dataframe.
+        postcode_field_name: Field name for postcode. Defaults to 'POSTCODE'.
 
     Returns:
         pandas.DataFrame: Same dataframe with longitude and latitude columns added.
@@ -368,15 +370,13 @@ def get_postcode_coordinates(df):
     postcode_coordinates_df = coordinates.get_postcode_coordinates()
 
     # Reformat POSTCODE
-    df = data_cleaning.reformat_postcode(df)
-    postcode_coordinates_df = data_cleaning.reformat_postcode(postcode_coordinates_df)
-
-    postcode_coordinates_df["POSTCODE"] = (
-        postcode_coordinates_df["POSTCODE"].str.upper().str.replace(" ", "")
+    postcode_coordinates_df = data_cleaning.reformat_postcode(
+        postcode_coordinates_df, white_space="remove"
     )
+    df = data_cleaning.reformat_postcode(df, white_space="remove")
 
     # Merge with location data
-    df = pd.merge(df, postcode_coordinates_df, on=["POSTCODE"])
+    df = pd.merge(df, postcode_coordinates_df, on="POSTCODE")
 
     return df
 
