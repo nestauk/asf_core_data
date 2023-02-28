@@ -115,6 +115,26 @@ def get_all_batch_names(
     return batches
 
 
+def get_latest_hist_installers():
+    """Get the filename for the latest batch of historical MCS installer data.
+
+    Returns:
+        str: Latest filename for historical data.
+    """
+
+    s3 = boto3.resource("s3")
+    bucket = "asf-core-data"
+    path = "outputs/MCS/installers"
+
+    batches = [key for key in data_getters.get_s3_dir_files(bucket, path)]
+
+    if not batches:
+        raise IOError("No suitable baches found.")
+
+    # Return highest value since files are marked with date stamps in format yyyymmdd
+    return max(batches)
+
+
 def get_latest_mcs_epc_joined_batch(version="most_relevant"):
     """Get the filename for the latest batch of MCS-EPC joined data for given version.
 
@@ -136,7 +156,7 @@ def get_latest_mcs_epc_joined_batch(version="most_relevant"):
     batches = [batch for batch in batches if batch[:-11].endswith(version)]
 
     if not batches:
-        raise IOError("No batch suitable baches found.")
+        raise IOError("No suitable baches found.")
 
     # Return highest value since files are marked with date stamps in format yyyymmdd
     return max(batches)
