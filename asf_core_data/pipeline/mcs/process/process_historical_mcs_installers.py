@@ -411,7 +411,7 @@ def create_certified_flags(data: pd.DataFrame):
     Updates historical installers data by creating flags representing whether
     installer is certified or not for a certain technology.
 
-    If a start date exists, then if means installer is certified.
+    If a start date exists, then it means installer is certified.
 
     Args:
         data: historical installers data
