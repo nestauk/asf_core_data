@@ -219,7 +219,9 @@ def match_companies_house(company_name: str, api_key: str) -> pd.Series:
         return match_companies_house(company_name, api_key)
 
 
-def recompute_full_adress(date_creation, first_commisioning_date, full_address):
+def recompute_full_adress(
+    date_creation: datetime, first_commisioning_date: datetime, full_address: str
+) -> str:
     """
     If company date of creation happens before the first HP comissioning date
     then we keep the full address (good match), otherwise address to None (meaning a bad
@@ -450,7 +452,7 @@ def clean_company_name(company_name: str) -> str:
     return " ".join(company_name)
 
 
-def from_list_to_dictionary(list_values):
+def from_list_to_dictionary(list_values: list) -> dict:
     """
     Transforms a list into a dictionary where each key is matched to the first
     value in the list. Creates a mapping between each item in the list and the first one.
@@ -547,7 +549,9 @@ def position_to_value(list_of_strings: list, indices_dict: dict) -> dict:
     }
 
 
-def map_installers_same_location_different_id(postcodes, installer_data):
+def map_installers_same_location_different_id(
+    postcodes: list, installer_data: pd.DataFrame
+) -> dict:
     """
     Returns a dictionary with a mapping between company unique IDs for companies that have the same
     address but are not originally identified as the same company.
@@ -833,7 +837,13 @@ def preprocess_historical_installers(
     ]
 
 
-def create_argparser():
+def create_argparser() -> ArgumentParser:
+    """
+    Creates an argument parser that can receive the following arguments:
+    - raw historical installers file name, as `raw_historical_installers_filename`
+    - raw historical installations file name, as `raw_historical_installations_filename`
+    - companies house api key, as `api_key`
+    """
     parser = ArgumentParser()
 
     parser.add_argument(
