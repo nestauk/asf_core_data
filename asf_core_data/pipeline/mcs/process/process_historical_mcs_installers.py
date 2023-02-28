@@ -190,32 +190,12 @@ def match_companies_house(company_name: str, api_key: str) -> pd.Series:
             and ("items" in company_data.keys())
             and len(company_data["items"]) > 0
         ):
-            # return data for the closest match, the one found in index 0
-            if ("address_snippet" in company_data["items"][0].keys()) and (
-                "date_of_creation" in company_data["items"][0].keys()
-            ):
-                return pd.Series(
-                    [
-                        company_data["items"][0]["address_snippet"],
-                        company_data["items"][0]["date_of_creation"],
-                    ]
-                )
-            elif "address_snippet" in company_data["items"][0].keys():
-                return pd.Series(
-                    [
-                        company_data["items"][0]["address_snippet"],
-                        None,
-                    ]
-                )
-            elif "date_of_creation" in company_data["items"][0].keys():
-                return pd.Series(
-                    [
-                        None,
-                        company_data["items"][0]["date_of_creation"],
-                    ]
-                )
-            else:
-                return pd.Series([None, None])
+           address_snippet = company_data["items"][0]["address_snippet"] if ("address_snippet" in company_data["items"][0].keys()) else None
+           date_of_creation = company_data["items"][0]["date_of_creation"] if  "date_of_creation" in company_data["items"][0].keys() else None
+           
+           return  pd.Series(
+                    [address_snippet, date_of_creation])
+        
         else:
             return pd.Series([None, None])
     else:
