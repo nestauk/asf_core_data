@@ -395,16 +395,13 @@ def update_full_address(
         full adress
     """
     if original_record:
-        temp = address_1
-        if not pd.isnull(address_2):
-            temp = temp + address_2 + ", "
-        if not pd.isnull(town):
-            temp = temp + town + ", "
-        if not pd.isnull(county):
-            temp = temp + county + ", "
-        if not pd.isnull(postcode):
-            temp = temp + postcode + ", "
-        return temp[:-2]
+        temp = []
+        for address_part in [address_1, address_2, town, county, postcode]:
+              if not pd.isnull(address_part):
+                    temp.append(address_part)
+        full_address = ", ".join(temp)
+        return full_address
+ 
     # if not original record, we have the full address from Companies House
     return full_address
 
