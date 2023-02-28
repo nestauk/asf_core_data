@@ -3,7 +3,6 @@ Script to test the data processing pipeline for raw historical MCS installers da
 """
 
 import pytest
-import numpy as np
 import pandas as pd
 from datetime import datetime
 import os
@@ -35,23 +34,37 @@ processed_installers_data = get_processed_historical_installers_data("20230207")
 
 def test_rename_columns():
     """
-    Testing rename_columns() function.
+    Test if the rename_columns() function works as expected by checking:
+    - it successfully transforms a set of predefined columns;
+    - if a few expressions can still be found in the column names.
     """
     cols = ["My Column", "ADDDRESS 3", "G/WS heat pump"]
     cols = rename_columns(cols)
 
     assert cols == ["my_column", "address_3", "g_ws_hp"]
 
+    processed_dataset_cols = [col for col in processed_installers_data.columns]
+    for col in processed_dataset_cols:
+        assert "heat pump" not in col
+        assert " " not in col
+        assert "/" not in col
+        assert "adddress" not in col
+        assert col == col.lower()
+
 
 def test_join_installation_and_design_vars():
     """
-    Testing join_installation_and_design_vars() function.
+    Test if the join_installation_and_design_vars() function works as expected by checking if
+    the percentage of missing values is lower for the new columns than for the original ones
+    since the new variables are computed from the "installation" and "design" ones.
     """
 
+    # only focusing on original records
     processed_data = processed_installers_data[
-        ~processed_installers_data["original_record"]
+        processed_installers_data["original_record"]
     ]
 
+    # raw columns that contain the "installation" keywords e.g. air_source_hp_installation_start_date
     installation_cols = [
         col for col in raw_installers_data.columns if "installation" in col
     ]
@@ -61,6 +74,7 @@ def test_join_installation_and_design_vars():
         assert len(raw_installers_data[pd.isnull(raw_installers_data[col])]) >= len(
             processed_data[pd.isnull(processed_data[processed_col])]
         )
+        # e.g. air source_hp_design_start_date
         design_var = col.replace("installation", "design")
         assert len(
             raw_installers_data[pd.isnull(raw_installers_data[design_var])]
@@ -69,7 +83,7 @@ def test_join_installation_and_design_vars():
 
 def test_deal_with_versions_of_trading_as():
     """
-    Testing deal_with_versions_of_trading_as() function.
+    Test if the deal_with_versions_of_trading_as() function works as expected.
     """
 
     names = [
@@ -97,7 +111,7 @@ def test_deal_with_versions_of_trading_as():
 
 def test_match_companies_house():
     """
-    Get result for the data we know and see accuracy.
+    Get result for the data we know and check accuracy.
     """
 
     data = processed_installers_data[processed_installers_data["original_record"]]
@@ -120,6 +134,7 @@ def test_match_companies_house():
         .str.replace(" ", "")
     )
 
+    # check if disagreement only happens in less than 10% of the instances
     assert (
         len(data[data["postcode"] != data["postcode_companies_house"]]) / len(data)
         < 0.1
@@ -128,7 +143,9 @@ def test_match_companies_house():
 
 def test_recompute_full_address():
     """
-    Test if the recompute_full_address() function works as expected.
+    Test if the recompute_full_address() function works as expected by checking
+    if there's at least one instance (in non-original records) where full address
+    is not None.
     """
 
     data = processed_installers_data[~processed_installers_data["original_record"]]
@@ -140,7 +157,8 @@ def test_recompute_full_address():
 
 def test_get_missing_installers_info():
     """
-    Test if the test_get_missing_installers_info() function works as expected.
+    Test if the test_get_missing_installers_info() function works as expected by
+    checking if we have at least one non-original record (since we know they exist).
     """
 
     data = processed_installers_data[~processed_installers_data["original_record"]]
@@ -150,7 +168,8 @@ def test_get_missing_installers_info():
 
 def test_update_full_address():
     """
-    Test if the update_full_address() function works as expected.
+    Test if the update_full_address() function works as expected by
+    checking if we are not concatenating nans to the full address string.
     """
 
     data = processed_installers_data[
@@ -162,7 +181,10 @@ def test_update_full_address():
 
 def test_create_certified_flags():
     """
-    Test if the create_certified_flags() function works as expected.
+    Test if the create_certified_flags() function works as expected by
+    checking:
+    - if there's a start date then the certified flag is True
+    - that these flags only take two values, True and False
     """
 
     data = processed_installers_data.copy()
@@ -182,6 +204,9 @@ def test_clean_company_name():
 
     company_name = "COMPANY & A (old/ account) ltd ltd. limited limited."
     assert clean_company_name(company_name) == "company a"
+
+    company_name = "\t A trading as    B "
+    assert clean_company_name(company_name) == "a trading as b"
 
 
 def test_from_list_to_dictionary():
@@ -236,7 +261,9 @@ def test_position_to_value():
 
 def test_map_installers_same_location_different_id():
     """
-    Test if the map_installers_same_location_different_id() function works as expected.
+    Test if the map_installers_same_location_different_id() function works as expected
+    by checking if installers with the same postcode and first line of address also
+    have the same company unique ID.
     """
 
     assert list(
@@ -248,7 +275,8 @@ def test_map_installers_same_location_different_id():
 
 def test_create_installer_unique_id():
     """
-    Test if the create_installer_unique_id() function works as expected.
+    Test if the create_installer_unique_id() function works as expected
+    by checking that the company unique ID is never missing.
     """
 
     data = get_processed_historical_installers_data("20230207")
@@ -258,7 +286,8 @@ def test_create_installer_unique_id():
 
 def test_geocode_postcode():
     """
-    Test if the geocode_postcode() function works as expected.
+    Test if the geocode_postcode() function works as expected by checking
+    that only a small percentage of postcodes are missing.
     """
 
     processed_data = processed_installers_data[
@@ -274,7 +303,9 @@ def test_geocode_postcode():
 
 def test_add_certification_body_info():
     """
-    Test if the add_certification_body_info() function works as expected.
+    Test if the add_certification_body_info() function works as expected
+    by checking that the certification body values in installations
+    match the values in installers.
     """
 
     raw_installations = get_raw_historical_installations_data(
@@ -294,7 +325,8 @@ def test_add_certification_body_info():
 
 def test_preprocess_historical_installers():
     """
-    Test if the preprocess_historical_installers() function works as expected.
+    Test if the preprocess_historical_installers() function works as expected
+    by checking that no instances have been lost.
     """
     processed_data = processed_installers_data[
         processed_installers_data["original_record"]
