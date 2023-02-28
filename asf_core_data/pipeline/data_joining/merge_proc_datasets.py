@@ -161,8 +161,7 @@ def add_mcs_installer_data(epc_mcs_installations):
 
     mcs_inst_data.rename(columns={"postcode": "POSTCODE"}, inplace=True)
 
-    # TODO
-    # Code to merge data with epc_mcs_installations based on company_unique_id
+    # TODO Code to merge data with epc_mcs_installations based on company_unique_id
     # It should be an outer merge keeping, keeping installer data with no matches to MCS installations
     # Their MCS installations and EPC fields would be NaN
 
