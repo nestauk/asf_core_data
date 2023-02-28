@@ -38,6 +38,7 @@ def merge_proc_epc_and_mcs_installations(epc_df, verbose=False):
     mcs_df = data_getters.load_s3_data(
         base_config.BUCKET_NAME,
         newest_joined_batch,
+        # TODO: Check whether we need any other fields
         usecols=[
             "UPRN",
             "commission_date",
@@ -142,7 +143,7 @@ def standardise_hp_type(epc_mcs_df):
 
 
 def add_mcs_installer_data(epc_mcs_installations):
-    """Add MCS installer data to joined EPC and MCS dataframe based on installer ID.
+    """Add MCS installer data to joined EPC and MCS installations dataframe based on installer ID.
 
     Args:
         epc_mcs_installations (pd.DataFrame): EPC and MCS installations data.
@@ -161,16 +162,19 @@ def add_mcs_installer_data(epc_mcs_installations):
     mcs_inst_data.rename(columns={"postcode": "POSTCODE"}, inplace=True)
 
     # TODO
-    # Code to merge data with epc_mcs_installations
+    # Code to merge data with epc_mcs_installations based on company_unique_id
+    # It should be an outer merge keeping, keeping installer data with no matches to MCS installations
+    # Their MCS installations and EPC fields would be NaN
 
 
-def merge_pipeline():
+def merging_pipeline():
     """Merge EPC and MCS installation and installer data to create gold schema like dataset.
     - Load EPC data
     - Get best approximation for installation date
     - Merge with MCS installations and reformatting
     - Merge with MCS installers
     - Reformat postcode
+    - Save output to S3
 
     """
 
@@ -188,7 +192,16 @@ def merge_pipeline():
     # Merge with MCS installers
     epc_mcs_complete = add_mcs_installer_data(epc_mcs_insts)
 
-    # Reformat postcode field to include no space.
+    # Reformat postcode field to include no space
     epc_mcs_complete = data_cleaning.reformat_postcode(
         epc_mcs_complete, postcode_var_name="POSTCODE", white_space="remove"
+    )
+
+    # Add geographical data
+
+    # Save final merged dataset
+    data_getters.save_to_s3(
+        bucket_name="asf-core-data",
+        output_var=epc_mcs_complete,
+        output_file_path='"output/mcs/gold/merged_epc_mcs.csv"',
     )
