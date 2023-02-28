@@ -457,10 +457,7 @@ def from_list_to_dictionary(list_values):
         Dictionary mapping all values to the first one
         e.g. {"Company B":"Company A", "Company A trading as Company B": "Company A"}
     """
-    dictionary = dict()
-    for value in list_values[1:]:
-        dictionary[value] = list_values[0]
-    return dictionary
+    return {value : list_values[0] for value in list_values[1:]}
 
 
 def dictionary_mapping_trading_as_company_names(
