@@ -120,7 +120,9 @@ def identify_clusters(hps, time_interval=base_config.MCS_CLUSTER_TIME_INTERVAL):
     return hps
 
 
-def get_installer_unique_id(installations, installers):
+def get_installer_unique_id(
+    installations: pd.DataFrame, installers: pd.DataFrame
+) -> pd.DataFrame:
     """
     Updates installations table by adding the unique installer ID.
     Args:
@@ -131,11 +133,13 @@ def get_installer_unique_id(installations, installers):
     installations = installations.merge(
         right=installers[["company_name", "company_unique_id"]],
         how="left",
-        left_on=["Installation Company Name"],
+        left_on=["installer_name"],
         right_on="company_name",
     )
 
-    installations.drop(["company_name"], axis=1, inplace=True)
+    installations.drop(columns=["company_name"], inplace=True)
+
+    return installations
 
 
 def get_processed_installations_data(refresh=True):
@@ -161,6 +165,8 @@ def get_processed_installations_data(refresh=True):
     installations_data = identify_clusters(installations_data)
 
     # Adding variable with unique installer ID
-    get_installer_unique_id(installations_data, historical_installers_processed_data)
+    installations_data = get_installer_unique_id(
+        installations_data, historical_installers_processed_data
+    )
 
     return installations_data
