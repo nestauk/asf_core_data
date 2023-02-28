@@ -484,7 +484,7 @@ def dictionary_mapping_trading_as_company_names(
         A dictionary mapping company names.
     """
 
-    # For each instance in data, it creates a ist with all possible versions of each company names
+    # For each instance in data, it creates a list with all possible versions of each company names
     # splitting string by "trading as". E.g. "A trading as B" -> ["A", "B"]
     trading_as_companies["list"] = trading_as_companies[
         "processed_company_name"
