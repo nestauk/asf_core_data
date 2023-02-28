@@ -352,19 +352,17 @@ def get_missing_installers_info(
     )
 
     # rename columns to match installers table
-    missing_installers.rename(
+    missing_installers.rename(columns=
         {
             "installation_company_name": "company_name",
             "installation_company_mcs_number": "mcs_certificate_number",
-        },
-        axis=1,
+        }
         inplace=True,
     )
 
     # dropping unecessary variables
-    missing_installers.drop(
+    missing_installers.drop(columns=
         ["date_of_creation"],
-        axis=1,
         inplace=True,
     )
 
