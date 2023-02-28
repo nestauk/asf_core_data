@@ -190,12 +190,19 @@ def match_companies_house(company_name: str, api_key: str) -> pd.Series:
             and ("items" in company_data.keys())
             and len(company_data["items"]) > 0
         ):
-           address_snippet = company_data["items"][0]["address_snippet"] if ("address_snippet" in company_data["items"][0].keys()) else None
-           date_of_creation = company_data["items"][0]["date_of_creation"] if  "date_of_creation" in company_data["items"][0].keys() else None
-           
-           return  pd.Series(
-                    [address_snippet, date_of_creation])
-        
+            address_snippet = (
+                company_data["items"][0]["address_snippet"]
+                if ("address_snippet" in company_data["items"][0].keys())
+                else None
+            )
+            date_of_creation = (
+                company_data["items"][0]["date_of_creation"]
+                if "date_of_creation" in company_data["items"][0].keys()
+                else None
+            )
+
+            return pd.Series([address_snippet, date_of_creation])
+
         else:
             return pd.Series([None, None])
     else:
@@ -352,17 +359,17 @@ def get_missing_installers_info(
     )
 
     # rename columns to match installers table
-    missing_installers.rename(columns=
-        {
+    missing_installers.rename(
+        columns={
             "installation_company_name": "company_name",
             "installation_company_mcs_number": "mcs_certificate_number",
-        }
+        },
         inplace=True,
     )
 
     # dropping unecessary variables
-    missing_installers.drop(columns=
-        ["date_of_creation"],
+    missing_installers.drop(
+        columns=["date_of_creation"],
         inplace=True,
     )
 
@@ -395,11 +402,11 @@ def update_full_address(
     if original_record:
         temp = []
         for address_part in [address_1, address_2, town, county, postcode]:
-              if not pd.isnull(address_part):
-                    temp.append(address_part)
+            if not pd.isnull(address_part):
+                temp.append(address_part)
         full_address = ", ".join(temp)
         return full_address
- 
+
     # if not original record, we have the full address from Companies House
     return full_address
 
@@ -457,7 +464,7 @@ def from_list_to_dictionary(list_values):
         Dictionary mapping all values to the first one
         e.g. {"Company B":"Company A", "Company A trading as Company B": "Company A"}
     """
-    return {value : list_values[0] for value in list_values[1:]}
+    return {value: list_values[0] for value in list_values[1:]}
 
 
 def dictionary_mapping_trading_as_company_names(
