@@ -1,8 +1,6 @@
 """to run script,
-
 can provide different old_df, new_df and comp_df s3 directory paths directly when running script.
 defaults to paths in base_config
-
 python compare_mcs_installations.py --new_installations_df NEW_INSTALLATIONS_PATH --old_installers_df OLD_INSTALLERS_PATH --new_installers_df NEW_INSTALLERS_PATH
 """
 

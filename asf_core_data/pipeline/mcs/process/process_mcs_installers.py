@@ -1,7 +1,5 @@
-# %%
 # File: asf_core_data/pipeline/mcs/process/process_mcs_installers.py
 """Processing MCS installer company data.
-
 To run script, (in activated conda environment) python process_mcs_installers.py -key API KEY
 """
 

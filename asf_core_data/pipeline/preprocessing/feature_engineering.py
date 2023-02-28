@@ -27,6 +27,7 @@ from asf_core_data.pipeline.preprocessing import data_cleaning
 
 def short_hash(text):
     """Generate a unique short hash for given string.
+    Legacy code. No longer used in newer versions.
 
     Args:
         text (str):  String for which to get ID.
@@ -43,6 +44,7 @@ def short_hash(text):
 
 def get_unique_building_id(df, short_code=False):
     """Add unique building ID column to dataframe.
+    Legacy code. No longer used in newer versions.
 
     Args:
         df (str): String for which to get ID.
@@ -235,10 +237,18 @@ def get_heating_features(df, fine_grained_HP_types=False):
                 ("heater" in heating),  # not specified heater
             ]
 
+            # Warm air
+            # --------------------------
+
+            if "warm air" in heating:
+                system_type = "warm air"
+                source_type = "electric"
+                has_hp = False
+
             # Different heat pump types
             # --------------------------
 
-            if "ground source heat pump" in heating:
+            elif "ground source heat pump" in heating:
                 system_type = "ground source heat pump"
                 source_type = "electric"
                 has_hp = True
@@ -272,13 +282,6 @@ def get_heating_features(df, fine_grained_HP_types=False):
 
             elif "electric underfloor heating" in heating:
                 system_type = "underfloor heating"
-                source_type = "electric"
-
-            # Warm air
-            # --------------------------
-
-            elif "warm air" in heating:
-                system_type = "warm air"
                 source_type = "electric"
 
             # Boiler and radiator / Boiler and underfloor / Community scheme / Heater (unspecified)
@@ -374,8 +377,6 @@ def get_postcode_coordinates(df):
 
     # Merge with location data
     df = pd.merge(df, postcode_coordinates_df, on=["POSTCODE"])
-
-    print(df.shape)
 
     return df
 

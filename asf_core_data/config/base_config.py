@@ -1,10 +1,9 @@
 from asf_core_data import Path
 
 MCS_RAW_S3_PATH = "inputs/MCS/mcs_heat_pumps.xlsx"
-MCS_RAW_LOCAL_PATH = "/inputs/data/mcs/mcs_heat_pumps.xlsx"
+# MCS_RAW_LOCAL_PATH = "/inputs/MCS/mcs_heat_pumps.xlsx"
 
 CURRENT_YEAR = 2022
-LATEST_BATCH = "Q4_2021_0721"
 
 ROOT_DATA_PATH = "."
 BUCKET_NAME = "asf-core-data"
@@ -18,10 +17,23 @@ ONLY_FIRST_EFF = False
 GLAZED_AREA_DTYPE = float if GLAZED_AREA_AS_NUM else str
 FLOOR_LEVEL_DTYPE = float if FLOOR_LEVEL_AS_NUM else str
 
+v0_batches = [
+    "2021_Q2_0721",
+]
+# v1_batches = ["2022_Q3_1220", "2021_Q4_0721"]
+# v2_batches = [
+#     "2022_Q1_complete",
+#     "2022_Q2_complete",
+#     "2022_Q3_complete",
+#     "2022_Q5_test",
+# ]
+
 
 POSTCODE_TO_COORD_PATH = Path(
     "inputs/supplementary_data/geospatial/ukpostcodes_to_coordindates.csv"
 )
+
+SUPPL_DATA_PATH = "inputs/supplementary_data/"
 
 EST_CLEANSED_EPC_DATA_DEDUPL_PATH = Path(
     "inputs/EPC/EST_cleansed_versions/EPC_England_Wales_cleansed_and_deduplicated.csv"
@@ -42,17 +54,13 @@ RAW_EPC_DATA_PATH = Path("outputs/EPC/preprocessed_data/{}/EPC_GB_raw.csv")
 PREPROC_EPC_DATA_DEDUPL_PATH = Path(
     "outputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed_and_deduplicated.csv"
 )
+
+OUTPUT_DATA_PATH = Path("outputs/EPC/preprocessed_data/")
+
 PREPROC_EPC_DATA_PATH = Path("outputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed.csv")
 
 PROCESSED_EPC_DATA_PATH = Path("./outputs/EPC/preprocessed_data/{}/")
 
-SNAPSHOT_RAW_EPC_DATA_PATH = Path("inputs/EPC/preprocessed_data/{}/EPC_GB_raw.csv")
-SNAPSHOT_PREPROC_EPC_DATA_DEDUPL_PATH = Path(
-    "inputs/EPC/preprocessed_data/{}/EPC_GB_preprocessed_and_deduplicated.csv"
-)
-SNAPSHOT_PREPROC_EPC_DATA_PATH = Path(
-    "/EPC/preprocessed_data/{}/EPC_GB_preprocessed.csv"
-)
 
 RAW_ENG_WALES_DATA_ZIP = Path(
     "inputs/EPC/raw_data/{}/England_Wales/all-domestic-certificates.zip"
@@ -60,6 +68,8 @@ RAW_ENG_WALES_DATA_ZIP = Path(
 RAW_SCOTLAND_DATA_ZIP = Path("inputs/EPC/raw_data/{}/Scotland/D_EPC_data.zip")
 
 RAW_DATA_PATH = Path("inputs/EPC/raw_data/{}/")
+
+RAW_DATA_FILE = Path("inputs/EPC/raw_data/{}")
 
 RAW_ENG_WALES_DATA_PATH = Path("inputs/EPC/raw_data/{}/England_Wales/")
 RAW_SCOTLAND_DATA_PATH = Path("inputs/EPC/raw_data/{}/Scotland/")
@@ -77,6 +87,8 @@ MERGED_MCS_EPC = Path("inputs/MCS_data/mcs_epc.csv")
 SUPERVISED_MODEL_OUTPUT = Path("outputs/supervised_model/")
 SUPERVISED_MODEL_FIG_PATH = Path("outputs/supervised_model/figures/")
 HEAT_PUMP_COSTS_FIG_PATH = Path("outputs/figures/hp_costs/")
+
+FIG_PATH = Path("outputs/figures")
 
 KEPLER_OUTPUT = Path("outputs/figures/kepler/")
 
@@ -118,7 +130,6 @@ EPC_FEAT_SELECTION = [
     "GLAZED_AREA",
     "GLAZED_TYPE",
     "PHOTO_SUPPLY",
-    "OSG_REFERENCE_NUMBER",
     "NUMBER_HABITABLE_ROOMS",
     "SOLAR_WATER_HEATING_FLAG",
     "LMK_KEY",
@@ -131,13 +142,11 @@ EPC_FEAT_SELECTION = [
     "MAIN_HEATING_CONTROLS",
     "MULTI_GLAZE_PROPORTION",
     "LOW_ENERGY_LIGHTING",
+    "COUNTRY",
 ]
 
 
 EPC_PREPROC_FEAT_SELECTION = EPC_FEAT_SELECTION + [
-    # "UNIQUE_ADDRESS",
-    # "BUILDING_ADDRESS_ID",
-    "COUNTRY",
     "N_SAME_UPRN_ENTRIES",
     "HEATING_SYSTEM",
     "HEATING_FUEL",
@@ -270,6 +279,7 @@ dtypes = {
     "WATER_HEATING_DEMAND": float,
     "HEAT_LOSS_CORRIDOOR": str,
     "MAIN_HEATING_CATEGORY": str,
+    "Flat Location": str,
 }
 
 dtypes_prepr = {
@@ -419,6 +429,7 @@ dtypes_prepr = {
     "WATER_HEATING_DEMAND": float,
     "HEAT_LOSS_CORRIDOR": str,
     "MAIN_HEATING_CATEGORY": str,
+    "Flat Location": str,
 }
 
 
@@ -435,7 +446,10 @@ dtypes_recom = {
 MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
 INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
-MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_epc.csv")
+MCS_EPC_MATCHING_PARAMETER = 0.7
+# MCS_EPC_MERGED_PATH = Path("outputs/temp/mcs_epc.csv")
+MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_installations_epc_most_relevant_221021.csv")
+MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 parse_dates = [
     "INSPECTION_DATE",
@@ -483,6 +497,65 @@ england_wales_only_features = [
     "UPRN_SOURCE",
     "LODGEMENT_DATETIME",
 ]
+
+
+scotland_field_fix_dict = {
+    "BUILDING_REFERENCE_NUMBER": "ï»¿Property_UPRN",
+    "UPRN": "OSG_UPRN",
+    "POSTCODE": "Postcode",
+    "INSPECTION_DATE": "Date of Assessment",
+    "LODGEMENT_DATE": "Date of Certificate",
+    "ENERGY_CONSUMPTION_CURRENT": "Primary Energy Indicator (kWh/mÂ²/year)",
+    "TOTAL_FLOOR_AREA": "Total floor area (mÂ²)",
+    "CO2_EMISS_CURR_PER_FLOOR_AREA": "CO2 Emissions Current Per Floor Area (kg.CO2/mÂ²/yr)",
+    "CURRENT_ENERGY_EFFICIENCY": "Current energy efficiency rating",
+    "CURRENT_ENERGY_RATING": "Current energy efficiency rating band",
+    "POTENTIAL_ENERGY_EFFICIENCY": "Potential Energy Efficiency Rating",
+    "POTENTIAL_ENERGY_RATING": "Potential energy efficiency rating band",
+    "ENVIRONMENT_IMPACT_CURRENT": "Current Environmental Impact Rating",
+    "ENVIRONMENT_IMPACT_POTENTIAL": "Potential Environmental Impact Rating",
+    "CO2_EMISSIONS_CURRENT": "Current Emissions (T.CO2/yr)",
+    "CO2_EMISSIONS_POTENTIAL": "Potential Reduction in Emissions (T.CO2/yr)",
+    "CONSTRUCTION_AGE_BAND": "Part 1 Construction Age Band",
+    "FLOOR_HEIGHT": "Part 1 Floor 0 Room Height",
+    "ENERGY_CONSUMPTION_POTENTIAL": "Energy Consumption Potential",
+    "EXTENSION_COUNT": "Extensions Count",
+    "FIXED_LIGHTING_OUTLETS_COUNT": "Fixed Lighting Outlets Count",
+    "LOW_ENERGY_FIXED_LIGHT_COUNT": "Low Energy Lighting Outlets Count",
+    "LOW_ENERGY_LIGHTING": "Low Energy Lighting %",
+    "FLOOR_LEVEL": "Flat Level",
+    "FLAT_STOREY_COUNT": "Flat Location",
+    "GLAZED_AREA": "Glazed Area",
+    "NUMBER_HABITABLE_ROOMS": "Habitable Room Count",
+    "HEAT_LOSS_CORRIDOR": "Heat Loss Corridor",
+    "NUMBER_HEATED_ROOMS": "Heated Room Count",
+    "LOCAL_AUTHORITY_LABEL": "Local Authority",
+    "MAINS_GAS_FLAG": "Main Gas",
+    "MAIN_FUEL": "Main Heating 1 Fuel Type",
+    "MAIN_HEATING_CONTROLS": "Main Heating 1 Control",
+    "MECHANICAL_VENTILATION": "Mechanical Ventilation",
+    "ENERGY_TARIFF": "Meter Type",
+    "MULTI_GLAZE_PROPORTION": "Multiple Glazed Proportion",
+    "GLAZED_TYPE": "Multiple Glazing Type",
+    "NUMBER_OPEN_FIREPLACES": "Open Fireplaces Count",
+    "PHOTO_SUPPLY": "Photovoltaic Supply",
+    "SOLAR_WATER_HEATING_FLAG": "Solar Water Heating",
+    "TENURE": "Tenure",
+    "TRANSACTION_TYPE": "Transaction Type",
+    "UNHEATED_CORRIDOR_LENGTH": "Unheated Corridor Length",
+    "CONSTITUENCY": "Ward Code",
+    "CONSTITUENCY_LABEL": "Ward Name",
+    "WIND_TURBINE_COUNT": "Wind Turbines Count",
+    "BUILT_FORM": "Built Form",
+    "PROPERTY_TYPE": "Property Type",
+    "WALLS_DESCRIPTION": "WALL_DESCRIPTION",
+    "WALLS_ENERGY_EFF": "WALL_ENERGY_EFF",
+    "WALLS_ENV_EFF": "WALL_ENV_EFF",
+    "POST_TOWN": "POSTTOWN",
+    "POSTCODE": "Postcode",
+}
+
+rev_scotland_field_fix_dict = {v: k for k, v in scotland_field_fix_dict.items()}
 
 
 # MCS settings

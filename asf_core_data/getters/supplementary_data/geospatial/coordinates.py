@@ -3,15 +3,14 @@
 
 # ---------------------------------------------------------------------------------
 
-import pandas as pd
-from asf_core_data import get_yaml_config, Path, PROJECT_DIR
 from asf_core_data.config import base_config
+from asf_core_data.getters import data_getters
 
 # ---------------------------------------------------------------------------------
 
 
 def get_postcode_coordinates(
-    data_path=PROJECT_DIR, rel_data_path=base_config.POSTCODE_TO_COORD_PATH
+    data_path="S3", rel_data_path=base_config.POSTCODE_TO_COORD_PATH
 ):
     """Load location data (postcode, latitude, longitude).
 
@@ -23,10 +22,7 @@ def get_postcode_coordinates(
         pandas.DateFrame: Location data (postcode, latitude, longitude).
     """
 
-    path = Path(data_path) / rel_data_path
-
-    # Load data
-    postcode_coordinates_df = pd.read_csv(path)
+    postcode_coordinates_df = data_getters.load_data(rel_data_path, data_path=data_path)
 
     # Remove ID (not necessary and conflicts with EPC dataframe)
     del postcode_coordinates_df["id"]

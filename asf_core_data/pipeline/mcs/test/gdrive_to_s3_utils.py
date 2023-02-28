@@ -38,13 +38,10 @@ def get_folder(folder_id: list):
 def get_mcs_data_dumps_folder(keywords: list, all_folders: list) -> list:
     # writing this recursively results in a throttled API.
     """Function to get contents from Team's MCS Data Dump folder.
-
     Args:
         keywords (List): List of keywords to search folder title for.
         all_folers (List): Initial drive list of folders.
-
     Returns:
-
         mcs_data_dumps (List): drive folder with MCS data dumps.
     """
     reduce_households_folder = get_folder(get_folder_id(keywords[0], all_folders))

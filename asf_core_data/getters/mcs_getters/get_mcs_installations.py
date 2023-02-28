@@ -21,7 +21,6 @@ def get_raw_installations_data(
 ):
     """Get raw MCS HP installation data (both domestic and non-domestic)
     with no processing other than renaming columns and setting correct dtypes.
-
     Args:
         local_path (str, optional): Local path to raw data.
             Defaults to str(PROJECT_DIR) + INSTALLATIONS_RAW_LOCAL_PATH.
@@ -30,7 +29,6 @@ def get_raw_installations_data(
             pulled from S3 even if refresh is False. Defaults to True.
         verbose (bool, optional): Whether to print info about the number of
             samples in loaded data.
-
     Returns:
         DataFrame: Raw HP installation data.
     """
