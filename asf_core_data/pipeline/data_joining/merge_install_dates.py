@@ -39,6 +39,7 @@ def get_mcs_install_dates(epc_df, additional_features=True):
             "UPRN",
             "cluster",
             "installer_name",
+            "postcode",
         ],
         dtype={"UPRN": "str"},
     )
@@ -88,8 +89,9 @@ def manage_hp_install_dates(
     additional_features=False,
     add_hp_features=False,
 ):
-
     """Manage heat pump install dates given by EPC and MCS.
+    Compute best approximation for heat pump installation date based on first mention
+    in EPC if MCS data is not available.
 
     Args:
         df (pd.DataFrame): Dataframe with EPC data and MCS install dates.
@@ -111,6 +113,8 @@ def manage_hp_install_dates(
     )
 
     df["FIRST_HP_MENTION"] = df[identifier].map(dict(first_hp_mention))
+
+    print(df[df["FIRST_HP_MENTION"].notna() & df["HP_INSTALLED"]].shape)
 
     # Additional features about heat pump history of property
     if add_hp_features:
@@ -267,9 +271,9 @@ def manage_hp_install_dates(
     no_future_hp_entry["INSPECTION_DATE"] = no_future_hp_entry["HP_INSTALL_DATE"]
     no_future_hp_entry["ARTIFICIALLY_DUPL"] = True
 
-    # df["HP_INSTALLED"] = np.where(
-    #     (no_epc_but_mcs_hp & epc_entry_before_mcs), False, df["HP_INSTALLED"]
-    # )
+    df["HP_INSTALLED"] = np.where(
+        (no_epc_but_mcs_hp & epc_entry_before_mcs), False, df["HP_INSTALLED"]
+    )
     df["HP_INSTALL_DATE"] = np.where(
         (no_epc_but_mcs_hp & epc_entry_before_mcs),
         np.datetime64("NaT"),
