@@ -67,18 +67,15 @@ def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFr
         raw_historical_installations.columns
     )
 
-    raw_historical_installations["certification_body"] = (
-        raw_historical_installations["installation_company_mcs_number"]
-        .str.split(" ")
-        .str[0]
+    raw_historical_installations[
+        ["certification_body", "installation_company_mcs_number"]
+    ] = raw_historical_installations["installation_company_mcs_number"].str.split(
+        " ", expand=True
     )
 
-    raw_historical_installations["installation_company_mcs_number"] = (
-        raw_historical_installations["installation_company_mcs_number"]
-        .str.split(" ")
-        .str[1]
-        .astype(int)
-    )
+    raw_historical_installations[
+        "installation_company_mcs_number"
+    ] = raw_historical_installations["installation_company_mcs_number"].astype(int)
 
 
 def rename_columns(cols: list) -> list:
@@ -400,12 +397,11 @@ def update_full_address(
         full adress
     """
     if original_record:
-        temp = []
+        full_address = []
         for address_part in [address_1, address_2, town, county, postcode]:
             if not pd.isnull(address_part):
-                temp.append(address_part)
-        full_address = ", ".join(temp)
-        return full_address
+                full_address.append(address_part)
+        return ", ".join(full_address)
 
     # if not original record, we have the full address from Companies House
     return full_address
@@ -488,24 +484,26 @@ def dictionary_mapping_trading_as_company_names(
 
     # For each instance in data, it creates a list with all possible versions of each company names
     # splitting string by "trading as". E.g. "A trading as B" -> ["A", "B"]
-    trading_as_companies["list"] = trading_as_companies[
+    trading_as_companies["list_of_companies"] = trading_as_companies[
         "processed_company_name"
     ].str.split(" trading as ")
 
     # Adding full name to the list as well : ["A", "B", "A trading as B"]
-    trading_as_companies["list"] = trading_as_companies.apply(
-        lambda x: x["list"] + [x["processed_company_name"]], axis=1
+    trading_as_companies["list_of_companies"] = trading_as_companies.apply(
+        lambda x: x["list_of_companies"] + [x["processed_company_name"]], axis=1
     )
 
     # Transforms the list into a dictionary where each key is matched to the first value in the list:
     # ["A", "B", "A trading as B"] -> {"B":"A", "A trading as B":"A"}
-    trading_as_companies["dictionary"] = trading_as_companies["list"].apply(
-        from_list_to_dictionary
-    )
+    trading_as_companies["dictionary_of_companies"] = trading_as_companies[
+        "list_of_companies"
+    ].apply(from_list_to_dictionary)
 
-    # Transforms the pd.Series trading_as_companies["dictionary"] into one dictionary
+    # Transforms the pd.Series trading_as_companies["dictionary_of_companies"] into one dictionary
     trading_as_dictionary = {
-        k: v for d in trading_as_companies["dictionary"] for k, v in d.items()
+        k: v
+        for d in trading_as_companies["dictionary_of_companies"]
+        for k, v in d.items()
     }
 
     return trading_as_dictionary
@@ -737,7 +735,10 @@ def add_certification_body_info(
     )
 
     # Dropping installation variables used to merge and match
-    installer_data.drop(installations_match_vars, axis=1, inplace=True)
+    installer_data.drop(columns=installations_match_vars, inplace=True)
+
+    print("installer columns check:")
+    print(installer_data.columns)
 
     return installer_data
 
@@ -787,6 +788,11 @@ def preprocess_historical_installers(
         True for i in range(len(raw_historical_installers))
     ]
 
+    # Certification body information
+    raw_historical_installers = add_certification_body_info(
+        raw_historical_installers, raw_historical_installations
+    )
+
     # Get info about installers with installations but with info missing from installers
     missing_installers = get_missing_installers_info(
         raw_historical_installations, raw_historical_installers, companies_house_api_key
@@ -821,11 +827,6 @@ def preprocess_historical_installers(
 
     # Create installer unique ID
     create_installer_unique_id(raw_historical_installers)
-
-    # Certification body information
-    raw_historical_installers = add_certification_body_info(
-        raw_historical_installers, raw_historical_installations
-    )
 
     return raw_historical_installers[
         base_config.processed_historical_installers_columns_order
