@@ -64,6 +64,11 @@ def get_latest_mcs_from_s3():
 
     for file in mcs_files:
         if "installations" in file:
+
+            # TODO: Fix handling of 4th quarter MCS installationss
+            if file == "inputs/MCS/latest_raw_data/mcs_installations_2022_q4.xlsx":
+                continue
+
             installations = load_s3_data(bucket_name, file)
             if type(installations) == pd.DataFrame:
                 installations_data.append((file, installations))
