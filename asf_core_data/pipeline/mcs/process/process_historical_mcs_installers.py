@@ -3,11 +3,11 @@ Script for pre-processing historical MCS heat pump installer company data:
 - Dropping duplicate instances (if they exist);
 - Renaming columns;
 - Joining installation and design variables;
+- Adding certification body information.
 - Adding instances for installers with installations but with info missing from installers table;
 - Creating flag variables for whether an installer is certified for a certain technology;
 - Geocoding data by mapping postcode to latitude and longitude values;
 - Creating a variable that uniquely identifies installers;
-- Adding certification body information.
 
 Note that:
 - installer name/ company name/ installation company name are used interchangebly throughout the whole script;
@@ -38,9 +38,6 @@ Companies House API additional info:
 
 import pandas as pd
 import numpy as np
-import requests
-import random
-import time
 import os
 from datetime import datetime
 from argparse import ArgumentParser
@@ -51,6 +48,16 @@ from asf_core_data.getters.mcs_getters.get_mcs_installers import (
 )
 from asf_core_data.getters.mcs_getters.get_mcs_installations import (
     get_raw_historical_installations_data,
+)
+from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
+    rename_columns,
+    match_companies_house,
+    clean_company_name,
+    geocode_postcode,
+    deal_with_versions_of_trading_as,
+    from_list_to_dictionary,
+    map_position_of_subset_items,
+    position_to_value,
 )
 
 
@@ -78,27 +85,6 @@ def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFr
     ] = raw_historical_installations["installation_company_mcs_number"].astype(int)
 
 
-def rename_columns(cols: list) -> list:
-    """
-    Renames a list of strings, e.g. a list of column names, by:
-    - applying lower case;
-    - replacing "heat pump" by "hp";
-    - replacing " " and "/" by "_";
-    - correcting the word address.
-
-    Args:
-        cols: original column names
-    Returns:
-        Renamed column names
-    """
-    cols = [c.lower() for c in cols]
-    changes_dict = {"heat pump": "hp", " ": "_", "/": "_", "adddress": "address"}
-    for item in changes_dict.keys():
-        cols = [c.replace(item, changes_dict[item]) for c in cols]
-
-    return cols
-
-
 def join_installation_and_design_vars(data: pd.DataFrame):
     """
     Joins together installation and design date variables and drops original variables.
@@ -124,99 +110,6 @@ def join_installation_and_design_vars(data: pd.DataFrame):
         )
 
         data.drop([col, correspondent_design_var_name], axis=1, inplace=True)
-
-
-def deal_with_versions_of_trading_as(installer_name: str) -> str:
-    """
-    Replaces several expressions representing "trading as" by the expression
-    "trading as" in the installer name.
-
-    Args:
-        installer_name: installer name
-
-    Returns:
-        updated installer name
-    """
-    versions = {
-        "t/a": "trading as",
-        " ta ": " trading as ",
-        "a trading name of": "trading as",
-        "the trading name of": "trading as",
-    }
-    for item in versions:
-        installer_name = installer_name.replace(item, versions[item])
-
-    return installer_name
-
-
-# copied from process_mcs_utils.py and changed slightly
-def match_companies_house(company_name: str, api_key: str) -> pd.Series:
-    """
-    Fuzzy match between MCS company name and Companies House API company names and
-    returns Companies House information: company full address and company date of creation.
-
-    Args:
-        company_name: Company name used to query company house API
-        api_key: API key to request data from live company house API endpoint
-    Returns:
-        company_info: pandas Series with 2 values, full address and creation date
-    """
-
-    # E.g. "Flo Group LTD T/A Flo Renewables" -> "flo renewables"
-    company_name = company_name.lower()
-    if "trading as" in company_name:
-        company_name = deal_with_versions_of_trading_as(company_name).split(
-            " trading as "
-        )[1]
-
-    # endpoint url
-    base_url = f"https://api.company-information.service.gov.uk/search/companies?q={company_name}"
-
-    response = requests.get(base_url, auth=(api_key, ""))
-
-    # developer guidelines state you can make 600 requests per 5 mins
-    # this translates into 1 request every 0.5 seconds
-    time.sleep(0.5)
-
-    response_status_code = response.status_code
-
-    if response_status_code == 200:  # status code 200 means all good with request
-        company_data = response.json()
-        if (
-            (company_data is not None)
-            and ("items" in company_data.keys())
-            and len(company_data["items"]) > 0
-        ):
-            address_snippet = (
-                company_data["items"][0]["address_snippet"]
-                if ("address_snippet" in company_data["items"][0].keys())
-                else None
-            )
-            date_of_creation = (
-                company_data["items"][0]["date_of_creation"]
-                if "date_of_creation" in company_data["items"][0].keys()
-                else None
-            )
-
-            return pd.Series([address_snippet, date_of_creation])
-
-        else:
-            return pd.Series([None, None])
-    else:
-        if response_status_code >= 400 and response_status_code < 500:
-            raise Exception(
-                "Cannot get data, the program will stop!\nHTTP {}: {}".format(
-                    response_status_code, response.text
-                )
-            )
-        sleep_seconds = random.randint(5, 60)
-        print(
-            "Cannot get data, your program will sleep for {} seconds...\nHTTP {}: {}".format(
-                sleep_seconds, response_status_code, response.text
-            )
-        )
-        time.sleep(sleep_seconds)
-        return match_companies_house(company_name, api_key)
 
 
 def recompute_full_adress(
@@ -429,42 +322,6 @@ def create_certified_flags(data: pd.DataFrame):
         data[flag_var] = ~pd.isnull(data[col])
 
 
-# copied from process_mcs_utils.py and changed slightly
-def clean_company_name(company_name: str) -> str:
-    """
-    Cleans installation company name by:
-        - changing company name to lower case;
-        - removing punctuation;
-        - removing company-related stopwords like "ltd", "limited", etc.;
-
-    Args:
-        company_name: Name of company to clean.
-    Returns:
-        company_name: Cleaned company name.
-    """
-    company_stopwords = ["ltd", "limited", "old", "account"]
-
-    company_name = company_name.lower().translate(str.maketrans("", "", "()-,/.&"))
-    company_name = [
-        comp for comp in company_name.split() if comp not in company_stopwords
-    ]
-
-    return " ".join(company_name)
-
-
-def from_list_to_dictionary(list_values: list) -> dict:
-    """
-    Transforms a list into a dictionary where each key is matched to the first
-    value in the list. Creates a mapping between each item in the list and the first one.
-    Arg:
-        list_values: a list of values e.g. ["Company A", "Company B", "Company A trading as Company B"]
-    Returns:
-        Dictionary mapping all values to the first one
-        e.g. {"Company B":"Company A", "Company A trading as Company B": "Company A"}
-    """
-    return {value: list_values[0] for value in list_values[1:]}
-
-
 def dictionary_mapping_trading_as_company_names(
     trading_as_companies: pd.DataFrame,
 ) -> dict:
@@ -509,44 +366,6 @@ def dictionary_mapping_trading_as_company_names(
     }
 
     return trading_as_dictionary
-
-
-def map_position_of_subset_items(list_of_strings: list) -> dict:
-    """
-    Returns a mapping between the position of strings in a list which are a subset of each other.
-    Example:
-    set_of_strings = ["company a ltd", "a ltd", "a"]
-    Outputs {0: 2, 1: 2}
-    Note that, in the example above, 0 is initially mapped to 1 but then that's overwritten by 0 being mapped to 2.
-
-    Args:
-        list_of_strings: a list of strings
-    Returns:
-        A dictionary mapping the position of strings that are subset of another.
-    """
-    return {
-        i: j
-        for i in range(len(list_of_strings) - 1)
-        for j in range(i + 1, len(list_of_strings), 1)
-        if (list_of_strings[i] in list_of_strings[j])
-        or (list_of_strings[j] in list_of_strings[i])
-    }
-
-
-def position_to_value(list_of_strings: list, indices_dict: dict) -> dict:
-    """
-    Returns dictionary resulting from mapping a dictionary with indices as key-value pairs to a list of strings.
-    Args:
-        list_of_strings: list of strings, e.g. ["a", "b", "c"]
-        indices_dict: dictionary of indices, e.g. {0:2, 1:2}
-    Returns:
-        The mapped dictionary e.g. {"a":"c", "b":"c"}
-
-    """
-    return {
-        list_of_strings[key]: list_of_strings[indices_dict[key]]
-        for key in indices_dict.keys()
-    }
 
 
 def map_installers_same_location_different_id(
@@ -673,28 +492,6 @@ def create_installer_unique_id(installer_data: pd.DataFrame):
     )
 
 
-# copied from process_mcs_utils.py and changed slightly
-def geocode_postcode(data: pd.DataFrame, geodata: pd.DataFrame) -> pd.DataFrame:
-    """
-    Updates data with latitude and longitude columns, by merging with geodata
-    on postode column (left merge, not to loose any data).
-    Also transforms postcode column by removing the space.
-
-    Args:
-        data: DataFrame with postcode column.
-        geodata: DataFrame with postcode, latitude and longitude columns.
-    """
-
-    geodata["postcode"] = geodata["postcode"].str.replace(" ", "")
-
-    data["postcode"] = data["postcode"].str.upper().str.replace(" ", "")
-    data = data.merge(
-        geodata[["postcode", "latitude", "longitude"]], how="left", on="postcode"
-    )
-
-    return data
-
-
 def add_certification_body_info(
     installer_data: pd.DataFrame, installations_data: pd.DataFrame
 ) -> pd.DataFrame:
@@ -741,9 +538,6 @@ def add_certification_body_info(
     # Dropping installation variables used to merge and match
     installer_data.drop(columns=installations_match_vars, inplace=True)
 
-    print("installer columns check:")
-    print(installer_data.columns)
-
     return installer_data
 
 
@@ -758,11 +552,11 @@ def preprocess_historical_installers(
     - Dropping duplicate instances (if they exist);
     - Renaming columns;
     - Joining installation and design variables;
+    - Adding certification body information;
     - Adding instances for installers with installations but with info missing from installers table;
     - Creating flag variables for whether an installer is certified for a certain technology;
     - Geocoding data by mapping postcode to latitude and longitude values;
-    - Creating a variable that uniquely identifies installers;
-    - Adding certification body information.
+    - Creating a variable that uniquely identifies installers.
 
     Args:
         raw_historical_installers: raw historical installers data
