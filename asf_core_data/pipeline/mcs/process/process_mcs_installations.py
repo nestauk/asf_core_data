@@ -13,8 +13,9 @@ from asf_core_data.getters.mcs_getters.get_mcs_installations import (
 from asf_core_data.getters.mcs_getters.get_mcs_installers import (
     get_processed_historical_installers_data,
 )
-from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
-
+from asf_core_data.getters.mcs_getters.get_mcs_installers import (
+    get_most_recent_processed_historical_installers_data,
+)
 from asf_core_data.config import base_config
 
 # %%
@@ -143,7 +144,7 @@ def get_installer_unique_id(
 
 
 def get_processed_installations_data(refresh=True):
-    """Get processed MCS installations data.
+    """Process MCS installations data and add information about company unique ID.
 
     Args:
         refresh (bool): Whether or not to redownload the unprocessed data
@@ -155,14 +156,14 @@ def get_processed_installations_data(refresh=True):
 
     installations_data = get_raw_installations_data(refresh=refresh)
 
-    # we need to change this later to account for other versions
-    historical_installers_processed_data = get_processed_historical_installers_data(
-        "20230207"
-    )
-
     installations_data = add_hp_features(installations_data)
     installations_data = mask_outliers(installations_data)
     installations_data = identify_clusters(installations_data)
+
+    # getting latest batch of processed historical installers data
+    historical_installers_processed_data = (
+        get_most_recent_processed_historical_installers_data()
+    )
 
     # Adding variable with unique installer ID
     installations_data = get_installer_unique_id(

@@ -627,7 +627,7 @@ raw_historical_installations_dtypes = {
     "Installation Type": str,
 }
 
-
+MCS_HISTORICAL_DATA_OUTPUTS_PATH = "/outputs/MCS/installers/"
 PREPROCESSED_MCS_HISTORICAL_INSTALLERS_FILE_PATH = (
     "/outputs/MCS/installers/mcs_historical_installers_{}.csv"
 )

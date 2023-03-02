@@ -87,3 +87,38 @@ def save_to_s3(s3, bucket_name, output_var, output_file_path):
         print(
             'Function not supported for file type other than "*.pkl", "*.json" and "*.csv"'
         )
+
+
+def get_most_recent_batch_name(
+    bucket: str,
+    s3_folder_path: str,
+    filter_keep_keywords: list = None,
+    filter_remove_keywords: list = None,
+) -> str:
+    """
+    Get the file name of the most recent batch for a specific set of files on an S3 folder.
+    Args:
+        bucket: s3 bucket e.g. "asf-core-data"
+        s3_folder_path: path to S3 folder, e.g."/outputs/MCS/installers"
+        filter_keep_keywords: keywords we should filter to keep
+            e.g. ["installation", "installer"] -> will keep files containing either the word "installation" or "installer"
+        filter_remove_keywords: keyword we should filter out
+            e.g. ["historical"] -> will remove all files containing the keyword "historical"
+    Returns:
+        The most recent batch.
+    """
+    batches = [key for key in get_s3_dir_files(s3, bucket, s3_folder_path)]
+
+    final_set = []
+    if filter_keep_keywords is not None:
+        for f in filter_keep_keywords:
+            final_set = final_set + [key for key in batches if f in key]
+    if filter_remove_keywords is not None:
+        for f in filter_remove_keywords:
+            final_set = [key for key in final_set if f not in key]
+
+    if len(final_set) == 0:
+        raise IOError("No files found.")
+
+    # Return highest value since all files are marked with date stamps in format yyyymmdd
+    return max(final_set)
