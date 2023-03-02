@@ -7,7 +7,7 @@ import pandas as pd
 import warnings
 import re
 import datetime
-
+import os
 from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
@@ -22,12 +22,24 @@ from asf_core_data.getters.data_getters import (
     load_s3_data,
     save_to_s3,
     get_s3_dir_files,
+    get_most_recent_batch_name,
 )
 
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     colnames_dict,
 )
-
+from asf_core_data.pipeline.mcs.process.process_historical_mcs_installers import (
+    preprocess_historical_installers,
+)
+from asf_core_data.getters.mcs_getters.get_mcs_installers import (
+    get_most_recent_raw_historical_installers_data,
+)
+from asf_core_data.getters.mcs_getters.get_mcs_installations import (
+    get_most_recent_raw_historical_installations_data,
+)
+from asf_core_data.getters.supplementary_data.geospatial.coordinates import (
+    get_postcode_coordinates,
+)
 from asf_core_data.config import base_config
 
 # %%
@@ -58,7 +70,7 @@ def get_latest_mcs_from_s3():
     mcs_files = [
         key
         for key in get_s3_dir_files(s3, bucket_name, raw_data_s3_folder)
-        if "installations" or "installer" in key
+        if ("installations" or "installer" in key) and ("historical" not in key)
     ]
 
     installer_data = []
@@ -107,9 +119,14 @@ def concatenate_save_raw_installations(all_installations_data):
             year, quarter = int(year_quarter[0:4]), int(year_quarter[-1])
             end_month = quarter * 3
             start_date = datetime.date(year, end_month - 2, 1)
-            end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(
-                days=1
-            )
+
+            if quarter == 4:
+                end_date = datetime.date(year + 1, 1, 1) - datetime.timedelta(days=1)
+            else:
+                end_date = datetime.date(year, end_month + 1, 1) - datetime.timedelta(
+                    days=1
+                )
+
             if (
                 (
                     pd.to_datetime(key_and_df[1]["Commissioning Date"]).dt.date
@@ -240,7 +257,10 @@ def get_mcs_installations(epc_version="none", refresh=False):
     return mcs_installations
 
 
-def generate_and_save_mcs(epc_data_path=base_config.ROOT_DATA_PATH):
+def generate_and_save_mcs(
+    epc_data_path: str = base_config.ROOT_DATA_PATH,
+    companies_house_api_key: str = os.environ.get("COMPANIES_HOUSE_API_KEY"),
+):
     """Concatenates, generates and saves the different versions of the MCS-EPC data to S3.
     Different versions are a) just installation data, b) installation data with
     each property's entire EPC history attached, c) with the EPC corresponding
@@ -264,6 +284,33 @@ def generate_and_save_mcs(epc_data_path=base_config.ROOT_DATA_PATH):
 
     concatenate_save_raw_installations(all_installations_data)
     concatenate_save_raw_installers(all_installer_data)
+
+    # process historical installers
+    processed_historical_installers = preprocess_historical_installers(
+        raw_historical_installers=get_most_recent_raw_historical_installers_data(),
+        raw_historical_installations=get_most_recent_raw_historical_installations_data(),
+        geographical_data=get_postcode_coordinates(),
+        companies_house_api_key=companies_house_api_key,
+    )
+
+    # save historical installers
+    date_historical_installers_received = get_most_recent_batch_name(
+        bucket=bucket_name,
+        s3_folder_path=base_config.MCS_HISTORICAL_DATA_INPUTS_PATH,
+        filter_keep_keywords=["installer"],
+    )
+    date_historical_installers_received = date_historical_installers_received.split(
+        "installers_"
+    )[1].split(".xlsx")[0]
+
+    save_to_s3(
+        s3=s3,
+        bucket_name=bucket_name,
+        output_var=processed_historical_installers,
+        output_file_path=base_config.PREPROCESSED_MCS_HISTORICAL_INSTALLERS_FILE_PATH.format(
+            date_historical_installers_received
+        ),
+    )
 
     processed_mcs = get_processed_installations_data()
     save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
