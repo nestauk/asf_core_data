@@ -1,7 +1,11 @@
 # File: asf_core_data/pipeline/mcs/process/process_mcs_utils.py
 """
-functions used to preprocess mcs data across installations and
-installer company data.
+Functions used to preprocess mcs data across installations and installer company data.
+
+Companies House API additional info:
+- https://developer-specs.company-information.service.gov.uk/companies-house-public-data-api/reference/search/search-companies
+- https://developer-specs.company-information.service.gov.uk/companies-house-public-data-api/resources/companysearch?v=latest
+
 """
 # %%
 
@@ -13,80 +17,6 @@ import numpy as np
 import random
 
 # %%
-
-colnames_dict = {
-    "Version Number": "version",
-    "Certificate Creation Date": "cert_date",
-    "Commissioning Date": "commission_date",
-    "Address Line 1": "address_1",
-    "Address Line 2": "address_2",
-    "Address Line 3": "address_3",
-    "County": "county",
-    "Postcode": "postcode",
-    "Local Authority": "local_authority",
-    "Total Installed Capacity": "capacity",
-    "Estimated Annual Generation": "estimated_annual_generation",
-    "Installation Company Name": "installer_name",
-    "Green Deal Installation?": "green_deal",
-    "Products": "products",
-    "Flow temp/SCOP ": "flow_scop",
-    "Technology Type": "tech_type",
-    "Installation Type": "installation_type",
-    " Installation Type": "installation_type",
-    "End User Installation Type": "end_user_installation_type",
-    "Installation New at Commissioning Date?": "new",
-    "Renewable System Design": "design",
-    "Annual Space Heating Demand": "heat_demand",
-    "Annual Water Heating Demand": "water_demand",
-    "Annual Space Heating Supplied": "heat_supplied",
-    "Annual Water Heating Supplied": "water_supplied",
-    "Installation Requires Metering?": "metering",
-    "RHI Metering Status": "rhi_status",
-    "RHI Metering Not Ready Reason": "rhi_not_ready",
-    "Number of MCS Certificates": "n_certificates",
-    "Heating System Type": "system_type",
-    "Alternative Heating System Type": "alt_type",
-    "Alternative Heating System Fuel Type": "alt_fuel",
-    "Overall Cost": "cost",
-    "Fuel Type": "fuel_type",
-    "Installation Company MCS Number": "installation_company_mcs_number",  # new var provided now in installations
-}
-
-mcs_companies_dict = {
-    "Company Name": "installer_name",
-    "MCS certificate number": "certificate_number",
-    "Add 1": "address_1",
-    "Add2": "address_2",
-    "Town": "town",
-    "County": "county",
-    "PCode": "postcode",
-    "Solar Thermal": "solar_thermal",
-    "Wind Turbines": "wind_turbines",
-    "Air Source Heat Pumps": "air_source_hps",
-    "Exhaust Air Heat Pumps": "exhaust_air_hps",
-    "Biomass": "biomass",
-    "Solar Photovoltaics": "solar_pv",
-    "Micro CHP": "micro_chp",
-    "Solar Assisted Heat Pump": "solar_assisted_hps",
-    "Gas Absorption Heat Pump": "gas_absorption_hps",
-    "Ground/Water Source Heat Pump": "ground_water_hps",
-    "Battery Storage": "battery_storage",
-    "Eastern Region": "eastern_region",
-    "East Midlands Region": "east_midlands_region",
-    "London Region": "london_region",
-    "North East Region": "north_east_region",
-    "North West Region": "north_west_region",
-    "South East Region": "south_east_region",
-    "South West Region": "south_west_region",
-    "West Midlands Region": "west_midlands_region",
-    "Yorkshire Humberside Region": "yorkshire_humberside_region",
-    "Northern Ireland Region": "northern_ireland_region",
-    "Scotland Region": "scotland_region",
-    "Wales Region": "wales_region",
-    "Effective From": "effective_from",
-    "Consumer Code": "consumer_code",
-    "Certification Body": "certification_body",
-}
 
 
 def rename_columns(cols: list) -> list:
@@ -275,7 +205,6 @@ def match_companies_house(company_name: str, api_key: str) -> pd.Series:
         return match_companies_house(company_name, api_key)
 
 
-# copied from process_mcs_utils.py and changed slightly
 def geocode_postcode(data: pd.DataFrame, geodata: pd.DataFrame) -> pd.DataFrame:
     """
     Updates data with latitude and longitude columns, by merging with geodata
@@ -295,6 +224,84 @@ def geocode_postcode(data: pd.DataFrame, geodata: pd.DataFrame) -> pd.DataFrame:
     )
 
     return data
+
+
+## ----- Legacy functions and variables below -----
+# The functions and variables below are legacy functions that are no longer in use.
+# Some of them are commented because they still exist but have been adapter
+colnames_dict = {
+    "Version Number": "version",
+    "Certificate Creation Date": "cert_date",
+    "Commissioning Date": "commission_date",
+    "Address Line 1": "address_1",
+    "Address Line 2": "address_2",
+    "Address Line 3": "address_3",
+    "County": "county",
+    "Postcode": "postcode",
+    "Local Authority": "local_authority",
+    "Total Installed Capacity": "capacity",
+    "Estimated Annual Generation": "estimated_annual_generation",
+    "Installation Company Name": "installer_name",
+    "Green Deal Installation?": "green_deal",
+    "Products": "products",
+    "Flow temp/SCOP ": "flow_scop",
+    "Technology Type": "tech_type",
+    "Installation Type": "installation_type",
+    " Installation Type": "installation_type",
+    "End User Installation Type": "end_user_installation_type",
+    "Installation New at Commissioning Date?": "new",
+    "Renewable System Design": "design",
+    "Annual Space Heating Demand": "heat_demand",
+    "Annual Water Heating Demand": "water_demand",
+    "Annual Space Heating Supplied": "heat_supplied",
+    "Annual Water Heating Supplied": "water_supplied",
+    "Installation Requires Metering?": "metering",
+    "RHI Metering Status": "rhi_status",
+    "RHI Metering Not Ready Reason": "rhi_not_ready",
+    "Number of MCS Certificates": "n_certificates",
+    "Heating System Type": "system_type",
+    "Alternative Heating System Type": "alt_type",
+    "Alternative Heating System Fuel Type": "alt_fuel",
+    "Overall Cost": "cost",
+    "Fuel Type": "fuel_type",
+    "Installation Company MCS Number": "installation_company_mcs_number",  # new var provided now in installations
+}
+
+mcs_companies_dict = {
+    "Company Name": "installer_name",
+    "MCS certificate number": "certificate_number",
+    "Add 1": "address_1",
+    "Add2": "address_2",
+    "Town": "town",
+    "County": "county",
+    "PCode": "postcode",
+    "Solar Thermal": "solar_thermal",
+    "Wind Turbines": "wind_turbines",
+    "Air Source Heat Pumps": "air_source_hps",
+    "Exhaust Air Heat Pumps": "exhaust_air_hps",
+    "Biomass": "biomass",
+    "Solar Photovoltaics": "solar_pv",
+    "Micro CHP": "micro_chp",
+    "Solar Assisted Heat Pump": "solar_assisted_hps",
+    "Gas Absorption Heat Pump": "gas_absorption_hps",
+    "Ground/Water Source Heat Pump": "ground_water_hps",
+    "Battery Storage": "battery_storage",
+    "Eastern Region": "eastern_region",
+    "East Midlands Region": "east_midlands_region",
+    "London Region": "london_region",
+    "North East Region": "north_east_region",
+    "North West Region": "north_west_region",
+    "South East Region": "south_east_region",
+    "South West Region": "south_west_region",
+    "West Midlands Region": "west_midlands_region",
+    "Yorkshire Humberside Region": "yorkshire_humberside_region",
+    "Northern Ireland Region": "northern_ireland_region",
+    "Scotland Region": "scotland_region",
+    "Wales Region": "wales_region",
+    "Effective From": "effective_from",
+    "Consumer Code": "consumer_code",
+    "Certification Body": "certification_body",
+}
 
 
 def clean_concat_installers(data):
@@ -344,7 +351,9 @@ def clean_concat_installers(data):
 
 
 def remove_punctuation(address):
-    """Remove all unwanted punctuation from an address.
+    """
+    ---Legacy function---
+    Remove all unwanted punctuation from an address.
     Underscores are kept and slashes/dashes are converted
     to underscores so that the numeric tokens in e.g.
     "Flat 3/2" and "Flat 3-2" are treated as a whole later.
@@ -369,7 +378,9 @@ def remove_punctuation(address):
 
 
 def extract_token_set(address, postcode, max_token_length):
-    """Extract valid numeric tokens from address string.
+    """
+    ---Legacy function---
+    Extract valid numeric tokens from address string.
     Numeric tokens are considered to be character strings containing numbers
     e.g. "45", "3a", "4_1".
     'Valid' is defined as
@@ -404,11 +415,11 @@ def extract_token_set(address, postcode, max_token_length):
     return valid_token_set
 
 
-## ----- Legacy functions below -----
-# The functions below were originally created by India and used to process the installers data we were receving
+# The functions and variables below were originally created by India and used to process the installers data we were receving
 # from MCS each quarter. Now that we are working with the historical table of installers, we had to change these
 # functions slighly as per above. We kept the original ones for reference, if we ever need to go back to them to
 # repeat any analysis.
+#
 # def clean_company_name(company_name):
 #    """cleans installation company name by:
 #        - removing "company" stopwords like ltd, limited;
