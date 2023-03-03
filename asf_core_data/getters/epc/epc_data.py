@@ -217,7 +217,7 @@ def load_scotland_data(
         epc_certs = epc_certs.rename(columns=base_config.rev_scotland_field_fix_dict)
         epc_certs = epc_certs.rename(
             columns={
-                "CO2 Emissions Current Per Floor Area (kg.CO2/m2/yr)": "ENERGY_CONSUMPTION_CURRENT",
+                "Primary Energy Indicator (kWh/mÂ²/year)": "ENERGY_CONSUMPTION_CURRENT",
                 "CO2 Emissions Current Per Floor Area (kg.CO2/mÂ²/yr)": "CO2_EMISS_CURR_PER_FLOOR_AREA",
                 "Total floor area (mÂ²)": "TOTAL_FLOOR_AREA",
             }
