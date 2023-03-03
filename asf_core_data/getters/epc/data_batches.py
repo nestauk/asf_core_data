@@ -18,9 +18,10 @@ def get_batch_path(rel_path, data_path, batch="newest", check_folder="input"):
     """Create path to specific batch, e.g. to the newest batch.
 
     Args:
-        path (str/Path): Path that needs to be updated with batch name.
+        rel_path (str/Path): Path that needs to be updated with batch name.
         data_path (str/Path, optional): Path to ASF core data directory. Defaults to None.
         batch (str, optional): Which batch to use, either specific batch name or relative indicator. Defaults to "newest".
+        check_folder (str, optional): Whether to check in the input or output folder. Options: input(s), output(s).
 
     Returns:
         Path: Path with specific batch name integrated.
