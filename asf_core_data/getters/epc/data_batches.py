@@ -39,7 +39,7 @@ def get_batch_path(rel_path, data_path, batch="newest", check_folder="input"):
         "latest",
     ]:
 
-        newest_batch = get_most_recent_batch(
+        newest_batch = get_most_recent_epc_batch(
             data_path=data_path, check_folder=check_folder
         )
         path = str(rel_path).format(newest_batch)
@@ -163,7 +163,7 @@ def get_latest_mcs_epc_joined_batch(version="most_relevant"):
     return max(batches)
 
 
-def get_most_recent_batch(
+def get_most_recent_epc_batch(
     data_path=None, rel_path=base_config.RAW_DATA_PATH, check_folder="input"
 ):
     """Get the most recent EPC data batch from ASF data directory or S3 bucket.
@@ -205,8 +205,10 @@ def check_for_newest_batch(data_path=None, check_folder="input", verbose=False):
     """
 
     # Get the latest batches on the local dir and S3
-    local_batch = get_most_recent_batch(data_path=data_path, check_folder=check_folder)
-    s3_batch = get_most_recent_batch(data_path="S3")
+    local_batch = get_most_recent_epc_batch(
+        data_path=data_path, check_folder=check_folder
+    )
+    s3_batch = get_most_recent_epc_batch(data_path="S3")
 
     if local_batch == s3_batch:
         if verbose:
