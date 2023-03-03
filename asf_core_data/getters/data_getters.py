@@ -33,11 +33,21 @@ data_dict = {
 
 def download_core_data(dataset, local_dir, batch=None, unzip=True):
     """Download the ASF core data from the S3 bucket to local directory.
+    You can pass a path to a specific file or pick from the following predefined sets:
+
+    - epc_raw
+    - epc_raw_combined
+    - epc_preprocessed_dedupl
+    - epc_preprocessed
+    - EST_cleansed
+    - EST_cleansed_dedupl
+    - supplementary_data
 
     Args:
-        dataset (str): Which dataset to download.
-            Options: epc_raw, epc_raw_combined, epc_preprocessed_dedupl, epc_preprocessed,
-            EST_cleansed, EST_cleansed_dedupl, supplementary_data
+        dataset (str): Which dataset to download. File path ending in .csv or .zip
+            or one of the following options as str: epc_raw, epc_raw_combined,
+            epc_preprocessed_dedupl, epc_preprocessed,
+            EST_cleansed, EST_cleansed_dedupl, supplementary_data.
         local_dir (str/Path): Path to local directory.
         batch (str, optional): Batch name. Defaults to None (=newest).
         unzip (bool, optional): Whether or not to unzip downloaded folder (if zip file). Defaults to True.
