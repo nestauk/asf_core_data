@@ -124,7 +124,6 @@ def get_latest_hist_installers():
         str: Latest filename for historical data.
     """
 
-    s3 = boto3.resource("s3")
     bucket = "asf-core-data"
     path = "outputs/MCS/installers"
 
@@ -148,7 +147,6 @@ def get_latest_mcs_epc_joined_batch(version="most_relevant"):
         str: Latest EPC/MCS batch filename for given version.
     """
 
-    s3 = boto3.resource("s3")
     bucket = "asf-core-data"
     path = "outputs/MCS/"
 
