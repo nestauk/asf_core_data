@@ -1,5 +1,5 @@
 """
-Script for pre-processing historical MCS heat pump installer company data:
+Script for pre-processing historical MCS heat pump installer company data.
 - Dropping duplicate instances (if they exist);
 - Renaming columns;
 - Joining installation and design variables;
@@ -29,11 +29,6 @@ OR
 `python3 process_historical_mcs_installers.py -raw_historical_installers_filename "raw_historical_mcs_installers_YYYYMMDD.xlsx" -raw_historical_installations_filename "raw_historical_mcs_installations_YYYYMMDD.xlsx"`
 OR
 `python3 process_historical_mcs_installers.py -api_key "YOUR_API_KEY" -raw_historical_installers_filename "raw_historical_mcs_installers_YYYYMMDD.xlsx" -raw_historical_installations_filename "raw_historical_mcs_installations_YYYYMMDD.xlsx"`
-
-Companies House API additional info:
-- https://developer-specs.company-information.service.gov.uk/companies-house-public-data-api/reference/search/search-companies
-- https://developer-specs.company-information.service.gov.uk/companies-house-public-data-api/resources/companysearch?v=latest
-
 """
 
 import pandas as pd
@@ -44,7 +39,7 @@ from argparse import ArgumentParser
 from asf_core_data.config import base_config
 from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
 from asf_core_data.getters.mcs_getters.get_mcs_installers import (
-    get_raw_historical_mcs_installers,
+    get_raw_historical_installers_data,
 )
 from asf_core_data.getters.mcs_getters.get_mcs_installations import (
     get_raw_historical_installations_data,
@@ -674,15 +669,11 @@ if __name__ == "__main__":
     uk_geo_data = load_s3_data(s3_bucket_name, uk_geo_path)
 
     # Getting raw installations and installers data from S3
-    mcs_raw_data_path = base_config.MCS_HISTORICAL_DATA_INPUTS_PATH
-    raw_historical_installers_filename = args.raw_historical_installers_filename
-    raw_historical_installations_filename = args.raw_historical_installations_filename
-
-    raw_historical_installers = get_raw_historical_mcs_installers(
-        raw_historical_installers_filename
+    raw_historical_installers = get_raw_historical_installers_data(
+        args.raw_historical_installers_filename
     )
     raw_historical_installations = get_raw_historical_installations_data(
-        raw_historical_installations_filename
+        args.raw_historical_installations_filename
     )
 
     # Process raw historical installers data
@@ -695,12 +686,10 @@ if __name__ == "__main__":
 
     # Saving processed data to S3
     processed_data_path = base_config.PREPROCESSED_MCS_HISTORICAL_INSTALLERS_FILE_PATH
-
+    # date when data was shared by MCS in MCS data dumps
     date = args.raw_historical_installers_filename.split("installers_")[1].split(
         ".xlsx"
-    )[
-        0
-    ]  # date when data was shared by MCS in MCS data dumps
+    )[0]
 
     save_to_s3(
         s3=s3,
