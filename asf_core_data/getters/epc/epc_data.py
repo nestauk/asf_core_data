@@ -165,12 +165,10 @@ def load_scotland_data(
 
             if "ENERGY_TARIFF" in scot_usecols:
                 scot_usecols.remove("ENERGY_TARIFF")
-                scot_usecols.remove("BUILDING_REFERENCE_NUMBER")
 
             if "UPRN" in scot_usecols:
 
                 scot_usecols.remove("UPRN")
-                # scot_usecols.remove("BUILDING_REFERENCE_NUMBER")
                 scot_usecols.append("Property_UPRN")
 
             if "LMK_KEY" in scot_usecols:
