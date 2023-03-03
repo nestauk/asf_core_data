@@ -26,7 +26,12 @@ def get_s3_dir_files(s3, bucket_name, dir_name):
 
 
 def load_s3_data(
-    bucket_name, file_name, usecols=None, dtypes=None, columns_to_parse_as_dates=None
+    bucket_name,
+    file_name,
+    usecols=None,
+    dtypes=None,
+    columns_to_parse_as_dates=None,
+    encoding="latin-1",
 ):
     """
     Load data from S3 location.
@@ -35,6 +40,7 @@ def load_s3_data(
     usecols: Columns of data to use. Defaults to None, loading all columns.
     dtypes: data types
     columns_to_parse_as_dates: columns that should be parsed as dates (when reading as csv)
+    encoding: enconding when reading as csv (defaults to latin-1)
     """
     if fnmatch(file_name, "*.xlsx"):
         data = pd.read_excel(
@@ -49,7 +55,7 @@ def load_s3_data(
     elif fnmatch(file_name, "*.csv"):
         return pd.read_csv(
             os.path.join("s3://" + bucket_name, file_name),
-            encoding="latin-1",
+            encoding=encoding,
             usecols=usecols,
             dtype=dtypes,
             parse_dates=columns_to_parse_as_dates,
@@ -108,12 +114,20 @@ def get_most_recent_batch_name(
         The most recent batch.
     """
     batches = [key for key in get_s3_dir_files(s3, bucket, s3_folder_path)]
+    print(batches)
 
     final_set = []
-    if filter_keep_keywords is not None:
+    if filter_keep_keywords is None and filter_remove_keywords is None:
+        final_set = final_set + batches
+    elif filter_remove_keywords is None:
         for f in filter_keep_keywords:
             final_set = final_set + [key for key in batches if f in key]
-    if filter_remove_keywords is not None:
+    elif filter_keep_keywords is None:
+        for f in filter_remove_keywords:
+            final_set = [key for key in batches if f not in key]
+    else:
+        for f in filter_keep_keywords:
+            final_set = final_set + [key for key in batches if f in key]
         for f in filter_remove_keywords:
             final_set = [key for key in final_set if f not in key]
 
