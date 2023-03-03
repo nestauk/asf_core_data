@@ -70,6 +70,7 @@ def get_most_recent_processed_historical_installers_data() -> pd.DataFrame:
         file_name=most_recent_file_name,
         dtypes=base_config.preprocessed_historical_installers_dtypes,
         columns_to_parse_as_dates=base_config.preprocessed_historical_installers_date_cols,
+        encoding="utf-8",
     )
 
 
@@ -88,4 +89,5 @@ def get_processed_historical_installers_data(path_to_file: str) -> pd.DataFrame:
         file_name=path_to_file,
         dtypes=base_config.preprocessed_historical_installers_dtypes,
         columns_to_parse_as_dates=base_config.preprocessed_historical_installers_date_cols,
+        encoding="utf-8",
     )
