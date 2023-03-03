@@ -230,9 +230,17 @@ Replace the `...` above with
 
 To update the data on the `asf-core-data` S3 bucket, run:
 
+    export COMPANIES_HOUSE_API_KEY="ADD_YOUR_API_KEY_HERE"
+
     from asf_core_data import generate_and_save_mcs
 
-    generate_and_save_mcs(epc_data_path=...)
+    generate_and_save_mcs()
+
+which requires the user to have a Companies House API key:
+
+- Create a developer account for Companies House API[here](https://developer.company-information.service.gov.uk/get-started);
+- Create a new application [here](https://developer.company-information.service.gov.uk/manage-applications/add). Give it any name and description you want and choose the Live environment.
+  Copy your API key credentials.
 
 This requires processed EPC data to be saved locally as set out by the requirements in the section above.
 
@@ -241,10 +249,6 @@ To run checks on raw installations data:
     from asf_core_data import test_installation_data
 
     test_installation_data(filename)
-
-To produce a new processed version of installer data on S3, run `generate_and_save_mcs` as above, then using a Companies House API key run
-
-    python asf_core_data/pipeline/mcs/process/process_mcs_installers.py -key [API KEY]
 
 ### Installations <a name="mcs_installations"></a>
 
@@ -263,7 +267,6 @@ The MCS **installers** dataset contains one record for each MCS-certified instal
 
 - name and address
 - technologies installed
-- locations in which the installer operates
 
 ### Merging with EPC <a name="mcs_epc_merging"></a>
 
