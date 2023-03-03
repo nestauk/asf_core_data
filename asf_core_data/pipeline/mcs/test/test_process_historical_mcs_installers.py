@@ -18,18 +18,16 @@ from asf_core_data.pipeline.mcs.process.process_historical_mcs_installers import
     basic_preprocessing_of_installations,
 )
 from asf_core_data.getters.mcs_getters.get_mcs_installers import (
-    get_processed_historical_installers_data,
-    get_raw_historical_mcs_installers,
+    get_most_recent_processed_historical_installers_data,
+    get_most_recent_raw_historical_installers_data,
 )
 from asf_core_data.getters.mcs_getters.get_mcs_installations import (
     get_raw_historical_installations_data,
 )
 
 
-raw_installers_data = get_raw_historical_mcs_installers(
-    "raw_historical_mcs_installers_20230207.xlsx"
-)
-processed_installers_data = get_processed_historical_installers_data("20230207")
+raw_installers_data = get_most_recent_raw_historical_installers_data()
+processed_installers_data = get_most_recent_processed_historical_installers_data()
 
 
 def test_rename_columns():
@@ -279,9 +277,14 @@ def test_create_installer_unique_id():
     by checking that the company unique ID is never missing.
     """
 
-    data = get_processed_historical_installers_data("20230207")
-
-    assert len(data[pd.isnull(data["company_unique_id"])]) == 0
+    assert (
+        len(
+            processed_installers_data[
+                pd.isnull(processed_installers_data["company_unique_id"])
+            ]
+        )
+        == 0
+    )
 
 
 def test_geocode_postcode():
