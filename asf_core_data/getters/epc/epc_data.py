@@ -45,13 +45,13 @@ def get_cert_rec_files(data_path, dir_name, scotland_data=False):
             directories = [
                 Path(f).name
                 for f in data_getters.get_s3_dir_files(
-                    dir_name=str(dir_name), direct_child_only=False
+                    path_to_dir=str(dir_name), direct_child_only=False
                 )
             ]
 
         else:
             directories = data_getters.get_dir_content(
-                dir_name=str(dir_name), base_name_only=True
+                str(dir_name), base_name_only=True
             )
 
     else:
