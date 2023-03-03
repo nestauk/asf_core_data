@@ -3,17 +3,11 @@
 
 # ---------------------------------------------------------------------------------
 
-
-import shutil
 import boto3
 import os
 import zipfile
 
 from asf_core_data import Path
-from asf_core_data.getters.epc import data_batches
-from asf_core_data.config import base_config
-from asf_core_data.getters import data_getters
-
 
 # ---------------------------------------------------------------------------------
 
