@@ -545,6 +545,45 @@ INSTALLATIONS_RAW_S3_PATH = "inputs/MCS/mcs_installations.csv"
 INSTALLATIONS_RAW_LOCAL_PATH = "/inputs/data/mcs/installations"
 RAW_DATA_S3_FOLDER = "inputs/MCS/latest_raw_data"
 
+# HISTORICAL INSTALLATIONS
+historical_installations_rename_cols_dict = {
+    "Version Number": "version",
+    "Certificate Creation Date": "cert_date",
+    "Commissioning Date": "commission_date",
+    "Address Line 1": "address_1",
+    "Address Line 2": "address_2",
+    "Address Line 3": "address_3",
+    "County": "county",
+    "Postcode": "postcode",
+    "Local Authority": "local_authority",
+    "Total Installed Capacity": "capacity",
+    "Estimated Annual Generation": "estimated_annual_generation",
+    "Installation Company Name": "installer_name",
+    "Green Deal Installation?": "green_deal",
+    "Products": "products",
+    "Flow temp/SCOP ": "flow_scop",
+    "Technology Type": "tech_type",
+    "Installation Type": "installation_type",
+    " Installation Type": "installation_type",
+    "End User Installation Type": "end_user_installation_type",
+    "Installation New at Commissioning Date?": "new",
+    "Renewable System Design": "design",
+    "Annual Space Heating Demand": "heat_demand",
+    "Annual Water Heating Demand": "water_demand",
+    "Annual Space Heating Supplied": "heat_supplied",
+    "Annual Water Heating Supplied": "water_supplied",
+    "Installation Requires Metering?": "metering",
+    "RHI Metering Status": "rhi_status",
+    "RHI Metering Not Ready Reason": "rhi_not_ready",
+    "Number of MCS Certificates": "n_certificates",
+    "Heating System Type": "system_type",
+    "Alternative Heating System Type": "alt_type",
+    "Alternative Heating System Fuel Type": "alt_fuel",
+    "Overall Cost": "cost",
+    "Fuel Type": "fuel_type",
+    "Installation Company MCS Number": "installation_company_mcs_number",
+}
+
 
 # HISTORICAL INSTALLERS
 MCS_HISTORICAL_DATA_INPUTS_PATH = "inputs/MCS/latest_raw_data/historical/"
@@ -627,7 +666,7 @@ raw_historical_installations_dtypes = {
     "Installation Type": str,
 }
 
-MCS_HISTORICAL_DATA_OUTPUTS_PATH = "/outputs/MCS/installers/"
+MCS_HISTORICAL_DATA_OUTPUTS_PATH = "outputs/MCS/installers/"
 PREPROCESSED_MCS_HISTORICAL_INSTALLERS_FILE_PATH = (
     "/outputs/MCS/installers/mcs_historical_installers_{}.csv"
 )

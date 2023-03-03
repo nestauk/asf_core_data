@@ -72,17 +72,6 @@ def get_raw_installations_data(
     return hps
 
 
-def get_raw_mcs_installations_concatenated_files():
-    """
-    Get raw MCS installations concatenated files.
-    """
-    return load_s3_data(
-        bucket_name=base_config.BUCKET_NAME,
-        file_name="inputs/MCS/mcs_installations.csv",
-        columns_to_parse_as_dates=["commission_date"],
-    )
-
-
 def get_most_recent_raw_historical_installations_data() -> pd.DataFrame:
     """
     Get the most recent version of the raw historical heat pump MCS certified installation data from S3.

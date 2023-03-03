@@ -6,17 +6,17 @@
 import pandas as pd
 import re
 import datetime as dt
-
 from asf_core_data.getters.mcs_getters.get_mcs_installations import (
-    get_raw_installations_data,
-)
-from asf_core_data.getters.mcs_getters.get_mcs_installers import (
-    get_processed_historical_installers_data,
+    get_most_recent_raw_historical_installations_data,
 )
 from asf_core_data.getters.mcs_getters.get_mcs_installers import (
     get_most_recent_processed_historical_installers_data,
 )
 from asf_core_data.config import base_config
+
+# --- Legacy imports
+# from asf_core_data.getters.mcs_getters.get_mcs_installations import get_raw_installations_data
+# from asf_core_data.pipeline.mcs.process.process_mcs_utils import colnames_dict
 
 # %%
 
@@ -34,11 +34,11 @@ def add_hp_features(hps):
 
     # Extract information from product column
     product_regex_dict = {
-        "product_id": "MCS Product Number: ([^\|]+)",
-        "product_name": "Product Name: ([^\|]+)",
-        "manufacturer": "License Holder: ([^\|]+)",
-        "flow_temp": "Flow Temp: ([^\|]+)",
-        "scop": "SCOP: ([^\)]+)",
+        "product_id": "MCS Product Number: ([^|]+)",
+        "product_name": "Product Name: ([^|]+)",
+        "manufacturer": "License Holder: ([^|]+)",
+        "flow_temp": "Flow Temp: ([^|]+)",
+        "scop": "SCOP: ([^)]+)",
     }
     for product_feat, regex in product_regex_dict.items():
         hps[product_feat] = [
@@ -47,9 +47,10 @@ def add_hp_features(hps):
 
     # Add RHI field - any "Unspecified" values in rhi_status field signify
     # that the installation is not for DRHI, missing values are unknown
-    hps["rhi"] = True
-    hps.loc[(hps["rhi_status"] == "Unspecified"), "rhi"] = False
-    hps["rhi"].mask(hps["rhi_status"].isna())
+    if "rhi_status" in hps.columns:
+        hps["rhi"] = True
+        hps.loc[(hps["rhi_status"] == "Unspecified"), "rhi"] = False
+        hps["rhi"].mask(hps["rhi_status"].isna())
 
     # Add installation year
     hps["commission_year"] = hps["commission_date"].dt.year
@@ -132,9 +133,11 @@ def get_installer_unique_id(
     """
 
     installations = installations.merge(
-        right=installers[["company_name", "company_unique_id"]],
+        right=installers[["company_name", "company_unique_id"]].drop_duplicates(
+            "company_name"
+        ),
         how="left",
-        left_on=["installer_name"],
+        left_on="installer_name",
         right_on="company_name",
     )
 
@@ -143,18 +146,19 @@ def get_installer_unique_id(
     return installations
 
 
-def get_processed_installations_data(refresh=True):
+def get_processed_installations_data():
     """Process MCS installations data and add information about company unique ID.
-
-    Args:
-        refresh (bool): Whether or not to redownload the unprocessed data
-        from S3. Defaults to True.
 
     Returns:
         Dataframe: Processed MCS installations data.
     """
 
-    installations_data = get_raw_installations_data(refresh=refresh)
+    # installations_data = get_raw_installations_data(refresh=refresh) -> legacy function
+    installations_data = get_most_recent_raw_historical_installations_data()
+
+    installations_data = installations_data.rename(
+        columns=base_config.historical_installations_rename_cols_dict
+    )
 
     installations_data = add_hp_features(installations_data)
     installations_data = mask_outliers(installations_data)
