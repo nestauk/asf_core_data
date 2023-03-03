@@ -226,6 +226,71 @@ def geocode_postcode(data: pd.DataFrame, geodata: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
+def remove_punctuation(address):
+    """
+    Remove all unwanted punctuation from an address.
+    Underscores are kept and slashes/dashes are converted
+    to underscores so that the numeric tokens in e.g.
+    "Flat 3/2" and "Flat 3-2" are treated as a whole later.
+
+    Args:
+        address (str): Address to format.
+
+    Returns:
+        address (str): Formatted address.
+    """
+
+    if (address is pd.NA) | (address is np.nan):
+        return ""
+    else:
+        # Replace / and - with _
+        address = re.sub(r"[/-]", "_", address)
+        # Remove all punctuation other than _
+        punct_regex = r"[\!\"#\$%&\\\'(\)\*\+,-\./:;<=>\?@\[\]\^`\{|\}~”“]"
+        address = re.sub(punct_regex, "", address)
+
+        return address
+
+
+def extract_token_set(address, postcode, max_token_length):
+    """
+    Extract valid numeric tokens from address string.
+    Numeric tokens are considered to be character strings containing numbers
+    e.g. "45", "3a", "4_1".
+    'Valid' is defined as
+    - below a certain token_length (to remove long MPAN strings)
+    - not the inward or outward code of the property's postcode
+    - not the property's postcode with space removed
+
+    Args:
+        address (str): String from which to extract tokens.
+        postcode (str): String used for removal of tokens corresponding to postcode parts.
+
+    Returns:
+        valid_token_set (set): Set of valid tokens. Set chosen as the order does not matter
+        for comparison purposes.
+    """
+    # wonder if single-letter tokens should be in here too
+    # for e.g. "Flat A" or whether this would give too many
+    # false positives
+    tokens = re.findall("\w*\d\w*", address)
+    if pd.isnull(postcode):  # invalid postcode
+        valid_tokens = [token for token in tokens if ((len(token) < max_token_length))]
+    else:  # valid postcode
+        valid_tokens = [
+            token
+            for token in tokens
+            if (
+                (len(token) < max_token_length)
+                & (token.lower() not in postcode.lower().split())
+                & (token.lower() != postcode.lower().replace(" ", ""))
+            )
+        ]
+    valid_token_set = set(valid_tokens)
+
+    return valid_token_set
+
+
 ## ----- Legacy functions and variables below -----
 # The functions and variables below are legacy functions that are no longer in use.
 # Some of them are commented because they still exist but have been adapter
@@ -302,10 +367,9 @@ mcs_companies_dict = {
     "Consumer Code": "consumer_code",
     "Certification Body": "certification_body",
 }
-
-
+"""
 def clean_concat_installers(data):
-    """
+
     Legacy function: only used for quarterly installers data,
     not for historical installers.
 
@@ -320,7 +384,7 @@ def clean_concat_installers(data):
     Returns:
         data (pd.DataFrame): Cleaned, concatenated installers data
 
-    """
+
 
     keywords_to_merge = [
         "Air Source",
@@ -348,72 +412,7 @@ def clean_concat_installers(data):
     ]
 
     return data.reset_index(drop=True)
-
-
-def remove_punctuation(address):
-    """
-    ---Legacy function---
-    Remove all unwanted punctuation from an address.
-    Underscores are kept and slashes/dashes are converted
-    to underscores so that the numeric tokens in e.g.
-    "Flat 3/2" and "Flat 3-2" are treated as a whole later.
-
-    Args:
-        address (str): Address to format.
-
-    Returns:
-        address (str): Formatted address.
-    """
-
-    if (address is pd.NA) | (address is np.nan):
-        return ""
-    else:
-        # Replace / and - with _
-        address = re.sub(r"[/-]", "_", address)
-        # Remove all punctuation other than _
-        punct_regex = r"[\!\"#\$%&\\\'(\)\*\+,-\./:;<=>\?@\[\]\^`\{|\}~”“]"
-        address = re.sub(punct_regex, "", address)
-
-        return address
-
-
-def extract_token_set(address, postcode, max_token_length):
-    """
-    ---Legacy function---
-    Extract valid numeric tokens from address string.
-    Numeric tokens are considered to be character strings containing numbers
-    e.g. "45", "3a", "4_1".
-    'Valid' is defined as
-    - below a certain token_length (to remove long MPAN strings)
-    - not the inward or outward code of the property's postcode
-    - not the property's postcode with space removed
-
-    Args:
-        address (str): String from which to extract tokens.
-        postcode (str): String used for removal of tokens corresponding to postcode parts.
-
-    Returns:
-        valid_token_set (set): Set of valid tokens. Set chosen as the order does not matter
-        for comparison purposes.
-    """
-    # wonder if single-letter tokens should be in here too
-    # for e.g. "Flat A" or whether this would give too many
-    # false positives
-
-    tokens = re.findall("\w*\d\w*", address)
-    valid_tokens = [
-        token
-        for token in tokens
-        if (
-            (len(token) < max_token_length)
-            & (token.lower() not in postcode.lower().split())
-            & (token.lower() != postcode.lower().replace(" ", ""))
-        )
-    ]
-    valid_token_set = set(valid_tokens)
-
-    return valid_token_set
-
+"""
 
 # The functions and variables below were originally created by India and used to process the installers data we were receving
 # from MCS each quarter. Now that we are working with the historical table of installers, we had to change these
