@@ -257,7 +257,7 @@ def load_s3_data(
 
     else:
         print(
-            'Function not supported for file type other than "*.xlsx", "*.pickle", and "*.csv"'
+            'Function not supported for file type other than "*.xlsx", "*.pickle", "*.geojson", and "*.csv"'
         )
 
 
