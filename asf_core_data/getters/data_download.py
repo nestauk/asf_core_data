@@ -61,8 +61,3 @@ def extract_data(file_path):
         print("Extracting...\n{}".format(zip.filename))
         zip.extractall(zip_dir)
         print("Done!")
-
-
-if __name__ == "__main__":
-    # Execute only if run as a script
-    main()
