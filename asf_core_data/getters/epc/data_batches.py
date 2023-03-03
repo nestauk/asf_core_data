@@ -81,6 +81,8 @@ def get_all_batch_names(
             'The value for check_folder has to be "input", "inputs", "output" or "outputs".'
         )
 
+    rel_path = Path(rel_path)
+
     if check_folder in ["output", "outputs"]:
         rel_path = base_config.OUTPUT_DATA_PATH
     else:
