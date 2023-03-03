@@ -29,6 +29,9 @@ OR
 `python3 process_historical_mcs_installers.py -raw_historical_installers_filename "raw_historical_mcs_installers_YYYYMMDD.xlsx" -raw_historical_installations_filename "raw_historical_mcs_installations_YYYYMMDD.xlsx"`
 OR
 `python3 process_historical_mcs_installers.py -api_key "YOUR_API_KEY" -raw_historical_installers_filename "raw_historical_mcs_installers_YYYYMMDD.xlsx" -raw_historical_installations_filename "raw_historical_mcs_installations_YYYYMMDD.xlsx"`
+
+Note that the processing of historical installers is included the script that processes MCS data:
+python3 asf_core_daa/pipeline/mcs/generate_mcs_data.py
 """
 
 import pandas as pd
