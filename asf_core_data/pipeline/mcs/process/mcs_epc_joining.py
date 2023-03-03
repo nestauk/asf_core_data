@@ -275,6 +275,7 @@ def join_mcs_epc_data(
     """Produce joined MCS-EPC dataframe from "unprepared" data.
     Args:
         epc_data_path (string): Path to local top-level EPC data folder.
+        rel_data_path (string): Relative path to specific EPC version.
         hps (Dataframe, optional): MCS installation records.
         If None, records are fetched automatically. Defaults to None.
         epcs (Dataframe, optional): EPC records. If None, records
@@ -295,12 +296,11 @@ def join_mcs_epc_data(
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        # TODO: load from S3 instead
         epcs = load_preprocessed_epc_data(
             data_path=epc_data_path,
             rel_data_path=rel_data_path,
-            # rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
             version=epc_version,
+            batch="newest",
             usecols=base_config.MCS_EPC_CHARACTERISTIC_FIELDS + extra_epc_cols,
         )
 
