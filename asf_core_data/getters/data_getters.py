@@ -25,16 +25,28 @@ def get_s3_dir_files(s3, bucket_name, dir_name):
     return dir_files
 
 
-def load_s3_data(bucket_name, file_name, usecols=None):
+def load_s3_data(
+    bucket_name,
+    file_name,
+    usecols=None,
+    dtypes=None,
+    columns_to_parse_as_dates=None,
+    encoding="latin-1",
+):
     """
     Load data from S3 location.
     bucket_name: The S3 bucket name
     file_name: S3 key to load
     usecols: Columns of data to use. Defaults to None, loading all columns.
+    dtypes: data types
+    columns_to_parse_as_dates: columns that should be parsed as dates (when reading as csv)
+    encoding: enconding when reading as csv (defaults to latin-1)
     """
     if fnmatch(file_name, "*.xlsx"):
         data = pd.read_excel(
-            os.path.join("s3://" + bucket_name, file_name), sheet_name=None
+            os.path.join("s3://" + bucket_name, file_name),
+            sheet_name=None,
+            dtype=dtypes,
         )
         if len(data) > 1:
             return data
@@ -43,8 +55,10 @@ def load_s3_data(bucket_name, file_name, usecols=None):
     elif fnmatch(file_name, "*.csv"):
         return pd.read_csv(
             os.path.join("s3://" + bucket_name, file_name),
-            encoding="latin-1",
+            encoding=encoding,
             usecols=usecols,
+            dtype=dtypes,
+            parse_dates=columns_to_parse_as_dates,
         )
     elif fnmatch(file_name, "*.pickle") or fnmatch(file_name, "*.pkl"):
         obj = s3.Object(bucket_name, file_name)
@@ -79,3 +93,45 @@ def save_to_s3(s3, bucket_name, output_var, output_file_path):
         print(
             'Function not supported for file type other than "*.pkl", "*.json" and "*.csv"'
         )
+
+
+def get_most_recent_batch_name(
+    bucket: str,
+    s3_folder_path: str,
+    filter_keep_keywords: list = None,
+    filter_remove_keywords: list = None,
+) -> str:
+    """
+    Get the file name of the most recent batch for a specific set of files on an S3 folder.
+    Args:
+        bucket: s3 bucket e.g. "asf-core-data"
+        s3_folder_path: path to S3 folder, e.g."/outputs/MCS/installers"
+        filter_keep_keywords: keywords we should filter to keep
+            e.g. ["installation", "installer"] -> will keep files containing either the word "installation" or "installer"
+        filter_remove_keywords: keyword we should filter out
+            e.g. ["historical"] -> will remove all files containing the keyword "historical"
+    Returns:
+        The most recent batch.
+    """
+    batches = [key for key in get_s3_dir_files(s3, bucket, s3_folder_path)]
+
+    final_set = []
+    if filter_keep_keywords is None and filter_remove_keywords is None:
+        final_set = final_set + batches
+    elif filter_remove_keywords is None:
+        for f in filter_keep_keywords:
+            final_set = final_set + [key for key in batches if f in key]
+    elif filter_keep_keywords is None:
+        for f in filter_remove_keywords:
+            final_set = [key for key in batches if f not in key]
+    else:
+        for f in filter_keep_keywords:
+            final_set = final_set + [key for key in batches if f in key]
+        for f in filter_remove_keywords:
+            final_set = [key for key in final_set if f not in key]
+
+    if len(final_set) == 0:
+        raise IOError("No files found.")
+
+    # Return highest value since all files are marked with date stamps in format yyyymmdd
+    return max(final_set)
