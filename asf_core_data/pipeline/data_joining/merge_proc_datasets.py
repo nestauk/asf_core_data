@@ -204,3 +204,7 @@ def merging_pipeline():
         output_var=epc_mcs_complete,
         output_file_path='"output/mcs/gold/merged_epc_mcs.csv"',
     )
+
+
+if __name__ == "__main__":
+    merging_pipeline()
