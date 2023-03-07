@@ -200,7 +200,7 @@ def merging_pipeline():
 
     # Save final merged dataset
     data_getters.save_to_s3(
-        bucket_name="asf-core-data",
+        bucket_name=base_config.BUCKET_NAME,
         output_var=epc_mcs_complete,
         output_file_path='"output/mcs/gold/merged_epc_mcs.csv"',
     )
