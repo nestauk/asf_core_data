@@ -18,7 +18,7 @@ def get_mcs_install_dates(epc_df, additional_features=True):
 
     Args:
         epc_df (pandas.DataFrame): EPC dataset.
-        additional_features (bool, optional): Whether to add additional MCS features. Defaults to False.
+        additional_features (bool, optional): Whether to add additional MCS features. Defaults to True.
 
     Returns:
         pandas.DataFrame: EPC dataset with added MCS install dates.
