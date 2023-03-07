@@ -13,12 +13,12 @@ import pandas as pd
 # ---------------------------------------------------------------------------------
 
 
-def get_mcs_install_dates(epc_df, additional_features=True):
+def get_mcs_install_dates(epc_df, additional_mcs_feats=False):
     """Get MCS install dates and add them to the EPC data.
 
     Args:
         epc_df (pandas.DataFrame): EPC dataset.
-        additional_features (bool, optional): Whether to add additional MCS features. Defaults to True.
+        additional_mcs_feats (bool, optional): Whether to add additional MCS features. Defaults to False.
 
     Returns:
         pandas.DataFrame: EPC dataset with added MCS install dates.
@@ -70,7 +70,7 @@ def get_mcs_install_dates(epc_df, additional_features=True):
 
     epc_df["HP_INSTALL_DATE"] = epc_df["UPRN"].map(date_dict)
 
-    if additional_features:
+    if additional_mcs_feats:
         for feat in ["tech_type", "cluster", "installer_name"]:
 
             epc_df[feat] = epc_df["UPRN"].map(
@@ -84,7 +84,7 @@ def manage_hp_install_dates(
     df,
     identifier="UPRN",
     verbose=False,
-    additional_features=False,
+    additional_mcs_feats=False,
     add_hp_features=False,
 ):
     """Manage heat pump install dates given by EPC and MCS.
@@ -95,13 +95,15 @@ def manage_hp_install_dates(
         df (pd.DataFrame): Dataframe with EPC data and MCS install dates.
         identifier (str, optional): Unique identifier for properties. Defaults to "UPRN".
         verbose (bool, optional): Print some diagnostics. Defaults to True.
+        additional_mcs_feats (bool, optional): Whether to add additional MCS features. Defaults to False.
+        add_hp_features (bool, optional): Compute additional features regarding mentions of heat pumps. Defaults to False.
 
     Returns:
         pd.DataFrame: Dataframe with updated install dates.
     """
 
     # Get the MCS install dates for EPC properties
-    df = get_mcs_install_dates(df, additional_features=additional_features)
+    df = get_mcs_install_dates(df, additional_mcs_feats=additional_mcs_feats)
 
     df = df[df["INSPECTION_DATE"].notna()]
 
