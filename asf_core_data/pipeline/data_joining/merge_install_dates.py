@@ -73,8 +73,6 @@ def get_mcs_install_dates(epc_df, additional_features=True):
     if additional_features:
         for feat in ["tech_type", "cluster", "installer_name"]:
 
-            print(mcs_data.columns)
-
             epc_df[feat] = epc_df["UPRN"].map(
                 mcs_data.set_index("UPRN").to_dict()[feat]
             )
@@ -113,8 +111,6 @@ def manage_hp_install_dates(
     )
 
     df["FIRST_HP_MENTION"] = df[identifier].map(dict(first_hp_mention))
-
-    print(df[df["FIRST_HP_MENTION"].notna() & df["HP_INSTALLED"]].shape)
 
     # Additional features about heat pump history of property
     if add_hp_features:
