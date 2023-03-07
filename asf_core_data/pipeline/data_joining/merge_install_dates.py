@@ -115,7 +115,7 @@ def manage_hp_install_dates(
     # Additional features about heat pump history of property
     if add_hp_features:
 
-        df["ANY_HP"] = df[identifier].map(
+        df["HP_AT_ANY_POINT"] = df[identifier].map(
             dict(df.groupby(identifier)["HP_INSTALLED"].max())
         )
 
