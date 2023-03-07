@@ -202,7 +202,7 @@ def merging_pipeline():
     data_getters.save_to_s3(
         bucket_name=base_config.BUCKET_NAME,
         output_var=epc_mcs_complete,
-        output_file_path='"output/mcs/gold/merged_epc_mcs.csv"',
+        output_file_path=base_config.EPC_MCS_MERGED_OUT_FOLDER,
     )
 
 
