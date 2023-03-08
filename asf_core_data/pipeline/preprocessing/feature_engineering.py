@@ -379,7 +379,7 @@ def get_postcode_coordinates(df, postcode_field_name="POSTCODE"):
     df = data_cleaning.reformat_postcode(df, white_space="remove")
 
     # Merge with location data
-    df = pd.merge(df, postcode_coordinates_df, on=postcode_field_name)
+    df = pd.merge(df, postcode_coordinates_df, on=postcode_field_name, how="outer")
 
     return df
 
