@@ -47,8 +47,8 @@ def preprocess_data(
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
         subset (str, optional): Nation subset: "England", "Wales" or "Scotland", will adjust outfile path.
         batch (str, optional): Data batch to load. Defaults to None.
-        save_data (bool, optional):  Whether or not to save preprocessed data at different stages (original, cleaned, deduplicated).
-            Defaults to base_config.PREPROC_EPC_DATA_PATH.
+        save_data (str/Path):  Where to preprocessed data at different stages (original, cleaned, deduplicated).
+            None does not save the outputs. Defaults to base_config.PREPROC_EPC_DATA_PATH.
         verbose (bool, optional): Print number of features and samples after each processing step. Defaults to True.
 
     Returns:
@@ -187,6 +187,8 @@ def load_and_preprocess_epc_data(
         remove_duplicates (bool, optional): Whether or not to remove duplicates for same property. Defaults to True.
         save_data (str/Path, optional): Whether or not to save preprocessed data at different stages (original, cleaned, deduplicated).
             Defaults to base_config.PREPROC_EPC_DATA_PATH.
+        reload_raw (bool, optional): Whether to reload the raw EPC data from inputs folder or whether to use the fully
+            merged raw EPC data from the outputs folder (still unprocessed). Reloading can be useful if there have been changes to the raw data or the loading functions. Defaults to False.
 
     Returns:
         pandas.DataFrame:  Preprocessed EPC dataset.
@@ -194,6 +196,9 @@ def load_and_preprocess_epc_data(
 
     # Do not save/overwrite the preprocessed data when not loading entire GB dataset
     # in order to prevent confusion.
+
+    # Default to False
+    raw_epc_exists = False
 
     if str(save_data) == "S3":
         save_data = None
@@ -212,9 +217,7 @@ def load_and_preprocess_epc_data(
             "You're not loading all samples so the processed data will not be saved!"
         )
 
-    if (save_data or (save_data is not None and not os.path.isabs(save_data))) and (
-        save_data is not None
-    ):
+    if save_data is not None and not os.path.isabs(save_data):
 
         save_data = data_path / save_data
 
@@ -227,7 +230,7 @@ def load_and_preprocess_epc_data(
         )
 
     # Load raw data (from 'preprocessed' raw data or 'untouched' raw data)
-    # Shouldn't make a difference but sometimes useful when debugging
+    # Shouldn't make a difference but sometimes useful when debugging or updating data
     if (raw_epc_exists and not reload_raw) or str(data_path) == "S3":
 
         # Load raw EPC from preprocessed batch (England/Wales/Scotland combines in EPC_GB_raw.csv)
