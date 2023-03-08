@@ -526,6 +526,8 @@ def reformat_postcode(df, postcode_var_name="POSTCODE", white_space="remove"):
 
     Args:
         df (pd.DataFrame): Dataframe with postcode column.
+        postcode_var_name (str, optional): Variable name for postcode. Defaults to "POSTCODE".
+        white_space (str, optional): Whether to "add" or "remove" white space seperator in postcode. Defaults to "remove".
 
     Returns:
         df (pd.DataFrame): Updated dataframe with formatted postcode.
