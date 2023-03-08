@@ -15,7 +15,8 @@ def get_postcode_coordinates(
     desired_postcode_name="POSTCODE",
 ):
     """Load location data (postcode, latitude, longitude).
-    Field names are POSTCODE, LATITUDE and LONGITUDE.
+    Field names are POSTCODE, LATITUDE and LONGITUDE by default,
+    but you can change the POSTCODE field name.
 
     Args:
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to "S3".
