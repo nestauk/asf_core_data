@@ -18,6 +18,7 @@ def download_s3_folder(s3_folder, local_dir, bucket_name="asf-core-data"):
     Args:
         s3_folder: the folder path in the s3 bucket
         local_dir: a relative or absolute directory path in the local file system
+        bucket_name (str, optional): Bucket name on S3. Defaults to "asf-core-data".
     """
 
     s3 = boto3.resource("s3")
