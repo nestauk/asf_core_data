@@ -10,7 +10,9 @@ from asf_core_data.getters import data_getters
 
 
 def get_postcode_coordinates(
-    data_path="S3", rel_data_path=base_config.POSTCODE_TO_COORD_PATH
+    data_path="S3",
+    rel_data_path=base_config.POSTCODE_TO_COORD_PATH,
+    desired_postcode_name="POSTCODE",
 ):
     """Load location data (postcode, latitude, longitude).
     Field names are POSTCODE, LATITUDE and LONGITUDE.
@@ -18,6 +20,7 @@ def get_postcode_coordinates(
     Args:
         data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to "S3".
         rel_data_path (str/Path, optional): Relative path for geographical data. Defaults to base_config.POSTCODE_TO_COORD_PATH.
+        desired_postcode_name: Field name for postcode. Defaults to 'POSTCODE'.
 
     Returns:
         pandas.DateFrame: Location data (postcode, latitude, longitude).
@@ -28,10 +31,10 @@ def get_postcode_coordinates(
     # Remove ID (not necessary and conflicts with EPC dataframe)
     del postcode_coordinates_df["id"]
 
-    # Rename columns to match EPC data
+    # Rename columns to match data
     postcode_coordinates_df = postcode_coordinates_df.rename(
         columns={
-            "postcode": "POSTCODE",
+            "postcode": desired_postcode_name,
             "latitude": "LATITUDE",
             "longitude": "LONGITUDE",
         }
