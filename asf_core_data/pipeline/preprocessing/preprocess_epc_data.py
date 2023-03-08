@@ -64,7 +64,7 @@ def preprocess_data(
             data_path / base_config.RAW_EPC_DATA_PATH,
             data_path=data_path,
             batch=batch,
-            check_folder="input",
+            check_folder="inputs",
         )
 
         if subset != "GB":
@@ -100,7 +100,7 @@ def preprocess_data(
             data_path / base_config.PREPROC_EPC_DATA_PATH,
             data_path=data_path,
             batch=batch,
-            check_folder="output",
+            check_folder="outputs",
         )
 
         if subset != "GB":
@@ -133,7 +133,7 @@ def preprocess_data(
                 data_path / base_config.PREPROC_EPC_DATA_DEDUPL_PATH,
                 data_path=data_path,
                 batch=batch,
-                check_folder="output",
+                check_folder="outputs",
             )
 
             if subset != "GB":
@@ -199,7 +199,7 @@ def load_and_preprocess_epc_data(
         save_data = None
     else:
         raw_data_path = data_batches.get_batch_path(
-            base_config.RAW_EPC_DATA_PATH, data_path, batch, check_folder="input"
+            base_config.RAW_EPC_DATA_PATH, data_path, batch, check_folder="inputs"
         )
 
         # Raw EPC can be found in data path?
