@@ -37,7 +37,7 @@ def get_imd_data(
     Args:
         country (str, optional): Country for which to load IMD: 'England', 'Scotland', 'Wales' or 'GB'. Defaults to 'GB'.
         data_path (str, optional): Path to IMD data in local dir or 'S3'. Defaults to "S3".
-        rel_path (_type_, optional): Relative path to IMD data. Defaults to None, leading to loading from default location.
+        rel_path (str/Path, optional): Relative path to IMD data. Defaults to None, leading to loading from default location.
         usecols (list, optional): List of features/columns to load. Defaults to ["IMD Rank", "IMD Decile", "Postcode", "Income Score", "Employment Score", "Country"].
 
     Raises:
@@ -50,7 +50,7 @@ def get_imd_data(
     country = country.lower()
     country_name = country[0].upper() + country[1:] if country != "gb" else "GB"
 
-    if country in ["gb", "all", None]:
+    if country == "gb":
 
         england_imd = get_imd_data(
             "England",
