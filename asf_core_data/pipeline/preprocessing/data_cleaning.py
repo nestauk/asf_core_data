@@ -460,6 +460,8 @@ def custom_clean_features(df, cap_features=False):
 
     Args:
         df (pandas.DataFrame): Dataframe to modify.
+        cap_features (boolean, optional): Whether to cap features at specific cap value,
+        e.g. cap NUMBER_HABITABLE_ROOMS at 10. Legacy code. Defaults to False.
 
     Returns:
         pandas.DataFrame: Dataframe after custom cleaning features.
