@@ -293,13 +293,6 @@ def join_mcs_epc_data(
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        # TODO: load from S3 instead
-
-        # prep_epc = epc_data.load_preprocessed_epc_data(data_path="S3", version='preprocessed_dedupl',
-        #                                           usecols=['UPRN', 'CURRENT_ENERGY_RATING', 'INSPECTION_DATE',
-        #                                                    'PROPERTY_TYPE', 'CONSTRUCTION_AGE_BAND'],
-        #                                           batch='2021_Q4_0721',
-        #                                           n_samples=5000)
 
         epcs = load_preprocessed_epc_data(
             data_path="S3",
@@ -329,13 +322,6 @@ def join_mcs_epc_data(
                 "MAINHEAT_DESCRIPTION",
             ],
         )
-
-        # epcs = load_preprocessed_epc_data(
-        #     data_path=epc_data_path,
-        #     # rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
-        #     version=epc_version,
-
-        # )
 
     prepared_hps = prepare_hps(hps)
     prepared_epcs = prepare_epcs(epcs)
