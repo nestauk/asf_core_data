@@ -344,7 +344,7 @@ def cap_feature_values(df, feature, cap_value=10, as_cat=False):
         pandas.DataFrame: Dataframe with capped values.
     """
 
-    # Cap at given limit (i.e. 10)
+    # Cap at given limit (i.e. 10 or 10+)
     cap = str(cap_value) + "+" if as_cat else cap_value
     df.loc[(df[feature] >= cap_value), feature] = cap
 
@@ -495,8 +495,7 @@ def custom_clean_features(df, cap_features=False):
         # Cap features
         for feat in df.columns:
             if feat in cap_value_dict.keys():
-                cap_value = cap_value_dict[feat]
-                df = cap_feature_values(df, feat, cap_value=cap_value)
+                df = cap_feature_values(df, feat, cap_value=cap_value_dict[feat])
 
     return df
 
