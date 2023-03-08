@@ -55,16 +55,7 @@ def merge_proc_epc_and_mcs_installations(epc_df, verbose=False):
         dtype={"UPRN": "str", "commission_date": "str"},
     )
 
-    # Get the MCS install dates (still necessary?)
-    mcs_df["commission_date"] = pd.to_datetime(
-        mcs_df["commission_date"]
-        .str.strip()
-        .str.lower()
-        .replace(r"\s.*", "", regex=True)
-        .replace(r"-", "", regex=True),
-        format="%Y%m%d",
-    )
-
+    mcs_df = merge_install_dates.reformat_mcs_date(mcs_df, "commission_date")
     mcs_df.rename(columns={"postcode": "POSTCODE"}, inplace=True)
 
     # Tag whether MCS or EPC match is available

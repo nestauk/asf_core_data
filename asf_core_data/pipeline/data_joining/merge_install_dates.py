@@ -13,6 +13,29 @@ import pandas as pd
 # ---------------------------------------------------------------------------------
 
 
+def reformat_mcs_date(mcs_df, feat):
+    """Reformat dates in MCS/
+
+    Args:
+        mcs_df (pd.DataFrame): Dataframe to adjust.
+        feat (str): Feature to adjust.
+
+    Returns:
+        pd.DataFrame: mcs_df with adjusted format.
+    """
+
+    mcs_df[feat] = pd.to_datetime(
+        mcs_df[feat]
+        .str.strip()
+        .str.lower()
+        .replace(r"\s.*", "", regex=True)
+        .replace(r"-", "", regex=True),
+        format="%Y%m%d",
+    )
+
+    return mcs_df
+
+
 def get_mcs_install_dates(epc_df, additional_mcs_feats=False):
     """Get MCS install dates and add them to the EPC data.
 
@@ -51,14 +74,7 @@ def get_mcs_install_dates(epc_df, additional_mcs_feats=False):
     )
 
     # Get the MCS install dates
-    mcs_data["HP_INSTALL_DATE"] = pd.to_datetime(
-        mcs_data["HP_INSTALL_DATE"]
-        .str.strip()
-        .str.lower()
-        .replace(r"\s.*", "", regex=True)
-        .replace(r"-", "", regex=True),
-        format="%Y%m%d",
-    )
+    mcs_data = reformat_mcs_date(mcs_data, "HP_INSTALL_DATE")
 
     mcs_data = mcs_data.sort_values("HP_INSTALL_DATE", ascending=True).drop_duplicates(
         subset=["UPRN"], keep="first"
