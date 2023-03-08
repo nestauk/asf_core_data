@@ -44,9 +44,7 @@ def get_cert_rec_files(data_path, dir_name, scotland_data=False):
 
             directories = [
                 Path(f).name
-                for f in data_getters.get_s3_dir_files(
-                    path_to_dir=str(dir_name), direct_child_only=False
-                )
+                for f in data_getters.get_s3_dir_files(path_to_dir=str(dir_name))
             ]
 
         else:
@@ -101,6 +99,7 @@ def load_scotland_data(
     if usecols is not None:
         add_country_f = "COUNTRY" in usecols
         usecols = [col for col in usecols if col != "COUNTRY"]
+        usecols = list(set(usecols))
     else:
         add_country_f = True
 
@@ -266,6 +265,7 @@ def load_england_wales_data(
     if usecols is not None:
         add_country_f = "COUNTRY" in usecols
         usecols = [col for col in usecols if col != "COUNTRY"]
+        usecols = list(set(usecols))
     else:
         add_country_f = True
 
@@ -600,6 +600,9 @@ def load_preprocessed_epc_data(
 
     if usecols == base_config.EPC_PREPROC_FEAT_SELECTION and version == "raw":
         usecols = base_config.EPC_FEAT_SELECTION
+
+    if usecols is not None:
+        usecols = list(set(usecols))
 
     EPC_DATA_PATH = data_batches.get_batch_path(
         rel_data_path / version_path_dict[version],
