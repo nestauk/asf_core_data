@@ -286,6 +286,7 @@ def join_mcs_epc_data(
     Returns:
         Dataframe: Matched MCS-EPC records.
     """
+
     if hps is None:
         print("Getting HP data...")
         hps = get_processed_installations_data()
