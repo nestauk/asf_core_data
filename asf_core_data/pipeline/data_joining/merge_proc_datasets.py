@@ -1,12 +1,24 @@
 # File: asf_core_data/pipeline/data_joining/merge_proc_datasets.py
-"""Join the EPC and MCS datasets."""
+"""Join the EPC and MCS installations and installer datasets.
+These scripts are meant to merge the final processed datasets into a gold dataset.
+
+The output is a complete datafarame with all EPC records (dedupl) and MCS installations and installers.
+We use outer merges to avoid losing data, creating NaN values for missing records.
+
+    - Load EPC data
+    - Get best approximation for installation date
+    - Merge with MCS installations and reformatting
+    - Merge with MCS installers
+    - Reformat postcode and geographies
+    - Save output to S3
+"""
 
 # ---------------------------------------------------------------------------------
 
 from asf_core_data.getters import data_getters
 from asf_core_data.config import base_config
 from asf_core_data.getters.epc import data_batches
-from asf_core_data.pipeline.data_joining import merge_install_dates
+from asf_core_data.pipeline.data_joining import install_data_computation
 from asf_core_data import load_preprocessed_epc_data
 from asf_core_data.pipeline.preprocessing import data_cleaning
 
@@ -16,8 +28,13 @@ import numpy as np
 # ---------------------------------------------------------------------------------
 
 
-def merge_proc_epc_and_mcs_installations(epc_df, verbose=False):
-    """Merge processed EPC and MCS installations data.
+def add_mcs_installations_data(
+    epc_df,
+    usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
+    bucket_name=base_config.BUCKET_NAME,
+    verbose=False,
+):
+    """Add MCS installations data to EPC data.
 
     - Load MCS installations data (most relevant fields)
     - Mark matches in data (MCS_AVAILABLE, EPC_AVAILABLE)
@@ -26,6 +43,8 @@ def merge_proc_epc_and_mcs_installations(epc_df, verbose=False):
 
     Args:
         epc_df (pd.DataFrame): Processed EPC dataframe.
+        usecols (list, optional): MCS features to use. Defaults to base_config.BASIC_MCS_FIELDS.
+        bucket_name (str, optional): Bucket name (from where to load from). Defaults to base_config.BUCKET_NAME.
         verbose (bool, optional): Print shape of dataframes as they are merged.
 
     Returns:
@@ -36,26 +55,13 @@ def merge_proc_epc_and_mcs_installations(epc_df, verbose=False):
 
     # # Load MCS
     mcs_df = data_getters.load_s3_data(
-        base_config.BUCKET_NAME,
+        bucket_name,
         newest_joined_batch,
-        # TODO: Check whether we need any other fields
-        usecols=[
-            "UPRN",
-            "commission_date",
-            "capacity",
-            "estimated_annual_generation",
-            "flow_temp",
-            "tech_type",
-            "scop",
-            "design",
-            "product_name",
-            "manufacturer",
-            "cost",
-        ],
+        usecols=usecols,
         dtype={"UPRN": "str", "commission_date": "str"},
     )
 
-    mcs_df = merge_install_dates.reformat_mcs_date(mcs_df, "commission_date")
+    mcs_df = install_data_computation.reformat_mcs_date(mcs_df, "commission_date")
     mcs_df.rename(columns={"postcode": "POSTCODE"}, inplace=True)
 
     # Tag whether MCS or EPC match is available
@@ -133,61 +139,85 @@ def standardise_hp_type(epc_mcs_df):
     return epc_mcs_df
 
 
-def add_mcs_installer_data(epc_mcs_installations):
-    """Add MCS installer data to joined EPC and MCS installations dataframe based on installer ID.
+def add_mcs_installer_data(df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION):
+    """Add MCS installer data to given dataframe based on installer ID.
+    The dataframe can be EPC and MCS installations data combined, or simply MCS installations data.
+
+    The MCS installations data needs to include the following fields: "company_unique_id", "installer_name".
 
     Args:
-        epc_mcs_installations (pd.DataFrame): EPC and MCS installations data.
+        df (pd.DataFrame): EPC and MCS installations data.
     """
 
     newest_hist_inst_batch = data_batches.get_latest_hist_installers()
 
+    # Just for testing
     print(newest_hist_inst_batch)
 
     # # Load MCS
-    mcs_inst_data = data_getters.load_s3_data(
-        base_config.BUCKET_NAME,
-        newest_hist_inst_batch,
+    mcs_instllr_data = data_getters.load_s3_data(
+        base_config.BUCKET_NAME, newest_hist_inst_batch, usecols=usecols
     )
 
-    mcs_inst_data.rename(columns={"postcode": "POSTCODE"}, inplace=True)
+    mcs_instllr_data.rename(columns={"postcode": "POSTCODE"}, inplace=True)
 
-    # TODO Code to merge data with epc_mcs_installations based on company_unique_id
-    # It should be an outer merge keeping, keeping installer data with no matches to MCS installations
-    # Their MCS installations and EPC fields would be NaN
+    merged_df = df.merge(
+        right=mcs_instllr_data,
+        how="outer",
+        left_on=["company_unique_id", "installer_name"],
+        right_on=["company_unique_id", "company_name"],
+    )
+
+    return merged_df
 
 
-def merging_pipeline():
-    """Merge EPC and MCS installation and installer data to create gold schema like dataset.
+def merging_pipeline(
+    epc_usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
+    mcs_installations_usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
+    mcs_installers_usecols=base_config.MCS_INSTALLER_FEAT_SELECTION,
+):
+
+    """Merge EPC and MCS installation and installer data to create a complete MCS/EPC dataset.
+
+    The output is a complete dataframe with all EPC records (dedupl) and MCS installations and installers.
+    We use outer merges to avoid losing data, creating NaN values for missing records.
+
     - Load EPC data
     - Get best approximation for installation date
-    - Merge with MCS installations and reformatting
-    - Merge with MCS installers
+    - Merge EPC data with MCS installations data (and reformat)
+    - Merge with MCS installers data
     - Reformat postcode
     - Save output to S3
 
+    epc_usecols (list, optional): Which EPC features to include. Defaults to base_config.EPC_PREPROC_FEAT_SELECTION.
+    mcs_installations_usecols (list, optional): Which MCS installation features to include.
+        Defaults to base_config.MCS_INSTALLATIONS_FEAT_SELECTION.
+    mcs_installers_usecols (list, optional): Which MCS installer features to include.
+        Defaults to base_config.MCS_INSTALLER_FEAT_SELECTION.
     """
 
-    # Load the processed EPC data
+    # Load the processed EPC data (not deduplicated)
     prep_epc = load_preprocessed_epc_data(
-        data_path="S3", version="preprocessed", batch="newest"
+        data_path="S3", version="preprocessed", batch="newest", usecols=epc_usecols
     )
 
     # Add more precise estimations for heat pump installation dates via MCS data
-    epc_with_MCS_dates = merge_install_dates.manage_hp_install_dates(prep_epc)
+    epc_with_MCS_dates = install_data_computation.compute_hp_install_date(prep_epc)
 
     # Merge EPC with MCS installations
-    epc_mcs_insts = merge_proc_epc_and_mcs_installations(epc_with_MCS_dates)
+    epc_mcs_insts = add_mcs_installations_data(
+        epc_with_MCS_dates, usecols=mcs_installations_usecols
+    )
 
-    # Merge with MCS installers
-    epc_mcs_complete = add_mcs_installer_data(epc_mcs_insts)
+    # Merge EPC/MCS with MCS installers
+    epc_mcs_complete = add_mcs_installer_data(
+        epc_mcs_insts, usecols=mcs_installers_usecols
+    )
 
     # Reformat postcode field to include no space
     epc_mcs_complete = data_cleaning.reformat_postcode(
         epc_mcs_complete, postcode_var_name="POSTCODE", white_space="remove"
     )
-
-    # Add geographical data
 
     # Save final merged dataset
     data_getters.save_to_s3(
