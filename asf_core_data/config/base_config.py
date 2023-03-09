@@ -20,14 +20,6 @@ FLOOR_LEVEL_DTYPE = float if FLOOR_LEVEL_AS_NUM else str
 v0_batches = [
     "2021_Q2_0721",
 ]
-# v1_batches = ["2022_Q3_1220", "2021_Q4_0721"]
-# v2_batches = [
-#     "2022_Q1_complete",
-#     "2022_Q2_complete",
-#     "2022_Q3_complete",
-#     "2022_Q5_test",
-# ]
-
 
 POSTCODE_TO_COORD_PATH = Path(
     "inputs/supplementary_data/geospatial/ukpostcodes_to_coordindates.csv"
@@ -617,3 +609,22 @@ INSTALLATIONS_RAW_LOCAL_PATH = "/inputs/data/mcs/installations"
 RAW_DATA_S3_FOLDER = "inputs/MCS/latest_raw_data"
 
 EPC_MCS_MERGED_OUT_FOLDER = "outputs/MCS/merged_epc_mcs_installations_installers.csv"
+
+MCS_INSTALLATIONS_FEAT_SELECTION = (
+    [
+        "UPRN",
+        "commission_date",
+        "capacity",
+        "estimated_annual_generation",
+        "flow_temp",
+        "tech_type",
+        "scop",
+        "design",
+        "product_name",
+        "manufacturer",
+        "cost",
+    ],
+)
+
+# !TODO
+MCS_INSTALLER_FEAT_SELECTION = None
