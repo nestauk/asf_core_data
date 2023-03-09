@@ -1,5 +1,6 @@
 # File: asf_core_data/pipeline/data_joining/merge_install_dates.py
-"""Merge HP install date information from EPC and MCS."""
+"""Compute and update the heat pump installation dates
+given EPC and MCS data."""
 
 # ---------------------------------------------------------------------------------
 
@@ -36,15 +37,12 @@ def reformat_mcs_date(mcs_df, feat):
     return mcs_df
 
 
-def get_mcs_install_dates(epc_df, additional_mcs_feats=False):
-    """Get MCS install dates and add them to the EPC data.
-
-    Args:
-        epc_df (pandas.DataFrame): EPC dataset.
-        additional_mcs_feats (bool, optional): Whether to add additional MCS features. Defaults to False.
+def get_mcs_install_date_mapping():
+    """Retrieve MCS installation dates and create dictionary
+    for mapping dates onto EPC records via UPRN.
 
     Returns:
-        pandas.DataFrame: EPC dataset with added MCS install dates.
+        dict: Installation date dictionary derived from MCS.
     """
 
     newest_joined_batch = data_batches.get_latest_mcs_epc_joined_batch()
@@ -82,36 +80,36 @@ def get_mcs_install_dates(epc_df, additional_mcs_feats=False):
 
     # Create a date dict from MCS data and apply to EPC data
     # If no install date is found for address, it assigns NaN
-    date_dict = mcs_data.set_index("UPRN").to_dict()["HP_INSTALL_DATE"]
+    mcs_hp_date_dict = mcs_data.set_index("UPRN").to_dict()["HP_INSTALL_DATE"]
 
-    epc_df["HP_INSTALL_DATE"] = epc_df["UPRN"].map(date_dict)
-
-    if additional_mcs_feats:
-        for feat in ["tech_type", "cluster", "installer_name"]:
-
-            epc_df[feat] = epc_df["UPRN"].map(
-                mcs_data.set_index("UPRN").to_dict()[feat]
-            )
-
-    return epc_df
+    return mcs_hp_date_dict
 
 
-def manage_hp_install_dates(
+def compute_hp_install_date(
     df,
     identifier="UPRN",
     verbose=False,
-    additional_mcs_feats=False,
     add_hp_features=False,
 ):
-    """Manage heat pump install dates given by EPC and MCS.
-    Compute best approximation for heat pump installation date based on first mention
-    in EPC if MCS data is not available.
+    """Compute and update the heat pump installation date based on combined information from EPC and MCS.
+    We get the best approximation for the installation date as follows:
+    If there is an MCS installation record for this property, we use the HP commissioning date.
+    If there isn't an MCS installation record, but EPC mentions having a heat pump, we consider
+    the inspection date of the first EPC record for said property that mentions the heat pump.
+
+    We also handle some edge cases, for example if an EPC record doesn't mention
+    a heat pump at a time where there already should have been one according to MCS records.
+
+    Check this sketch to understand the logic (numbers are outdated):
+    https://user-images.githubusercontent.com/42718928/223767114-644802dd-07c9-4bb1-939f-b0c08d45b94a.png
+
+    Note that this script doesn't merge EPC with MCS, it merely draws in MCS data for create a better estimate
+    of the installation date.
 
     Args:
-        df (pd.DataFrame): Dataframe with EPC data and MCS install dates.
+        df (pd.DataFrame): Dataframe with EPC data.
         identifier (str, optional): Unique identifier for properties. Defaults to "UPRN".
         verbose (bool, optional): Print some diagnostics. Defaults to True.
-        additional_mcs_feats (bool, optional): Whether to add additional MCS features. Defaults to False.
         add_hp_features (bool, optional): Compute additional features regarding mentions of heat pumps. Defaults to False.
 
     Returns:
@@ -119,7 +117,8 @@ def manage_hp_install_dates(
     """
 
     # Get the MCS install dates for EPC properties
-    df = get_mcs_install_dates(df, additional_mcs_feats=additional_mcs_feats)
+    mcs_hp_date_dict = get_mcs_install_date_mapping()
+    df["HP_INSTALL_DATE"] = df["UPRN"].map(mcs_hp_date_dict)
 
     df = df[df["INSPECTION_DATE"].notna()]
 
@@ -131,6 +130,7 @@ def manage_hp_install_dates(
     df["FIRST_HP_MENTION"] = df[identifier].map(dict(first_hp_mention))
 
     # Additional features about heat pump history of property
+    # Interesting to track unexpected behaviours, e.g. having lost a heat pump
     if add_hp_features:
 
         df["HP_AT_ANY_POINT"] = df[identifier].map(
@@ -169,6 +169,8 @@ def manage_hp_install_dates(
     either_hp = (df["MCS_AVAILABLE"]) | (df["HP_INSTALLED"])
     epc_entry_before_mcs = df["INSPECTION_DATE"] < df["HP_INSTALL_DATE"]
 
+    # We use this tag to track whether a record was artificially duplicated
+    # to handle an edge case (see below:  MCS but no EPC HP with EPC HP mention before MCS)
     df["ARTIFICIALLY_DUPL"] = False
 
     if verbose:
@@ -297,6 +299,8 @@ def manage_hp_install_dates(
     df = pd.concat([df, no_future_hp_entry])
 
     # Deduplicate and only keep latest record
+    # Note: Depending on the use case, you may want to filter differently
+    # (e.g. when looking at the property characteristcs just before installing a heat pump
     df = df.sort_values("INSPECTION_DATE", ascending=True).drop_duplicates(
         subset=[identifier], keep="last"
     )
