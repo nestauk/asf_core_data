@@ -13,6 +13,7 @@ import pandas as pd
 from asf_core_data import Path
 from asf_core_data.config import base_config
 from asf_core_data.getters.epc import data_batches
+from asf_core_data.getters import data_download
 
 
 # %%
@@ -60,7 +61,7 @@ def download_core_data(dataset, local_dir, batch=None, unzip=True):
 
     # Download entire folder
     elif dataset == "supplementary_data":
-        download_s3_folder(data_dict[dataset], local_dir)
+        data_download.download_s3_folder(data_dict[dataset], local_dir)
         return
     else:
         data_to_load = str(data_dict[dataset]) + ".zip"
@@ -75,6 +76,8 @@ def download_core_data(dataset, local_dir, batch=None, unzip=True):
     if unzip:
         with ZipFile(output_path, "r") as zip_ref:
             zip_ref.extractall(output_path.parent)
+
+        os.remove(output_path)
 
     dirpath = Path(output_path.parent / "__MACOSX")
 
@@ -100,12 +103,15 @@ def get_dir_content(path_to_dir, base_name_only=False):
         contents (list): List of files or subfolders.
     """
 
+    path_to_dir = str(path_to_dir)
     s3_client = boto3.client("s3")
     contents = set()
-    response = s3_client.list_objects_v2(Bucket="asf-core-data", Prefix=path_to_dir)
+    response = s3_client.list_objects_v2(
+        Bucket="asf-core-data", Prefix=str(path_to_dir)
+    )
 
     for content in response.get("Contents", []):
-        contents.add(os.path.path_to_dir(content["Key"]))
+        contents.add(Path(content["Key"]))
 
     if base_name_only:
         contents = [Path(f).name for f in contents]
@@ -174,14 +180,12 @@ def load_data(
 def get_s3_dir_files(
     bucket_name="asf-core-data",
     path_to_dir=".",
-    direct_child_only=False,
 ):
     """Get a list of all files in given bucket directory.
 
     Args:
         bucket_name (str, optional): Bucket name on S3. Defaults to "asf-core-data".
         path_to_dir (str, optional): Path to directory of interest. Defaults to ".".
-        direct_child_only (bool, optional): Whether to only consider direct children (no subfolders). Defaults to False.
 
     Returns:
         dir_files (list): Files in given directory.
@@ -194,11 +198,6 @@ def get_s3_dir_files(
     my_bucket = s3.Bucket(bucket_name)
     for object_summary in my_bucket.objects.filter(Prefix=path_to_dir):
         dir_files.append(object_summary.key)
-
-    if direct_child_only:
-        s3 = boto3.client("s3")
-        result = s3.list_objects(Bucket=bucket_name, Prefix=path_to_dir, Delimiter="/")
-        dir_files = [o for o in result]
 
     return dir_files
 
@@ -286,23 +285,23 @@ def save_to_s3(bucket_name, output_var, output_file_path):
         )
 
 
-def download_s3_folder(s3_folder, local_dir):
-    """
-    Download the contents of a folder directory
-    Args:
-        s3_folder: the folder path in the s3 bucket
-        local_dir: a relative or absolute directory path in the local file system
-    """
-    s3 = boto3.resource("s3")
-    bucket = s3.Bucket("asf-core-data")
-    for obj in bucket.objects.filter(Prefix=s3_folder):
+# def download_s3_folder(s3_folder, local_dir):
+#     """
+#     Download the contents of a folder directory
+#     Args:
+#         s3_folder: the folder path in the s3 bucket
+#         local_dir: a relative or absolute directory path in the local file system
+#     """
+#     s3 = boto3.resource("s3")
+#     bucket = s3.Bucket("asf-core-data")
+#     for obj in bucket.objects.filter(Prefix=s3_folder):
 
-        target = os.path.join(local_dir, s3_folder, os.path.relpath(obj.key, s3_folder))
-        if not os.path.exists(os.path.dirname(target)):
-            os.makedirs(os.path.dirname(target))
-        if obj.key[-1] == "/":
-            continue
-        bucket.download_file(obj.key, target)
+#         target = os.path.join(local_dir, s3_folder, os.path.relpath(obj.key, s3_folder))
+#         if not os.path.exists(os.path.dirname(target)):
+#             os.makedirs(os.path.dirname(target))
+#         if obj.key[-1] == "/":
+#             continue
+#         bucket.download_file(obj.key, target)
 
 
 def download_from_s3(path_to_file, output_path):
