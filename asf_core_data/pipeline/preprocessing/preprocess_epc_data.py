@@ -3,7 +3,6 @@
 
 # ----------------------------------------------------------------------------------
 
-from imp import reload
 import re
 import time
 import os
@@ -33,7 +32,7 @@ def preprocess_data(
     The processing steps:
 
     - raw:
-    Merged but otherwise not altered EPC data
+    Concatenated EPC records for all countries but otherwise not processed EPC data
 
     - preprocessed:
     Partially cleaned and with additional features
@@ -112,6 +111,7 @@ def preprocess_data(
 
         print("Saving preprocessed data to {}".format(file_path))
         print()
+
         # Save unaltered_version
         df.to_csv(file_path, index=False)
 
@@ -187,19 +187,19 @@ def load_and_preprocess_epc_data(
         remove_duplicates (bool, optional): Whether or not to remove duplicates for same property. Defaults to True.
         save_data (str/Path, optional): Whether or not to save preprocessed data at different stages (original, cleaned, deduplicated).
             Defaults to base_config.PREPROC_EPC_DATA_PATH.
-        reload_raw (bool, optional): Whether to reload the raw EPC data from inputs folder or whether to use the fully
-            merged raw EPC data from the outputs folder (still unprocessed). Reloading can be useful if there have been changes to the raw data or the loading functions. Defaults to False.
+        reload_raw (bool, optional): Whether to reload the individual raw EPC records from inputs folder
+            or whether to use  the fully concatenated raw EPC data from the outputs folder (still unprocessed).
+            Reloading can be useful if there have been changes to the input data or the loading functions. Defaults to False.
 
     Returns:
         pandas.DataFrame:  Preprocessed EPC dataset.
     """
 
-    # Do not save/overwrite the preprocessed data when not loading entire GB dataset
-    # in order to prevent confusion.
-
     # Default to False
     raw_epc_exists = False
 
+    # Do not save/overwrite the preprocessed data when not loading entire GB dataset
+    # in order to prevent confusion.
     if str(save_data) == "S3":
         save_data = None
     else:
@@ -229,11 +229,28 @@ def load_and_preprocess_epc_data(
             "Nation subsets do not work well in combination with low n_samples. Set n_samples=None for best results."
         )
 
-    # Load raw data (from 'preprocessed' and combined raw data or 'untouched' raw data)
-    # Shouldn't make a difference but sometimes useful when debugging or after updating data
+    # Load raw EPC data (for all of GB or subset)
+    # ++++++++++++++++++++++++++++++++++++++++++++
+    # There's two options, but if all data sources are up-to-date, the output is the same.
+    # Option a) is faster and more general, while Option b) is useful when testing
+    # loading functions and after updating input data of existing batch.
+
+    # a) Load the concatenated CSV file from outputs (EPC_GB_raw.csv).
+    # If available, this is slightly faster as only one file needs to be loaded.
+    # This concatenated version is generated when processing the EPC data
+    # with preprocess_data() or load_and_preprocess_epc_data().
+    # This is also the only option when loading the data directly from S3.
+
+    # b) Load the EPC data from the individual record files for England, Wales and Scotland in the inputs folder.
+    # This may take slightly longer to load as several files need to be read and concatenated.
+    # However, this option is useful when testing updated EPC loading functions or when updating
+    # an existing EPC data batch.
+    # This option is not (yet) available when loading data directly from S3.
+
+    # Option a): Load raw EPC data (concatenated but not actually processed yet)
     if (raw_epc_exists and not reload_raw) or str(data_path) == "S3":
 
-        # Load raw EPC from preprocessed batch in outputs foler (England/Wales/Scotland combined in EPC_GB_raw.csv)
+        # Load raw EPC from outputs folder for given batch (England/Wales/Scotland combined in EPC_GB_raw.csv)
         epc_df = epc_data.load_preprocessed_epc_data(
             data_path=data_path,
             subset=subset,
@@ -243,8 +260,10 @@ def load_and_preprocess_epc_data(
             n_samples=n_samples,
         )
 
+    # Option b): Load the raw EPC data for given batch from individual EPC record files
+    # in inputs folder and concatenate the outputs for all countries.
+    # The feature 'COUNTRY' will be added as the data is loaded.
     else:
-        # Load raw EPC data from England/Wales and Scotland data from raw data folders (inputs)
         epc_df = epc_data.load_raw_epc_data(
             data_path=data_path,
             rel_data_path=rel_data_path,
@@ -253,6 +272,13 @@ def load_and_preprocess_epc_data(
             usecols=usecols,
             n_samples=n_samples,
         )
+
+    # Process the EPC data
+    # ++++++++++++++++++++++++++++++++++++++++++++
+    # After loading the raw EPC data with any of the two options above,
+    # put it through the processing pipeline.
+    # This will create a raw, processed and preocessed and deduplicated version,
+    # meaning that EPC_GB_raw.csv will be created/updated so it can be used next time for direct loading.
 
     # Now process the loaded EPC data
     epc_df = preprocess_data(
@@ -270,19 +296,16 @@ def load_and_preprocess_epc_data(
 
 
 def main():
-    """Main function: Loads and preprocessed EPC data with default settings."""
+    """Main function: Loads and preprocessed EPC data with default settings.
+    Don't forget to set the local data directory."""
 
-    ASF_CORE_DATA_DIR = "/Users/juliasuter/Documents/ASF_data"
+    # Update local data directory
+    LOCAL_DATA_DIR = "path/to/local_data_dir/"
 
     start_time = time.time()
 
     print("Loading and preprocessing EPC data... This will take a while.\n")
-    epc_df = load_and_preprocess_epc_data(
-        usecols=base_config.EPC_FEAT_SELECTION,
-        n_samples=None,
-        save_data=base_config.PREPROC_EPC_DATA_PATH,
-        data_path=ASF_CORE_DATA_DIR,
-    )
+    load_and_preprocess_epc_data(data_path=LOCAL_DATA_DIR)
 
     end_time = time.time()
     runtime = round((end_time - start_time) / 60)
