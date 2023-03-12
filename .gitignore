@@ -101,6 +101,7 @@ target/
 
 # Jupyter NB Checkpoints
 .ipynb_checkpoints/
+*jvsc*
 
 # exclude /inputs and /outputs/data except top-level markdown
 /inputs/*
