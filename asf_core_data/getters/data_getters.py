@@ -15,11 +15,8 @@ from asf_core_data.config import base_config
 from asf_core_data.getters.epc import data_batches
 from asf_core_data.getters import data_download
 
-
-# %%
 s3 = boto3.resource("s3")
 logger = logging.getLogger(__name__)
-
 
 data_dict = {
     "epc_raw": base_config.RAW_DATA_FILE,
@@ -283,25 +280,6 @@ def save_to_s3(bucket_name, output_var, output_file_path):
         print(
             'Function not supported for file type other than "*.pkl", "*.json" and "*.csv"'
         )
-
-
-# def download_s3_folder(s3_folder, local_dir):
-#     """
-#     Download the contents of a folder directory
-#     Args:
-#         s3_folder: the folder path in the s3 bucket
-#         local_dir: a relative or absolute directory path in the local file system
-#     """
-#     s3 = boto3.resource("s3")
-#     bucket = s3.Bucket("asf-core-data")
-#     for obj in bucket.objects.filter(Prefix=s3_folder):
-
-#         target = os.path.join(local_dir, s3_folder, os.path.relpath(obj.key, s3_folder))
-#         if not os.path.exists(os.path.dirname(target)):
-#             os.makedirs(os.path.dirname(target))
-#         if obj.key[-1] == "/":
-#             continue
-#         bucket.download_file(obj.key, target)
 
 
 def download_from_s3(path_to_file, output_path):
