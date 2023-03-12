@@ -18,7 +18,7 @@ We use outer merges to avoid losing data, creating NaN values for missing record
 from asf_core_data.getters import data_getters
 from asf_core_data.config import base_config
 from asf_core_data.getters.epc import data_batches
-from asf_core_data.pipeline.data_joining import install_data_computation
+from asf_core_data.pipeline.data_joining import install_date_computation
 from asf_core_data import load_preprocessed_epc_data
 from asf_core_data.pipeline.preprocessing import data_cleaning
 
@@ -61,7 +61,7 @@ def add_mcs_installations_data(
         dtype={"UPRN": "str", "commission_date": "str"},
     )
 
-    mcs_df = install_data_computation.reformat_mcs_date(mcs_df, "commission_date")
+    mcs_df = install_date_computation.reformat_mcs_date(mcs_df, "commission_date")
     mcs_df.rename(columns={"postcode": "POSTCODE"}, inplace=True)
 
     # Tag whether MCS or EPC match is available
@@ -149,10 +149,11 @@ def add_mcs_installer_data(df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION)
         df (pd.DataFrame): EPC and MCS installations data.
     """
 
-    newest_hist_inst_batch = data_batches.get_latest_hist_installers()
+    # Add fields required for merging
+    if usecols is not None:
+        usecols = list(set(usecols + ["company_unique_id", "company_name"]))
 
-    # Just for testing
-    print(newest_hist_inst_batch)
+    newest_hist_inst_batch = data_batches.get_latest_hist_installers()
 
     # # Load MCS
     mcs_instllr_data = data_getters.load_s3_data(
@@ -202,7 +203,7 @@ def merging_pipeline(
     )
 
     # Add more precise estimations for heat pump installation dates via MCS data
-    epc_with_MCS_dates = install_data_computation.compute_hp_install_date(prep_epc)
+    epc_with_MCS_dates = install_date_computation.compute_hp_install_date(prep_epc)
 
     # Merge EPC with MCS installations
     epc_mcs_insts = add_mcs_installations_data(

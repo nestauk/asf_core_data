@@ -103,7 +103,7 @@ def compute_hp_install_date(
     Check this sketch to understand the logic (numbers are outdated):
     https://user-images.githubusercontent.com/42718928/223767114-644802dd-07c9-4bb1-939f-b0c08d45b94a.png
 
-    Note that this script doesn't merge EPC with MCS, it merely draws in MCS data for create a better estimate
+    Note that this script doesn't merge EPC with MCS, it merely draws in MCS data to create a better estimate
     of the installation date.
 
     Args:
