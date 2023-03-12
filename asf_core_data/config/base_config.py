@@ -610,21 +610,42 @@ RAW_DATA_S3_FOLDER = "inputs/MCS/latest_raw_data"
 
 EPC_MCS_MERGED_OUT_FOLDER = "outputs/MCS/merged_epc_mcs_installations_installers.csv"
 
-MCS_INSTALLATIONS_FEAT_SELECTION = (
-    [
-        "UPRN",
-        "commission_date",
-        "capacity",
-        "estimated_annual_generation",
-        "flow_temp",
-        "tech_type",
-        "scop",
-        "design",
-        "product_name",
-        "manufacturer",
-        "cost",
-    ],
-)
+MCS_INSTALLATIONS_FEAT_SELECTION = [
+    "UPRN",
+    "commission_date",
+    "capacity",
+    "estimated_annual_generation",
+    "flow_temp",
+    "tech_type",
+    "scop",
+    "design",
+    "product_name",
+    "manufacturer",
+    "cost",
+    "company_unique_id",
+    "installer_name",
+]
 
-# !TODO
-MCS_INSTALLER_FEAT_SELECTION = None
+MCS_INSTALLER_FEAT_SELECTION = [
+    "company_unique_id",
+    "company_name",
+    "mcs_certificate_number",
+    "certification_body",
+    "latitude",
+    "longitude",
+    "effective_from",
+    "effective_to",
+    "biomass_certified",
+    "hydro_certified",
+    "micro_chp_certified",
+    "solar_pv_certified",
+    "wind_turbine_certified",
+    "solar_thermal_certified",
+    "battery_storage_certified",
+    "air_source_hp_certified",
+    "ground_water_source_hp_certified",
+    "hot_water_hp_certified",
+    "exhaust_air_hp_certified",
+    "gas_absorbtion_hp_certified",
+    "solar_assisted_hp_certified",
+]
