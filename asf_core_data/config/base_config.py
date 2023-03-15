@@ -438,10 +438,6 @@ dtypes_recom = {
 MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
 INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
-MCS_EPC_MATCHING_PARAMETER = 0.7
-# MCS_EPC_MERGED_PATH = Path("outputs/temp/mcs_epc.csv")
-MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_installations_epc_most_relevant_221021.csv")
-MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 parse_dates = [
     "INSPECTION_DATE",
