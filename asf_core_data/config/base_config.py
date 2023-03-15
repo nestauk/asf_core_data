@@ -1,7 +1,8 @@
 from asf_core_data import Path
+from datetime import datetime
 
 MCS_RAW_S3_PATH = "inputs/MCS/mcs_heat_pumps.xlsx"
-# MCS_RAW_LOCAL_PATH = "/inputs/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_LOCAL_PATH = "/inputs/MCS/mcs_heat_pumps.xlsx"
 
 CURRENT_YEAR = 2022
 
@@ -438,6 +439,7 @@ dtypes_recom = {
 MCS_HP_PATH = Path("/inputs/MCS_data/mcs_heat_pumps.xlsx")
 MCS_DOMESTIC_HP_PATH = Path("/outputs/mcs_domestic_hps.csv")
 INFLATION_PATH = Path("/inputs/MCS_data/inflation.csv")
+MCS_EPC_MERGED_PATH = Path("outputs/MCS/mcs_epc.csv")
 
 parse_dates = [
     "INSPECTION_DATE",
@@ -552,7 +554,6 @@ MCS_HP_PATH = "/inputs/MCS_data/mcs_heat_pumps.xlsx"
 MCS_DOMESTIC_HP_PATH = "/outputs/mcs_domestic_hps.csv"
 MCS_PROCESSED_PATH = "/outputs/data/mcs_processed.csv"
 MCS_EPC_MATCHING_PARAMETER = 0.7
-MCS_EPC_MERGED_PATH = "/outputs/data/mcs_epc.csv"
 MCS_EPC_MAX_TOKEN_LENGTH = 8
 
 MCS_MAX_COST = 200000
@@ -644,4 +645,250 @@ MCS_INSTALLER_FEAT_SELECTION = [
     "exhaust_air_hp_certified",
     "gas_absorbtion_hp_certified",
     "solar_assisted_hp_certified",
+]
+
+
+# HISTORICAL INSTALLATIONS
+historical_installations_rename_cols_dict = {
+    "Version Number": "version",
+    "Certificate Creation Date": "cert_date",
+    "Commissioning Date": "commission_date",
+    "Address Line 1": "address_1",
+    "Address Line 2": "address_2",
+    "Address Line 3": "address_3",
+    "County": "county",
+    "Postcode": "postcode",
+    "Local Authority": "local_authority",
+    "Total Installed Capacity": "capacity",
+    "Estimated Annual Generation": "estimated_annual_generation",
+    "Installation Company Name": "installer_name",
+    "Green Deal Installation?": "green_deal",
+    "Products": "products",
+    "Flow temp/SCOP ": "flow_scop",
+    "Technology Type": "tech_type",
+    "Installation Type": "installation_type",
+    " Installation Type": "installation_type",
+    "End User Installation Type": "end_user_installation_type",
+    "Installation New at Commissioning Date?": "new",
+    "Renewable System Design": "design",
+    "Annual Space Heating Demand": "heat_demand",
+    "Annual Water Heating Demand": "water_demand",
+    "Annual Space Heating Supplied": "heat_supplied",
+    "Annual Water Heating Supplied": "water_supplied",
+    "Installation Requires Metering?": "metering",
+    "RHI Metering Status": "rhi_status",
+    "RHI Metering Not Ready Reason": "rhi_not_ready",
+    "Number of MCS Certificates": "n_certificates",
+    "Heating System Type": "system_type",
+    "Alternative Heating System Type": "alt_type",
+    "Alternative Heating System Fuel Type": "alt_fuel",
+    "Overall Cost": "cost",
+    "Fuel Type": "fuel_type",
+    "Installation Company MCS Number": "installation_company_mcs_number",
+}
+
+
+# HISTORICAL INSTALLERS
+MCS_HISTORICAL_DATA_INPUTS_PATH = "inputs/MCS/latest_raw_data/historical/"
+
+raw_historical_installers_dtypes = {
+    "Company Name": str,
+    "MCS certificate number": int,
+    "Adddress 1": str,
+    "Adddress 2": str,
+    "Town": str,
+    "County": str,
+    "Postcode": str,
+    "Effective From": datetime,
+    "Effective To": datetime,
+    "Air Source Heat Pump Installation Start Date": datetime,
+    "Air Source Heat Pump Installation End Date": datetime,
+    "Air Source Heat Pump Design Start Date": datetime,
+    "Air Source Heat Pump Design End Date": datetime,
+    "Biomass Start Date": datetime,
+    "Biomass End Date": datetime,
+    "Ground/Water Source Heat Pump Installation Start Date": datetime,
+    "Ground/Water Source Heat Pump Installation End Date": datetime,
+    "Ground/Water Source Heat Pump Design Start Date": datetime,
+    "Ground/Water Source Heat Pump Design End Date": datetime,
+    "Hot Water Heat Pump Installation Start Date": datetime,
+    "Hot Water Heat Pump Installation End Date": datetime,
+    "Hot Water Heat Pump Design Start Date": datetime,
+    "Hot Water Heat Pump Design End Date": datetime,
+    "Hydro Start Date": datetime,
+    "Hydro End Date": datetime,
+    "Micro CHP Start Date": datetime,
+    "Micro CHP End Date": datetime,
+    "Solar PV Start Date": datetime,
+    "Solar PV End Date": datetime,
+    "Wind Turbine Start Date": datetime,
+    "Wind Turbine End Date": datetime,
+    "Exhaust Air Heat Pump Installation Start Date": datetime,
+    "Exhaust Air Heat Pump Installation End Date": datetime,
+    "Exhaust Air Heat Pump Design Start Date": datetime,
+    "Exhaust Air Heat Pump Design End Date": datetime,
+    "Gas Absorbtion Heat Pump Installation Start Date": datetime,
+    "Gas Absorbtion Heat Pump Installation End Date": datetime,
+    "Gas Absorbtion Heat Pump Design Start Date": datetime,
+    "Gas Absorbtion Heat Pump Design End Date": datetime,
+    "Solar Assisted Heat Pump Installation Start Date": datetime,
+    "Solar Assisted Heat Pump Installation End Date": datetime,
+    "Solar Assisted Heat Pump Design Start Date": datetime,
+    "Solar Assisted Heat Pump Design End Date": datetime,
+    "Solar Thermal Start Date": datetime,
+    "Solar Thermal End Date": datetime,
+    "Battery Storage Start Date": datetime,
+    "Battery Storage End Date": datetime,
+}
+
+raw_historical_installations_dtypes = {
+    "Version Number": int,
+    "Commissioning Date": datetime,
+    "Address Line 1": str,
+    "Address Line 2": str,
+    "Address Line 3": str,
+    "County": str,
+    "Postcode": str,
+    "Local Authority": str,
+    "Total Installed Capacity": float,
+    "Estimated Annual Generation": float,
+    "Green Deal Installation?": str,
+    "Installation Company Name": str,
+    "Installation Company MCS Number": str,
+    "Products": str,
+    "Technology Type": str,
+    "Installation New at Commissioning Date?": datetime,
+    "Renewable System Design": str,
+    "Annual Space Heating Demand": float,
+    "Annual Water Heating Demand": float,
+    "Annual Space Heating Supplied": float,
+    "Annual Water Heating Supplied": float,
+    "Number of MCS Certificates": float,
+    "Heating System Type": str,
+    "Fuel Type": str,
+    "Overall Cost": float,
+    "Installation Type": str,
+}
+
+MCS_HISTORICAL_DATA_OUTPUTS_PATH = "outputs/MCS/installers/"
+PREPROCESSED_MCS_HISTORICAL_INSTALLERS_FILE_PATH = (
+    "/outputs/MCS/installers/mcs_historical_installers_{}.csv"
+)
+
+processed_historical_installers_columns_order = [
+    "company_unique_id",
+    "company_name",
+    "mcs_certificate_number",
+    "certification_body",
+    "address_1",
+    "address_2",
+    "town",
+    "county",
+    "postcode",
+    "latitude",
+    "longitude",
+    "full_address",
+    "original_record",
+    "effective_from",
+    "effective_to",
+    "biomass_start_date",
+    "biomass_end_date",
+    "hydro_start_date",
+    "hydro_end_date",
+    "micro_chp_start_date",
+    "micro_chp_end_date",
+    "solar_pv_start_date",
+    "solar_pv_end_date",
+    "wind_turbine_start_date",
+    "wind_turbine_end_date",
+    "solar_thermal_start_date",
+    "solar_thermal_end_date",
+    "battery_storage_start_date",
+    "battery_storage_end_date",
+    "air_source_hp_start_date",
+    "air_source_hp_end_date",
+    "ground_water_source_hp_start_date",
+    "ground_water_source_hp_end_date",
+    "hot_water_hp_start_date",
+    "hot_water_hp_end_date",
+    "exhaust_air_hp_start_date",
+    "exhaust_air_hp_end_date",
+    "gas_absorbtion_hp_start_date",
+    "gas_absorbtion_hp_end_date",
+    "solar_assisted_hp_start_date",
+    "solar_assisted_hp_end_date",
+    "biomass_certified",
+    "hydro_certified",
+    "micro_chp_certified",
+    "solar_pv_certified",
+    "wind_turbine_certified",
+    "solar_thermal_certified",
+    "battery_storage_certified",
+    "air_source_hp_certified",
+    "ground_water_source_hp_certified",
+    "hot_water_hp_certified",
+    "exhaust_air_hp_certified",
+    "gas_absorbtion_hp_certified",
+    "solar_assisted_hp_certified",
+]
+
+
+preprocessed_historical_installers_dtypes = {
+    "company_unique_id": str,
+    "company_name": str,
+    "mcs_certificate_number": int,
+    "certification_body": str,
+    "address_1": str,
+    "address_2": str,
+    "town": str,
+    "county": str,
+    "postcode": str,
+    "latitude": float,
+    "longitude": float,
+    "full_address": str,
+    "original_record": bool,
+    "biomass_certified": bool,
+    "hydro_certified": bool,
+    "micro_chp_certified": bool,
+    "solar_pv_certified": bool,
+    "wind_turbine_certified": bool,
+    "solar_thermal_certified": bool,
+    "battery_storage_certified": bool,
+    "air_source_hp_certified": bool,
+    "ground_water_source_hp_certified": bool,
+    "hot_water_hp_certified": bool,
+    "exhaust_air_hp_certified": bool,
+    "gas_absorbtion_hp_certified": bool,
+    "solar_assisted_hp_certified": bool,
+}
+
+preprocessed_historical_installers_date_cols = [
+    "effective_from",
+    "effective_to",
+    "biomass_start_date",
+    "biomass_end_date",
+    "hydro_start_date",
+    "hydro_end_date",
+    "micro_chp_start_date",
+    "micro_chp_end_date",
+    "solar_pv_start_date",
+    "solar_pv_end_date",
+    "wind_turbine_start_date",
+    "wind_turbine_end_date",
+    "solar_thermal_start_date",
+    "solar_thermal_end_date",
+    "battery_storage_start_date",
+    "battery_storage_end_date",
+    "air_source_hp_start_date",
+    "air_source_hp_end_date",
+    "ground_water_source_hp_start_date",
+    "ground_water_source_hp_end_date",
+    "hot_water_hp_start_date",
+    "hot_water_hp_end_date",
+    "exhaust_air_hp_start_date",
+    "exhaust_air_hp_end_date",
+    "gas_absorbtion_hp_start_date",
+    "gas_absorbtion_hp_end_date",
+    "solar_assisted_hp_start_date",
+    "solar_assisted_hp_end_date",
 ]
