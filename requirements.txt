@@ -19,3 +19,4 @@ h3
 s3fs
 fsspec
 geopandas
+datacompy
