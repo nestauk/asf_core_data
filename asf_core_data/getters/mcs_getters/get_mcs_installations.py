@@ -2,16 +2,12 @@
 """Function to get concatenated installations data in a usable format,
 with correct dtypes."""
 
-# %%
-
 import pandas as pd
 import os
 
 from asf_core_data.getters.data_getters import load_s3_data
 
 from asf_core_data.config import base_config
-
-# %%
 
 
 def get_raw_installations_data(
