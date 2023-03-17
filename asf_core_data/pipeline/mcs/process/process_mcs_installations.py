@@ -1,7 +1,6 @@
 # File: asf_core_data/pipeline/mcs/process/process_mcs_installations.py
 """Processing MCS heat pump installation data."""
 
-# %%
 
 import pandas as pd
 import re
@@ -13,8 +12,6 @@ from asf_core_data.getters.mcs_getters.get_mcs_installations import (
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import clean_company_name
 
 from asf_core_data.config import base_config
-
-# %%
 
 
 def add_hp_features(hps):

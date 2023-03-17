@@ -3,7 +3,6 @@
 To run script, (in activated conda environment) python process_mcs_installers.py -key API KEY
 """
 
-# %%
 
 import argparse
 import pandas as pd
@@ -23,8 +22,6 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
 )
 
 from asf_core_data.config import base_config
-
-# %%
 
 
 def preprocess_installer_companies(installer_companies, installations_data, api_key):
@@ -106,8 +103,6 @@ def preprocess_installer_companies(installer_companies, installations_data, api_
 
     return installer_companies_house_data
 
-
-# %%
 
 if __name__ == "__main__":
     # get config file with relevant paramenters
