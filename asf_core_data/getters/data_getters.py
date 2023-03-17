@@ -204,9 +204,11 @@ def load_s3_data(
     file_name,
     usecols=None,
     dtype=None,
-    low_memory=False,
     skiprows=None,
     n_samples=None,
+    columns_to_parse_as_dates=None,
+    encoding="latin-1",
+    low_memory=False,
 ):
     """Load data from S3 location.
 
@@ -215,9 +217,10 @@ def load_s3_data(
         file_name (str/Path): File to load.
         usecols (list, optional): Features/columns to load from EPC dataset. Defaults to None, loading all features.
         dtype (dict, optional): Dict with dtypes for easier loading. Defaults to None.
-        low_memory (bool, optional): _description_. Defaults to False.
         skiprows (int, optional): Which rows in csv file to skip loading. Defaults to None.
         n_samples (int, optional): Number of samples/rows to load. Defaults to None, loading all samples.
+        columns_to_parse_as_dates: Columns that should be parsed as dates (when reading as csv). Defauls to None.
+        encoding: Encoding when reading as csv. Defaults to latin-1.
         low_memory (bool, optional): Whether to load data with low memory. Defaults to True.
             If True, internally process the file in chunks, resulting in lower memory use while parsing,
             but possibly mixed type inference.
@@ -235,12 +238,13 @@ def load_s3_data(
     elif fnmatch(file_name, "*.csv"):
         return pd.read_csv(
             os.path.join("s3://" + bucket_name, file_name),
-            encoding="latin-1",
+            encoding=encoding,
             usecols=usecols,
             dtype=dtype,
             low_memory=low_memory,
             skiprows=skiprows,
             nrows=n_samples,
+            parse_dates=columns_to_parse_as_dates,
         )
 
     elif fnmatch(file_name, "*.geojson"):
