@@ -132,3 +132,6 @@ asf_core_data/analysis/recycling/*
 
 # NPM
 node_modules/
+
+# secrets
+client_secrets.json

@@ -2,7 +2,7 @@ from asf_core_data import Path
 from datetime import datetime
 
 MCS_RAW_S3_PATH = "inputs/MCS/mcs_heat_pumps.xlsx"
-MCS_RAW_LOCAL_PATH = "/inputs/MCS/mcs_heat_pumps.xlsx"
+MCS_RAW_LOCAL_PATH = "/inputs/data/mcs/mcs_heat_pumps.xlsx"
 
 CURRENT_YEAR = 2022
 
@@ -488,7 +488,6 @@ england_wales_only_features = [
     "LODGEMENT_DATETIME",
 ]
 
-
 scotland_field_fix_dict = {
     "BUILDING_REFERENCE_NUMBER": "ï»¿Property_UPRN",
     "UPRN": "OSG_UPRN",
@@ -547,12 +546,12 @@ scotland_field_fix_dict = {
 
 rev_scotland_field_fix_dict = {v: k for k, v in scotland_field_fix_dict.items()}
 
-
 # MCS settings
 
 MCS_HP_PATH = "/inputs/MCS_data/mcs_heat_pumps.xlsx"
 MCS_DOMESTIC_HP_PATH = "/outputs/mcs_domestic_hps.csv"
 MCS_PROCESSED_PATH = "/outputs/data/mcs_processed.csv"
+MCS_EPC_MERGED_PATH = "/outputs/data/mcs_epc.csv"
 MCS_EPC_MATCHING_PARAMETER = 0.7
 MCS_EPC_MAX_TOKEN_LENGTH = 8
 
@@ -646,7 +645,6 @@ MCS_INSTALLER_FEAT_SELECTION = [
     "gas_absorbtion_hp_certified",
     "solar_assisted_hp_certified",
 ]
-
 
 # HISTORICAL INSTALLATIONS
 historical_installations_rename_cols_dict = {
@@ -831,7 +829,6 @@ processed_historical_installers_columns_order = [
     "gas_absorbtion_hp_certified",
     "solar_assisted_hp_certified",
 ]
-
 
 preprocessed_historical_installers_dtypes = {
     "company_unique_id": str,

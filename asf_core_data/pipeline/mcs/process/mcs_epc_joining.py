@@ -27,7 +27,6 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
 
 from asf_core_data.config import base_config
 
-# %%
 
 #### PREPROCESSING
 
@@ -263,7 +262,7 @@ def join_prepared_mcs_epc_data(
 
 
 def join_mcs_epc_data(
-    # epc_data_path=base_config.ROOT_DATA_PATH,
+    epc_data_path=base_config.ROOT_DATA_PATH,
     hps=None,
     epcs=None,
     all_records=True,
@@ -272,7 +271,7 @@ def join_mcs_epc_data(
 ):
     """Produce joined MCS-EPC dataframe from "unprepared" data.
     Args:
-        epc_data_path (string): Path to local top-level EPC data folder.
+        epc_data_path (string): Path to local top-level EPC data folder. (LEGACY!)
         hps (Dataframe, optional): MCS installation records.
         If None, records are fetched automatically. Defaults to None.
         epcs (Dataframe, optional): EPC records. If None, records

@@ -1,6 +1,6 @@
 # ASF Core Data <a name="core_data_overview"></a>
 
-Last updated: March 31 2022 by Chris Williamson
+Last updated: July 12 2022 by Chris Williamson
 
 ## Overview <a name="overview"></a>
 
@@ -208,15 +208,47 @@ Below we describe the necessary steps to download and update the data. Don't wor
 
 ## MCS Data <a name="mcs"></a>
 
-The MCS datasets contain information on MCS-certified heat pump **installations** and **installers**. These datasets are proprietary and cannot be shared outside of Nesta. Both datasets are provided quarterly by MCS and are stored in the **asf-core-data** bucket on S3.
+The MCS datasets contain information on MCS-certified heat pump **installations** and **installers**. These datasets are proprietary and cannot be shared outside of Nesta. Both datasets are provided quarterly by MCS and are stored in the **asf-core-data** bucket on S3. Information about the fields in this dataset can be found [here](https://docs.google.com/spreadsheets/d/1EKrQGZfeyVkQPJC05746vT0mWlGvK4vnzj5upi_fPBY/edit?usp=sharing) (accessible only by Nesta employees).
 
 ### How to use <a name="instructions"></a>
 
-To pull installation data into a project, first install this repo as a package then run
+To pull installation data into a project, first install this repo as a package by adding this line to your project's `requirements.txt`, substituting `$BRANCH` for your desired branch name:
 
-    from asf_core_data.asf_core_data.pipeline.mcs.generate_mcs_data import get_mcs_installations
+    asf_core_data@ git+ssh://git@github.com/nestauk/asf_core_data.git@$BRANCH
 
-    installation_data = get_mcs_installations(...)
+The data can then be pulled in using:
+
+    from asf_core_data import get_mcs_installations
+
+    installation_data = get_mcs_installations(epc_version=...)
+
+Replace the `...` above with
+
+- "none" to get just the MCS installation records
+- "full" to get every MCS installation record joined to the property's full EPC history (one row for each installation-EPC pair) - installations without a matching EPC are kept, but with missing data in the EPC fields
+- "most_relevant" to get every MCS installation joined to its "most relevant" EPC record (this being the latest EPC before the installation if one exists; otherwise, the earliest EPC after the installation) - installations without a matching EPC are kept, but with missing data in the EPC fields
+
+To update the data on the `asf-core-data` S3 bucket, run:
+
+    export COMPANIES_HOUSE_API_KEY="ADD_YOUR_API_KEY_HERE"
+
+    from asf_core_data import generate_and_save_mcs
+
+    generate_and_save_mcs()
+
+which requires the user to have a Companies House API key:
+
+- Create a developer account for Companies House API[here](https://developer.company-information.service.gov.uk/get-started);
+- Create a new application [here](https://developer.company-information.service.gov.uk/manage-applications/add). Give it any name and description you want and choose the Live environment.
+  Copy your API key credentials.
+
+This requires processed EPC data to be saved locally as set out by the requirements in the section above.
+
+To run checks on raw installations data:
+
+    from asf_core_data import test_installation_data
+
+    test_installation_data(filename)
 
 ### Installations <a name="mcs_installations"></a>
 
@@ -227,7 +259,7 @@ The MCS **installations** dataset contains one record for each MCS certificate. 
 - characteristics of the installation: commissioning date, overall cost, installer name, whether or not the installation is eligible for RHI
 - characteristics of the certificate: version number, certification date
 
-For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing). Further information about the fields included in this dataset can be found [here](https://docs.google.com/spreadsheets/d/1XaGDblbCIBTkStH3_RE7d6qzzKAWghRf/edit#gid=1260528248). (Access to these documents is provided only to Nesta employees)
+For further information about the data collection process see [this doc](https://docs.google.com/document/d/1uuptYecUfIm1Dxy1iuw19xgareZPzg_WP4M7J80mTgc/edit?usp=sharing) (assessible only to Nesta employees).
 
 ### Installers <a name="mcs_installers"></a>
 
@@ -235,16 +267,14 @@ The MCS **installers** dataset contains one record for each MCS-certified instal
 
 - name and address
 - technologies installed
-- locations in which the installer operates
 
 ### Merging with EPC <a name="mcs_epc_merging"></a>
 
-**asf_core_data/pipeline/mcs** contains functions for processing the raw MCS data and joining it with EPC data. In particular, running **generate_mcs_data.py** will process and save four different versions of the data to S3:
+**asf_core_data/pipeline/mcs** contains functions for processing the raw MCS data and joining it with EPC data. In particular, running **generate_mcs_data.py** will process and save three different versions of the data to S3:
 
-1. Cleaned MCS installation data, with one row for each **installation**, taking the most recent version of each certificate
+1. Cleaned MCS installation data, with one row for each **installation**
 2. As in 1., with EPC data fully joined: when a property also appears in EPC data, a row is included for each EPC (so the full EPC history of the property appears in the data)
-3. As in 2., filtered only to the most recent EPC
-4. As in 2., filtered to the "most relevant" EPC which aims to best reflect the status of the property at the time of the installation: the latest EPC before the installation if one exists, otherwise the earliest EPC after the installation
+3. As in 2., filtered to the "most relevant" EPC which aims to best reflect the status of the property at the time of the installation: the latest EPC before the installation if one exists, otherwise the earliest EPC after the installation
 
 Further details about the processing and joining of the data are provided within asf_core_data/pipeline.
 

@@ -1,7 +1,6 @@
 # File: asf_core_data/getters/MCS/get_mcs.py
 """Getting MCS heat pump data."""
 
-
 import pandas as pd
 import datetime as dt
 import boto3

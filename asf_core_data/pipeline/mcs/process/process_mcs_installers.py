@@ -1,5 +1,11 @@
 # File: asf_core_data/pipeline/mcs/process/process_mcs_installers.py
-"""Processing MCS installer company data.
+"""
+--- Legacy script ---
+This is a legacy script that allows to process installer snapshot data, i.e. data from installers certified on
+the date the data was collected by the MCS team.
+
+This script allows for processing MCS installer company data.
+
 To run script, (in activated conda environment) python process_mcs_installers.py -key API KEY
 """
 

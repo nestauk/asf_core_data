@@ -4,8 +4,6 @@ defaults to paths in base_config
 python compare_mcs_installations.py --new_installations_df NEW_INSTALLATIONS_PATH --old_installers_df OLD_INSTALLERS_PATH --new_installers_df NEW_INSTALLERS_PATH
 """
 
-# %%
-
 import datacompy
 import pandera as pa
 from datetime import datetime
@@ -15,8 +13,6 @@ import sys
 import argparse
 
 from asf_core_data.config import base_config
-
-# %%
 
 bucket_name = base_config.BUCKET_NAME
 
@@ -203,8 +199,6 @@ def test_installation_data(filename):
 
     return within_mcs_installations_check(list(raw_installation_data.values())[0])
 
-
-# %%
 
 if __name__ == "__main__":
     test_output_txt = f'mcs_test_{datetime.now().strftime("%Y%m%d-%H%M%S")}.txt'
