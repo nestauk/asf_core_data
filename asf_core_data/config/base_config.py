@@ -604,7 +604,7 @@ INSTALLATIONS_RAW_S3_PATH = "inputs/MCS/mcs_installations.csv"
 INSTALLATIONS_RAW_LOCAL_PATH = "/inputs/data/mcs/installations"
 RAW_DATA_S3_FOLDER = "inputs/MCS/latest_raw_data"
 
-EPC_MCS_MERGED_OUT_FOLDER = "outputs/MCS/merged_epc_mcs_installations_installers.csv"
+EPC_MCS_MERGED_OUT_PATH = "/outputs/MCS/merged_epc_mcs_installations_installers.csv"
 
 MCS_INSTALLATIONS_FEAT_SELECTION = [
     "UPRN",
