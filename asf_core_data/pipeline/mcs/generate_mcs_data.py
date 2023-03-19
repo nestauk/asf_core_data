@@ -74,6 +74,7 @@ def generate_and_save_mcs(
     the HP installation if one exists or the earliest EPC from after the HP
     installation otherwise.
     """
+
     today = date.today().strftime("%y%m%d")
 
     no_epc_path, full_epc_path, _, most_relevant_epc_path = [
@@ -124,15 +125,14 @@ def generate_and_save_mcs(
         )
     )
     save_to_s3(
-        s3=s3,
-        bucket_name=bucket_name,
-        output_var=processed_historical_installers,
-        output_file_path=installers_path,
+        bucket_name,
+        processed_historical_installers,
+        installers_path,
     )
     print("Saved in S3: " + installers_path)
 
     processed_mcs = get_processed_installations_data()
-    save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
+    save_to_s3(bucket_name, processed_mcs, no_epc_path)
     print("Saved in S3: " + no_epc_path)
 
     fully_joined_mcs_epc = join_mcs_epc_data(
@@ -141,7 +141,7 @@ def generate_and_save_mcs(
         all_records=True,
         verbose=verbose,
     )
-    save_to_s3(s3, bucket_name, fully_joined_mcs_epc, full_epc_path)
+    save_to_s3(bucket_name, fully_joined_mcs_epc, full_epc_path)
     print("Saved in S3: " + full_epc_path)
 
     # avoid completely regenerating the joined df by just filtering it
@@ -154,7 +154,7 @@ def generate_and_save_mcs(
     # print("Saved in S3: " + newest_epc_path)
 
     most_relevant_mcs_epc = select_most_relevant_epc(fully_joined_mcs_epc)
-    save_to_s3(s3, bucket_name, most_relevant_mcs_epc, most_relevant_epc_path)
+    save_to_s3(bucket_name, most_relevant_mcs_epc, most_relevant_epc_path)
     print("Saved in S3: " + most_relevant_epc_path)
 
 
@@ -369,7 +369,6 @@ def get_mcs_installations(epc_version="none", refresh=False):
 
 
 if __name__ == "__main__":
-    uk_geo_path = base_config.POSTCODE_TO_COORD_PATH
-    uk_geo_data = load_s3_data(bucket_name, uk_geo_path)
-
+    # Get MCS and join with MCS
+    uk_geo_data = load_s3_data(bucket_name, base_config.POSTCODE_TO_COORD_PATH)
     generate_and_save_mcs(uk_geo_data=uk_geo_data)

@@ -2,7 +2,7 @@
 """Join the EPC and MCS installations and installer datasets.
 These scripts are meant to merge the final processed datasets into a gold dataset.
 
-The output is a complete datafarame with all EPC records (dedupl) and MCS installations and installers.
+The output is a complete dataframe with all EPC records (dedupl) and MCS installations and installers.
 We use outer merges to avoid losing data, creating NaN values for missing records.
 
     - Load EPC data
@@ -176,6 +176,7 @@ def merging_pipeline(
     epc_usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
     mcs_installations_usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
     mcs_installers_usecols=base_config.MCS_INSTALLER_FEAT_SELECTION,
+    save=True,
 ):
 
     """Merge EPC and MCS installation and installer data to create a complete MCS/EPC dataset.
@@ -195,6 +196,7 @@ def merging_pipeline(
         Defaults to base_config.MCS_INSTALLATIONS_FEAT_SELECTION.
     mcs_installers_usecols (list, optional): Which MCS installer features to include.
         Defaults to base_config.MCS_INSTALLER_FEAT_SELECTION.
+    save (bool, optional): Where to save final output. Defaults to True.
     """
 
     # Load the processed EPC data (not deduplicated)
@@ -220,12 +222,15 @@ def merging_pipeline(
         epc_mcs_complete, postcode_var_name="POSTCODE", white_space="remove"
     )
 
-    # Save final merged dataset
-    data_getters.save_to_s3(
-        bucket_name=base_config.BUCKET_NAME,
-        output_var=epc_mcs_complete,
-        output_file_path=base_config.EPC_MCS_MERGED_OUT_FOLDER,
-    )
+    if save:
+        # Save final merged dataset
+        data_getters.save_to_s3(
+            base_config.BUCKET_NAME,
+            epc_mcs_complete,
+            base_config.EPC_MCS_MERGED_OUT_PATH,
+        )
+
+    return epc_mcs_complete
 
 
 if __name__ == "__main__":

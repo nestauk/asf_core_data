@@ -25,9 +25,9 @@ def get_most_recent_raw_historical_installers_data() -> pd.DataFrame:
     )
 
     return load_s3_data(
-        bucket_name=base_config.BUCKET_NAME,
-        file_name=most_recent_file_name,
-        dtypes=base_config.raw_historical_installers_dtypes,
+        base_config.BUCKET_NAME,
+        most_recent_file_name,
+        dtype=base_config.raw_historical_installers_dtypes,
     )
 
 
@@ -44,12 +44,12 @@ def get_raw_historical_installers_data(
         Raw historical installers heat pump data from MCS.
     """
     return load_s3_data(
-        bucket_name=base_config.BUCKET_NAME,
-        file_name=os.path.join(
+        base_config.BUCKET_NAME,
+        os.path.join(
             base_config.MCS_HISTORICAL_DATA_INPUTS_PATH,
             raw_historical_installers_file_name,
         ),
-        dtypes=base_config.raw_historical_installers_dtypes,
+        dtype=base_config.raw_historical_installers_dtypes,
     )
 
 
@@ -66,9 +66,9 @@ def get_most_recent_processed_historical_installers_data() -> pd.DataFrame:
     )
 
     return load_s3_data(
-        bucket_name=bucket,
-        file_name=most_recent_file_name,
-        dtypes=base_config.preprocessed_historical_installers_dtypes,
+        bucket,
+        most_recent_file_name,
+        dtype=base_config.preprocessed_historical_installers_dtypes,
         columns_to_parse_as_dates=base_config.preprocessed_historical_installers_date_cols,
         encoding="utf-8",
     )
@@ -85,9 +85,9 @@ def get_processed_historical_installers_data(path_to_file: str) -> pd.DataFrame:
         Raw historical installers data from MCS.
     """
     return load_s3_data(
-        bucket_name=base_config.BUCKET_NAME,
-        file_name=path_to_file,
-        dtypes=base_config.preprocessed_historical_installers_dtypes,
+        base_config.BUCKET_NAME,
+        path_to_file,
+        dtype=base_config.preprocessed_historical_installers_dtypes,
         columns_to_parse_as_dates=base_config.preprocessed_historical_installers_date_cols,
         encoding="utf-8",
     )

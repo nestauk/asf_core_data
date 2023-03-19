@@ -17,7 +17,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
 
-from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+from asf_core_data.getters.data_getters import load_s3_data, save_to_s3
 
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     mcs_companies_dict,
@@ -153,10 +153,9 @@ if __name__ == "__main__":
 
     # save preprocessed, geocoded data to s3
     save_to_s3(
-        s3, bucket_name, geocoded_cleaned_installations_data, cleaned_installations_path
+        bucket_name, geocoded_cleaned_installations_data, cleaned_installations_path
     )
     save_to_s3(
-        s3,
         bucket_name,
         geocoded_cleaned_installers_data,
         cleaned_installer_company_path,

@@ -40,7 +40,7 @@ import os
 from datetime import datetime
 from argparse import ArgumentParser
 from asf_core_data.config import base_config
-from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+from asf_core_data.getters.data_getters import load_s3_data, save_to_s3
 from asf_core_data.getters.mcs_getters.get_mcs_installers import (
     get_raw_historical_installers_data,
 )
@@ -695,8 +695,7 @@ if __name__ == "__main__":
     )[0]
 
     save_to_s3(
-        s3=s3,
-        bucket_name=s3_bucket_name,
-        output_var=processed_historical_installers,
-        output_file_path=processed_data_path.format(date),
+        s3_bucket_name,
+        processed_historical_installers,
+        processed_data_path.format(date),
     )
