@@ -232,7 +232,7 @@ def load_s3_data(
         data = pd.read_excel(
             os.path.join("s3://" + bucket_name, file_name),
             sheet_name=None,
-            dtype=dtypes,
+            dtype=dtype,
         )
         if len(data) > 1:
             return data
