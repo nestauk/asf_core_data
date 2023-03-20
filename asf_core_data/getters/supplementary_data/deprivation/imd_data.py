@@ -3,49 +3,26 @@
 
 # ---------------------------------------------------------------------------------
 
-from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 import pandas as pd
 from asf_core_data.config import base_config
+
+from asf_core_data.getters import data_getters
 
 # ---------------------------------------------------------------------------------
 
 # Load config file
-config = get_yaml_config(
-    Path(str(PROJECT_DIR) + "/heat_pump_adoption_modelling/config/base.yaml")
-)
 
 country_path_dict = {
-    "England": base_config.IMD_ENGLAND_PATH.name,
-    "Wales": base_config.IMD_WALES_PATH.name,
-    "Scotland": base_config.IMD_SCOTLAND_PATH.name,
+    "england": base_config.IMD_ENGLAND_PATH,
+    "wales": base_config.IMD_WALES_PATH,
+    "scotland": base_config.IMD_SCOTLAND_PATH,
 }
 
 
-def get_country_imd_data(
-    country, data_path=PROJECT_DIR / base_config.IMD_PATH, usecols=None
-):
-    """Get deprivation data for specific country.
-
-    Args:
-        country (str): Country for which to load IMD: 'England', 'Scotland', 'Wales'.
-        data_path (str/Path, optional): Path to IMD data in local dir or 'S3'. Defaults to PROJECT_DIR / base_config.IMD_PATH.
-        usecols (list, optional): List of features/columns to load. Defaults to None, loading all features.
-
-    Returns:
-        pandas.DataFrame: Deprivation data.
-    """
-
-    file_path = data_path / country_path_dict[country]
-
-    imd_df = pd.read_csv(file_path, usecols=usecols)
-    imd_df["Country"] = country
-
-    return imd_df
-
-
-def get_gb_imd_data(
-    data_path=base_config.ROOT_DATA_PATH,
-    rel_data_path=base_config.IMD_PATH,
+def get_imd_data(
+    country="GB",
+    data_path="S3",
+    rel_path=None,
     usecols=[
         "IMD Rank",
         "IMD Decile",
@@ -55,26 +32,59 @@ def get_gb_imd_data(
         "Country",
     ],
 ):
-    """Get deprivation data for England, Wales and Scotland.
+    """Get deprivation data for specific country.
 
     Args:
-        data_path (str/Path, optional): Path to ASF core data directory or 'S3'. Defaults to base_config.ROOT_DATA_PATH.
-        rel_data_path (str/Path, optional): Relative path to IMD data. Defaults to base_config.IMD_PATH.
-        usecols (list, optional):  List of features/columns to load.
-            Defaults to ["IMD Rank", "IMD Decile", "Postcode", "Income Score", "Employment Score", "Country"].
-            This selection works for all countries. None will load all features.
+        country (str, optional): Country for which to load IMD: 'England', 'Scotland', 'Wales' or 'GB'. Defaults to 'GB'.
+        data_path (str, optional): Path to IMD data in local dir or 'S3'. Defaults to "S3".
+        rel_path (str/Path, optional): Relative path to IMD data. Defaults to None, leading to loading from default location.
+        usecols (list, optional): List of features/columns to load. Defaults to ["IMD Rank", "IMD Decile", "Postcode", "Income Score", "Employment Score", "Country"].
+
+    Raises:
+        IOError: Throws error if country input is not valid.
 
     Returns:
-        pandas.DataFrame:  Deprivation data for all countries.
+        pandas.DataFrame: Deprivation data.
     """
 
-    imd_path = Path(data_path) / rel_data_path
+    country = country.lower()
+    country_name = country[0].upper() + country[1:] if country != "gb" else "GB"
 
-    england_imd = get_country_imd_data("England", data_path=imd_path, usecols=usecols)
-    wales_imd = get_country_imd_data("Wales", data_path=imd_path, usecols=usecols)
-    scotland_imd = get_country_imd_data("Scotland", data_path=imd_path, usecols=usecols)
+    if country == "gb":
 
-    imd_df = pd.concat([england_imd, wales_imd, scotland_imd], axis=0)
+        england_imd = get_imd_data(
+            "England",
+            data_path=data_path,
+            usecols=usecols,
+        )
+
+        wales_imd = get_imd_data(
+            "Wales",
+            data_path=data_path,
+            usecols=usecols,
+        )
+
+        scotland_imd = get_imd_data(
+            "Scotland",
+            data_path=data_path,
+            usecols=usecols,
+        )
+
+        imd_df = pd.concat([england_imd, wales_imd, scotland_imd], axis=0)
+
+    elif country in ["england", "wales", "scotland"]:
+        if rel_path is None:
+            rel_path = country_path_dict[country]
+
+        imd_df = data_getters.load_data(rel_path, data_path=data_path, usecols=usecols)
+        imd_df["Country"] = country_name
+
+    else:
+        raise IOError(
+            "'{}' is not a valid country/area. Please pick from 'England', 'Wales', 'Scotland' or 'GB'.".format(
+                country
+            )
+        )
 
     return imd_df
 

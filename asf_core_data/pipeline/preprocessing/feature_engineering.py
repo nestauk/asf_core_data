@@ -27,6 +27,7 @@ from asf_core_data.pipeline.preprocessing import data_cleaning
 
 def short_hash(text):
     """Generate a unique short hash for given string.
+    Legacy code. No longer used in newer versions.
 
     Args:
         text (str):  String for which to get ID.
@@ -43,6 +44,7 @@ def short_hash(text):
 
 def get_unique_building_id(df, short_code=False):
     """Add unique building ID column to dataframe.
+    Legacy code. No longer used in newer versions.
 
     Args:
         df (str): String for which to get ID.
@@ -235,10 +237,18 @@ def get_heating_features(df, fine_grained_HP_types=False):
                 ("heater" in heating),  # not specified heater
             ]
 
+            # Warm air
+            # --------------------------
+
+            if "warm air" in heating:
+                system_type = "warm air"
+                source_type = "electric"
+                has_hp = False
+
             # Different heat pump types
             # --------------------------
 
-            if "ground source heat pump" in heating:
+            elif "ground source heat pump" in heating:
                 system_type = "ground source heat pump"
                 source_type = "electric"
                 has_hp = True
@@ -272,13 +282,6 @@ def get_heating_features(df, fine_grained_HP_types=False):
 
             elif "electric underfloor heating" in heating:
                 system_type = "underfloor heating"
-                source_type = "electric"
-
-            # Warm air
-            # --------------------------
-
-            elif "warm air" in heating:
-                system_type = "warm air"
                 source_type = "electric"
 
             # Boiler and radiator / Boiler and underfloor / Community scheme / Heater (unspecified)
@@ -350,32 +353,33 @@ def get_heating_features(df, fine_grained_HP_types=False):
     return df
 
 
-def get_postcode_coordinates(df):
+def get_postcode_coordinates(df, postcode_field_name="POSTCODE"):
     """Add coordinates (longitude and latitude) to the dataframe
     based on the postcode.
 
     Args:
         df (pandas.DataFrame): EPC dataframe.
+        postcode_field_name: Field name for postcode. Defaults to 'POSTCODE'.
 
     Returns:
         pandas.DataFrame: Same dataframe with longitude and latitude columns added.
     """
 
     # Get postcode/coordinates
-    postcode_coordinates_df = coordinates.get_postcode_coordinates()
-
-    # Reformat POSTCODE
-    df = data_cleaning.reformat_postcode(df)
-    postcode_coordinates_df = data_cleaning.reformat_postcode(postcode_coordinates_df)
-
-    postcode_coordinates_df["POSTCODE"] = (
-        postcode_coordinates_df["POSTCODE"].str.upper().str.replace(" ", "")
+    postcode_coordinates_df = coordinates.get_postcode_coordinates(
+        desired_postcode_name=postcode_field_name
     )
 
-    # Merge with location data
-    df = pd.merge(df, postcode_coordinates_df, on=["POSTCODE"])
+    # Reformat POSTCODE
+    postcode_coordinates_df = data_cleaning.reformat_postcode(
+        postcode_coordinates_df,
+        postcode_var_name=postcode_field_name,
+        white_space="remove",
+    )
+    df = data_cleaning.reformat_postcode(df, white_space="remove")
 
-    print(df.shape)
+    # Merge with location data
+    df = pd.merge(df, postcode_coordinates_df, on=postcode_field_name, how="outer")
 
     return df
 

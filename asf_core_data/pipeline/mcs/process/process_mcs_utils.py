@@ -7,7 +7,6 @@ Companies House API additional info:
 - https://developer-specs.company-information.service.gov.uk/companies-house-public-data-api/resources/companysearch?v=latest
 
 """
-# %%
 
 import pandas as pd
 import requests
@@ -15,8 +14,6 @@ import time
 import re
 import numpy as np
 import random
-
-# %%
 
 
 def rename_columns(cols: list) -> list:
@@ -377,14 +374,10 @@ def clean_concat_installers(data):
         - dropping duplicate company names;
         - removing columns with identical values;
         - merging similar columns.
-
     Args:
         data (pd.DataFrame): Concatenated installers data
-
     Returns:
         data (pd.DataFrame): Cleaned, concatenated installers data
-
-
 
     keywords_to_merge = [
         "Air Source",

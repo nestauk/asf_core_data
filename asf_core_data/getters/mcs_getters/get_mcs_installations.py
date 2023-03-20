@@ -2,16 +2,12 @@
 """Function to get concatenated installations data in a usable format,
 with correct dtypes."""
 
-# %%
-
 import pandas as pd
 import os
 
 from asf_core_data.getters.data_getters import load_s3_data, get_most_recent_batch_name
 
 from asf_core_data.config import base_config
-
-# %%
 
 
 def get_raw_installations_data(
@@ -87,9 +83,9 @@ def get_most_recent_raw_historical_installations_data() -> pd.DataFrame:
     )
 
     return load_s3_data(
-        bucket_name=base_config.BUCKET_NAME,
-        file_name=most_recent_file_name,
-        dtypes=base_config.raw_historical_installations_dtypes,
+        base_config.BUCKET_NAME,
+        most_recent_file_name,
+        dtype=base_config.raw_historical_installations_dtypes,
     )
 
 
@@ -106,11 +102,12 @@ def get_raw_historical_installations_data(
     Returns:
         Raw historical installation data
     """
+
     return load_s3_data(
-        bucket_name=base_config.BUCKET_NAME,
-        file_name=os.path.join(
+        base_config.BUCKET_NAME,
+        os.path.join(
             base_config.MCS_HISTORICAL_DATA_INPUTS_PATH,
             raw_historical_installations_file_name,
         ),
-        dtypes=base_config.raw_historical_installations_dtypes,
+        dtype=base_config.raw_historical_installations_dtypes,
     )

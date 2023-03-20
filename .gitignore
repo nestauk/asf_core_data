@@ -101,10 +101,12 @@ target/
 
 # Jupyter NB Checkpoints
 .ipynb_checkpoints/
+*jvsc*
 
 # exclude /inputs and /outputs/data except top-level markdown
 /inputs/*
 !/inputs/*.md
+/outputs/epc_data/*
 /outputs/data/*
 !/outputs/data/*.md
 /outputs/models/*
@@ -114,6 +116,8 @@ target/
 !/outputs/EPC_data/preprocessed_data/Q2_2021/.gitkeep
 /outputs/EPC_data/preprocessed_data/Q4_2021/*
 !/outputs/EPC_data/preprocessed_data/Q4_2021/.gitkeep
+
+asf_core_data/analysis/recycling/*
 
 # Mac OS-specific storage files
 .DS_Store

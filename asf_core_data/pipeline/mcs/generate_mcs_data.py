@@ -1,6 +1,5 @@
 # asf_core_data/pipeline/mcs/generate_mcs_data.py
 # Functions for generating processed versions of MCS data (both installations and installers) and saving to S3.
-# %%
 
 from datetime import date
 import pandas as pd
@@ -8,14 +7,8 @@ import warnings
 import re
 import datetime
 import os
-from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
-    get_processed_installations_data,
-)
 
-from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
-    join_mcs_epc_data,
-    select_most_relevant_epc,
-)
+from asf_core_data.config import base_config
 
 from asf_core_data.getters.data_getters import (
     s3,
@@ -25,9 +18,19 @@ from asf_core_data.getters.data_getters import (
     get_most_recent_batch_name,
 )
 
+from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
+    get_processed_installations_data,
+)
+
+from asf_core_data.pipeline.mcs.process.mcs_epc_joining import (
+    join_mcs_epc_data,
+    select_most_relevant_epc,
+)
+
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     colnames_dict,
 )
+
 from asf_core_data.pipeline.mcs.process.process_historical_mcs_installers import (
     preprocess_historical_installers,
 )
@@ -37,18 +40,19 @@ from asf_core_data.getters.mcs_getters.get_mcs_installers import (
 from asf_core_data.getters.mcs_getters.get_mcs_installations import (
     get_most_recent_raw_historical_installations_data,
 )
-from asf_core_data.config import base_config
-
-# %%
 
 bucket_name = base_config.BUCKET_NAME
 mcs_installations_path = base_config.MCS_INSTALLATIONS_PATH
 mcs_installations_epc_full_path = base_config.MCS_INSTALLATIONS_EPC_FULL_PATH
+
 mcs_installations_epc_newest_path = base_config.MCS_INSTALLATIONS_EPC_NEWEST_PATH
 mcs_installations_epc_most_relevant_path = (
     base_config.MCS_INSTALLATIONS_EPC_MOST_RELEVANT_PATH
 )
 
+installations_raw_s3_path = base_config.INSTALLATIONS_RAW_S3_PATH
+installers_raw_s3_path = base_config.MCS_RAW_INSTALLER_CONCAT_S3_PATH
+raw_data_s3_folder = base_config.RAW_DATA_S3_FOLDER
 keyword_to_path_dict = {
     "none": mcs_installations_path,
     "full": mcs_installations_epc_full_path,
@@ -61,6 +65,7 @@ def generate_and_save_mcs(
     uk_geo_data: pd.DataFrame,
     epc_data_path: str = base_config.ROOT_DATA_PATH,
     companies_house_api_key: str = os.environ.get("COMPANIES_HOUSE_API_KEY"),
+    verbose=False,
 ):
     """Concatenates, generates and saves the different versions of the MCS-EPC data to S3.
     Different versions are a) just installation data, b) installation data with
@@ -69,9 +74,10 @@ def generate_and_save_mcs(
     the HP installation if one exists or the earliest EPC from after the HP
     installation otherwise.
     """
+
     today = date.today().strftime("%y%m%d")
 
-    no_epc_path, full_epc_path, newest_epc_path, most_relevant_epc_path = [
+    no_epc_path, full_epc_path, _, most_relevant_epc_path = [
         path_stem.format(today)
         for path_stem in [
             mcs_installations_path,
@@ -83,6 +89,12 @@ def generate_and_save_mcs(
 
     # legacy function calls in the 3 lines below
     # all_installations_data, all_installer_data = get_latest_mcs_from_s3()
+    # if verbose:
+    #         print("Installations files")
+    #         print("\n".join([file[0] for file in all_installations_data]))
+    #         print("\nInstaller files")
+    #         print("\n".join([file[0] for file in all_installer_data]))
+
     # concatenate_save_raw_installations(all_installations_data)
     # concatenate_save_raw_installers(all_installer_data)
 
@@ -113,22 +125,23 @@ def generate_and_save_mcs(
         )
     )
     save_to_s3(
-        s3=s3,
-        bucket_name=bucket_name,
-        output_var=processed_historical_installers,
-        output_file_path=installers_path,
+        bucket_name,
+        processed_historical_installers,
+        installers_path,
     )
     print("Saved in S3: " + installers_path)
 
     processed_mcs = get_processed_installations_data()
-    processed_mcs.to_csv("processed_data.csv")
-    save_to_s3(s3, bucket_name, processed_mcs, no_epc_path)
+    save_to_s3(bucket_name, processed_mcs, no_epc_path)
     print("Saved in S3: " + no_epc_path)
 
     fully_joined_mcs_epc = join_mcs_epc_data(
-        epc_data_path=epc_data_path, hps=processed_mcs, all_records=True
+        epc_data_path=epc_data_path,
+        hps=processed_mcs,
+        all_records=True,
+        verbose=verbose,
     )
-    save_to_s3(s3, bucket_name, fully_joined_mcs_epc, full_epc_path)
+    save_to_s3(bucket_name, fully_joined_mcs_epc, full_epc_path)
     print("Saved in S3: " + full_epc_path)
 
     # avoid completely regenerating the joined df by just filtering it
@@ -141,7 +154,7 @@ def generate_and_save_mcs(
     # print("Saved in S3: " + newest_epc_path)
 
     most_relevant_mcs_epc = select_most_relevant_epc(fully_joined_mcs_epc)
-    save_to_s3(s3, bucket_name, most_relevant_mcs_epc, most_relevant_epc_path)
+    save_to_s3(bucket_name, most_relevant_mcs_epc, most_relevant_epc_path)
     print("Saved in S3: " + most_relevant_epc_path)
 
 
@@ -160,8 +173,8 @@ def get_latest_mcs_from_s3():
 
     mcs_files = [
         key
-        for key in get_s3_dir_files(s3, bucket_name, raw_data_s3_folder)
-        if ("installations" or "installer" in key) and ("historical" not in key)
+        for key in get_s3_dir_files(path_to_dir=raw_data_s3_folder)
+        if ("installations" or "installer" in key) and ("historic" not in key)
     ]
 
     installer_data = []
@@ -169,6 +182,7 @@ def get_latest_mcs_from_s3():
 
     for file in mcs_files:
         if "installations" in file:
+
             installations = load_s3_data(bucket_name, file)
             if type(installations) == pd.DataFrame:
                 installations_data.append((file, installations))
@@ -206,6 +220,7 @@ def concatenate_save_raw_installations(all_installations_data):
     year and quarter stated in the filename, and flags if file columns differ.
     """
     for key_and_df in all_installations_data:
+
         year_quarter_search = re.search(r"20[0-9][0-9]_q[1-4]", key_and_df[0])
         if year_quarter_search:  # ignore mcs_installations_2021.xlsx
             year_quarter = year_quarter_search[0]  # get match
@@ -250,7 +265,7 @@ def concatenate_save_raw_installations(all_installations_data):
 
     concat_installations = concat_installations.rename(columns=colnames_dict)
 
-    save_to_s3(s3, bucket_name, concat_installations, "/" + installations_raw_s3_path)
+    save_to_s3(bucket_name, concat_installations, "/" + installations_raw_s3_path)
 
 
 def concatenate_save_raw_installers(all_installer_data):
@@ -263,7 +278,7 @@ def concatenate_save_raw_installers(all_installer_data):
     concat_installers = pd.concat(installer_dfs)
     concat_installers.drop_duplicates(inplace=True, ignore_index=True)
 
-    save_to_s3(s3, bucket_name, concat_installers, "/" + installers_raw_s3_path)
+    save_to_s3(bucket_name, concat_installers, "/" + installers_raw_s3_path)
 
 
 def generate_processed_mcs_installations(
@@ -273,7 +288,6 @@ def generate_processed_mcs_installations(
     --- Legacy function ---
     Generates processed version of MCS installation data (with optional
     joined EPC data) from the raw data.
-
     Args:
         epc_version (str, optional): One of "none", "full", "newest" or "most_relevant".
         "none" returns just installation data, "full" returns installation data with
@@ -281,10 +295,8 @@ def generate_processed_mcs_installations(
         corresponding to the most recent inspection and "most_relevant" selects the
         most recent EPC from before the HP installation if one exists or the earliest EPC
         from after the HP installation otherwise. Defaults to "none".
-
     Raises:
         ValueError: if epc_version is not one of the specified values.
-
     Returns:
         DataFrame: installation (+ EPC) data.
     """
@@ -328,7 +340,6 @@ def get_mcs_installations(epc_version="none", refresh=False):
             from after the HP installation otherwise. Defaults to "none".
         refresh (bool, optional): If True, skips the S3 check and generates the processed
             data from raw data. Defaults to False.
-
     Returns:
         DataFrame: installation (+ EPC) data.
     """
@@ -357,10 +368,7 @@ def get_mcs_installations(epc_version="none", refresh=False):
     return mcs_installations
 
 
-# %%
-
 if __name__ == "__main__":
-    uk_geo_path = base_config.POSTCODE_TO_COORD_PATH
-    uk_geo_data = load_s3_data(bucket_name, uk_geo_path)
-
+    # Get MCS and join with MCS
+    uk_geo_data = load_s3_data(bucket_name, base_config.POSTCODE_TO_COORD_PATH)
     generate_and_save_mcs(uk_geo_data=uk_geo_data)

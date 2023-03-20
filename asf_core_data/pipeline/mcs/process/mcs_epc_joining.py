@@ -11,7 +11,6 @@ Overall process is as follows:
 - Join datasets using this matching
 """
 
-# %%
 
 import recordlinkage as rl
 
@@ -28,7 +27,6 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
 
 from asf_core_data.config import base_config
 
-# %%
 
 #### PREPROCESSING
 
@@ -36,10 +34,8 @@ from asf_core_data.config import base_config
 def prepare_hps(hps):
     """Prepare Dataframe of HP installations by adding
     standardised_postcode, standardised_address and numeric_tokens fields.
-
     Args:
         hps (Dataframe): Dataframe with postcode, address_1 and address_2 fields.
-
     Returns:
         Dataframe: Domestic HP records with added fields.
     """
@@ -68,10 +64,8 @@ def prepare_hps(hps):
 def prepare_epcs(epcs):
     """Prepare Dataframe of EPC records by adding
     standardised_postcode, standardised_address and numeric_tokens fields.
-
     Args:
         epcs (Dataframe): EPC records with POSTCODE, ADDRESS1 and ADDRESS2 fields.
-
     Returns:
         Dataframe: EPC records with added fields.
     """
@@ -116,13 +110,11 @@ def form_matching(df1, df2):
     This feels better suited than e.g. Levenshtein as to not
     excessively punish the inclusion of extra information at
     the end of the address field e.g. town, county.
-
     Args:
         df1 (Dataframe): Dataframe with standardised_postcode,
         numeric_tokens and standardised_address fields.
         df2 (Dataframe): Dataframe with standardised_postcode,
         numeric_tokens and standardised_address fields.
-
     Returns:
         Dataframe: Indices of df1 and matched indices in df2
         along with similarity scores for numeric tokens (value in {0, 1})
@@ -161,7 +153,6 @@ def join_prepared_mcs_epc_data(
     verbose=True,
 ):
     """Join prepared MCS and EPC data.
-
     Args:
         hps (Dataframe): Dataframe with standardised_postcode,
         numeric_tokens and standardised_address fields.
@@ -175,7 +166,6 @@ def join_prepared_mcs_epc_data(
         matches are sensible. Defaults to True.
         verbose (bool, optional): Whether or not to print diagnostic information
         about the matching, e.g. number of matched records. Defaults to True.
-
     Returns:
         Dataframe: Merged MCS and EPC records.
     """
@@ -280,9 +270,8 @@ def join_mcs_epc_data(
     verbose=True,
 ):
     """Produce joined MCS-EPC dataframe from "unprepared" data.
-
     Args:
-        epc_data_path (string): Path to local top-level EPC data folder.
+        epc_data_path (string): Path to local top-level EPC data folder. (LEGACY!)
         hps (Dataframe, optional): MCS installation records.
         If None, records are fetched automatically. Defaults to None.
         epcs (Dataframe, optional): EPC records. If None, records
@@ -293,10 +282,10 @@ def join_mcs_epc_data(
         from the EPC records used for matching. Defaults to True.
         verbose (bool, optional): Whether or not to print diagnostic information.
         Defaults to True.
-
     Returns:
         Dataframe: Matched MCS-EPC records.
     """
+
     if hps is None:
         print("Getting HP data...")
         hps = get_processed_installations_data()
@@ -304,12 +293,13 @@ def join_mcs_epc_data(
     if epcs is None:
         epc_version = "preprocessed" if all_records else "preprocessed_dedupl"
         print("Getting EPC data...")
-        # TODO: load from S3 instead
+
         epcs = load_preprocessed_epc_data(
-            data_path=epc_data_path,
-            # rel_data_path="outputs/EPC/preprocessed_data/2021_Q4_0721",
+            data_path="S3",
             version=epc_version,
+            batch="newest",
             usecols=[
+                "UPRN",
                 "LMK_KEY",
                 "ADDRESS1",
                 "ADDRESS2",
@@ -353,11 +343,9 @@ def select_most_relevant_epc(joined_df):
     to best reflect the status of the property at the time of HP installation).
     The EPC chosen is the latest one before the installation if it exists;
     otherwise it is the earliest one after the installation.
-
     Args:
         joined_df (Dataframe): Joined MCS-EPC data. Assumed to
         contain INSPECTION_DATE, commission_date and original_mcs_index columns.
-
     Returns:
         Dataframe: Most relevant MCS-EPC records.
     """
@@ -395,9 +383,6 @@ def select_most_relevant_epc(joined_df):
     )
 
     return filtered_data
-
-
-# %%
 
 
 def main():

@@ -230,7 +230,7 @@ def clean_GLAZED_AREA(area, as_numeric=base_config.GLAZED_AREA_AS_NUM):
 
 
 def clean_PHOTO_SUPPLY(df):
-    """Extract photo supply area from length descriptions.
+    """Extract photo supply area from lengthy descriptions.
 
     Args:
         df (pandas.DataFrame): Dataframe to modify.
@@ -344,9 +344,9 @@ def cap_feature_values(df, feature, cap_value=10, as_cat=False):
         pandas.DataFrame: Dataframe with capped values.
     """
 
-    # Cap at given limit (i.e. 10)
-    cap_n = str(cap_n) + "+" if as_cat else cap_value
-    df.loc[(df[feature] >= cap_n), feature] = cap_value
+    # Cap at given limit (i.e. 10 or 10+)
+    cap = str(cap_value) + "+" if as_cat else cap_value
+    df.loc[(df[feature] >= cap_value), feature] = cap
 
     if as_cat:
         df[feature] = df[feature].astype(str)
@@ -375,7 +375,9 @@ def standardise_dates(
     for feature in date_features:
 
         # Fix years starting with 00 -> 20..
-        df[feature] = df[feature].str.replace(r"00(\d\d)", r"20\1", regex=True)
+        df[feature] = (
+            df[feature].astype(str).str.replace(r"00(\d\d)", r"20\1", regex=True)
+        )
         df[feature] = pd.to_datetime(df[feature], errors="coerce")
 
         df.loc[
@@ -452,12 +454,14 @@ def remove_empty_features(df):
     return df
 
 
-def custom_clean_features(df):
+def custom_clean_features(df, cap_features=False):
     """Custom clean features.
     For instances, standardise values and cap at max value.
 
     Args:
         df (pandas.DataFrame): Dataframe to modify.
+        cap_features (boolean, optional): Whether to cap features at specific cap value,
+        e.g. cap NUMBER_HABITABLE_ROOMS at 10. Legacy code. Defaults to False.
 
     Returns:
         pandas.DataFrame: Dataframe after custom cleaning features.
@@ -471,11 +475,6 @@ def custom_clean_features(df):
         "GLAZED_AREA": clean_GLAZED_AREA,
     }
 
-    cap_value_dict = {
-        "NUMBER_HABITABLE_ROOMS": 10,
-        "NUMBER_HEATED_ROOMS": 10,
-    }
-
     # Custom cleaning by value (B1)
     for feat in df.columns:
         if feat in custom_cleaning_dict.keys():
@@ -486,11 +485,17 @@ def custom_clean_features(df):
     df = clean_EFF_SCORES(df)
     # [Additional cleaning functions here]
 
-    # Cap features
-    for feat in df.columns:
-        if feat in cap_value_dict.keys():
-            cap_value = cap_value_dict[feat]
-            df = cap_feature_values(df, feat, cap_value=cap_value)
+    if cap_features:
+
+        cap_value_dict = {
+            "NUMBER_HABITABLE_ROOMS": 10,
+            "NUMBER_HEATED_ROOMS": 10,
+        }
+
+        # Cap features
+        for feat in df.columns:
+            if feat in cap_value_dict.keys():
+                df = cap_feature_values(df, feat, cap_value=cap_value_dict[feat])
 
     return df
 
@@ -507,9 +512,34 @@ def clean_epc_data(df):
     """
 
     df = remove_empty_features(df)
+
     df = standardise_unknowns(df)
     df = standardise_features(df)
     df = standardise_dates(df)
     df = custom_clean_features(df)
+
+    return df
+
+
+def reformat_postcode(df, postcode_var_name="POSTCODE", white_space="remove"):
+    """Reformat postcode (remove or add empty space) and UPPERCASE..
+
+    Args:
+        df (pd.DataFrame): Dataframe with postcode column.
+        postcode_var_name (str, optional): Variable name for postcode. Defaults to "POSTCODE".
+        white_space (str, optional): Whether to "add" or "remove" white space seperator in postcode. Defaults to "remove".
+
+    Returns:
+        df (pd.DataFrame): Updated dataframe with formatted postcode.
+    """
+
+    if white_space == "remove":
+        df[postcode_var_name] = df[postcode_var_name].str.upper().str.replace(r" ", "")
+    elif white_space == "add":
+        df[postcode_var_name] = df[postcode_var_name].str.upper().map(clean_POSTCODE)
+    else:
+        raise NotImplementedError(
+            "Invalid input for kwarg 'white_space'. Valid values are 'remove' or 'add'."
+        )
 
     return df

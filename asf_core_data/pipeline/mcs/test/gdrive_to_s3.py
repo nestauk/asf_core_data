@@ -22,11 +22,9 @@ bucket_name = base_config.BUCKET_NAME
 
 def drive_to_s3(local_data_dump_dir, s3_data_dump_dir):
     """Pulls MCS data dumps from Google Drive to a local dir and s3.
-
     Inputs:
         local_data_dump_dir (str): local path to store MCS data dumps.
         s3_data_dump_dir (str): path in s3 to store MCS data dumps.
-
     """
     mcs_files = get_mcs_data_dumps_folder(keywords, all_folders)
 

@@ -1,4 +1,3 @@
-# %%
 # File: asf_core_data/pipeline/mcs/process/process_mcs_installers.py
 """
 --- Legacy script ---
@@ -10,7 +9,6 @@ This script allows for processing MCS installer company data.
 To run script, (in activated conda environment) python process_mcs_installers.py -key API KEY
 """
 
-# %%
 
 import argparse
 import pandas as pd
@@ -19,7 +17,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
     get_processed_installations_data,
 )
 
-from asf_core_data.getters.data_getters import s3, load_s3_data, save_to_s3
+from asf_core_data.getters.data_getters import load_s3_data, save_to_s3
 
 from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     mcs_companies_dict,
@@ -30,8 +28,6 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
 )
 
 from asf_core_data.config import base_config
-
-# %%
 
 
 def preprocess_installer_companies(installer_companies, installations_data, api_key):
@@ -114,8 +110,6 @@ def preprocess_installer_companies(installer_companies, installations_data, api_
     return installer_companies_house_data
 
 
-# %%
-
 if __name__ == "__main__":
     # get config file with relevant paramenters
 
@@ -159,10 +153,9 @@ if __name__ == "__main__":
 
     # save preprocessed, geocoded data to s3
     save_to_s3(
-        s3, bucket_name, geocoded_cleaned_installations_data, cleaned_installations_path
+        bucket_name, geocoded_cleaned_installations_data, cleaned_installations_path
     )
     save_to_s3(
-        s3,
         bucket_name,
         geocoded_cleaned_installers_data,
         cleaned_installer_company_path,
