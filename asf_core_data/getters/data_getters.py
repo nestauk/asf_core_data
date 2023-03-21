@@ -159,7 +159,6 @@ def load_data(
             n_samples=n_samples,
         )
     else:
-
         full_path = Path(data_path) / file_path
 
         loaded_data = pd.read_csv(
@@ -229,11 +228,26 @@ def load_s3_data(
     """
 
     if fnmatch(file_name, "*.xlsx"):
-        data = pd.read_excel(
-            os.path.join("s3://" + bucket_name, file_name),
-            sheet_name=None,
-            dtype=dtype,
-        )
+        excel_file = pd.ExcelFile(os.path.join("s3://" + bucket_name, file_name))
+        sheet_names = excel_file.sheet_names
+
+        # if excel file has data in multiple sheets
+        if len(sheet_names) > 1:
+            data = pd.DataFrame()
+            for sheet in sheet_names:
+                aux = pd.read_excel(
+                    os.path.join("s3://" + bucket_name, file_name),
+                    sheet_name=sheet,
+                    dtype=dtype,
+                )
+                data = pd.concat([data, aux])
+                del aux
+        else:  # only one sheet
+            data = pd.read_excel(
+                os.path.join("s3://" + bucket_name, file_name),
+                sheet_name=None,
+                dtype=dtype,
+            )
         if len(data) > 1:
             return data
         else:
