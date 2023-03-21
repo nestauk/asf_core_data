@@ -2,6 +2,7 @@
 Script for pre-processing historical MCS heat pump installer company data.
 - Dropping duplicate instances (if they exist);
 - Renaming columns;
+- Removing instances from test account(s);
 - Joining installation and design variables;
 - Adding certification body information.
 - Adding instances for installers with installations but with info missing from installers table;
@@ -81,6 +82,21 @@ def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFr
     raw_historical_installations[
         "installation_company_mcs_number"
     ] = raw_historical_installations["installation_company_mcs_number"].astype(int)
+
+
+def drop_instances_test_accounts(data: pd.DataFrame, company_name_var) -> pd.DataFrame:
+    """
+    Drops instances from accounts used for testing by MCS and returns updated data.
+
+    Args:
+        data: installations/installers data
+        company_name_var: name of the variable in data containing the company name
+    Returns:
+        Updated installations/installers data
+    """
+    test_accounts = ["Sharma Solar Thermal Limited 1"]
+    data = data[~data[company_name_var].isin(test_accounts)]
+    return data
 
 
 def join_installation_and_design_vars(data: pd.DataFrame):
@@ -549,6 +565,7 @@ def preprocess_historical_installers(
     Pre-processes raw historical installers data by:
     - Dropping duplicate instances (if they exist);
     - Renaming columns;
+    - Removing instances from test account(s);
     - Joining installation and design variables;
     - Adding certification body information;
     - Adding instances for installers with installations but with info missing from installers table;
@@ -574,6 +591,14 @@ def preprocess_historical_installers(
     # Renaming columns
     raw_historical_installers.columns = rename_columns(
         raw_historical_installers.columns
+    )
+
+    # Drop instances from test accounts
+    raw_historical_installations = drop_instances_test_accounts(
+        raw_historical_installations, "installation_company_name"
+    )
+    raw_historical_installers = drop_instances_test_accounts(
+        raw_historical_installers, "company_name"
     )
 
     # Joining installation and design variables
