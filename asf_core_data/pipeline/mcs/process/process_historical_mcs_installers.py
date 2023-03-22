@@ -84,7 +84,9 @@ def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFr
     ] = raw_historical_installations["installation_company_mcs_number"].astype(int)
 
 
-def drop_instances_test_accounts(data: pd.DataFrame, company_name_var) -> pd.DataFrame:
+def drop_instances_test_accounts(
+    data: pd.DataFrame, company_name_var: str
+) -> pd.DataFrame:
     """
     Drops instances from accounts used for testing by MCS and returns updated data.
 
