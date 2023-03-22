@@ -242,6 +242,7 @@ def load_s3_data(
                 )
                 data = pd.concat([data, aux])
                 del aux
+            data.reset_index(drop=True, inplace=True)
         else:  # only one sheet
             data = pd.read_excel(
                 os.path.join("s3://" + bucket_name, file_name),
