@@ -158,6 +158,48 @@ def generate_and_save_mcs(
     print("Saved in S3: " + most_relevant_epc_path)
 
 
+def get_mcs_installations(epc_version="none", refresh=False):
+    """
+    Gets MCS (+ EPC) data. Tries to get the most recent version
+    from S3 if one exists.
+
+    Args:
+        epc_version (str, optional): One of "none", "full", "newest" or "most_relevant".
+            "none" returns just installation data, "full" returns installation data with
+            each property's entire EPC history attached, "newest" selects the EPC
+            corresponding to the most recent inspection and "most_relevant" selects the
+            most recent EPC from before the HP installation if one exists or the earliest EPC
+            from after the HP installation otherwise. Defaults to "none".
+        refresh (bool, optional): If True, skips the S3 check and generates the processed
+            data from raw data. Defaults to False.
+    Returns:
+        DataFrame: installation (+ EPC) data.
+    """
+    if not refresh:
+        bucket = s3.Bucket(bucket_name)
+        folder = "outputs/MCS/"
+        file_list = [
+            ("/" + object.key) for object in bucket.objects.filter(Prefix=folder)
+        ]  # bit of a hack
+        file_prefix = keyword_to_path_dict[epc_version].split("{")[0]
+        matches = [
+            filename
+            for filename in file_list
+            if (re.split("[0-9]", filename)[0] == file_prefix)
+        ]
+        if len(matches) > 0:
+            latest_version = max(matches)
+            print("Loading", latest_version, "from S3")
+            mcs_installations = load_s3_data(
+                bucket_name, latest_version[1:]  # undoing the hack
+            )
+            return mcs_installations
+        else:
+            print("File not found on S3.")
+
+    return mcs_installations
+
+
 ### ---- Legacy functions ----
 # The functions and variables below are legacy functions/variables that are no longer in use.
 installations_raw_s3_path = base_config.INSTALLATIONS_RAW_S3_PATH
@@ -182,7 +224,6 @@ def get_latest_mcs_from_s3():
 
     for file in mcs_files:
         if "installations" in file:
-
             installations = load_s3_data(bucket_name, file)
             if type(installations) == pd.DataFrame:
                 installations_data.append((file, installations))
@@ -220,7 +261,6 @@ def concatenate_save_raw_installations(all_installations_data):
     year and quarter stated in the filename, and flags if file columns differ.
     """
     for key_and_df in all_installations_data:
-
         year_quarter_search = re.search(r"20[0-9][0-9]_q[1-4]", key_and_df[0])
         if year_quarter_search:  # ignore mcs_installations_2021.xlsx
             year_quarter = year_quarter_search[0]  # get match
@@ -323,49 +363,6 @@ def generate_processed_mcs_installations(
             processed_mcs = joined_mcs_epc
 
     return processed_mcs
-
-
-def get_mcs_installations(epc_version="none", refresh=False):
-    """
-    --- Legacy function ---
-    Gets MCS (+ EPC) data. Tries to get the most recent version
-    from S3 if one exists.
-
-    Args:
-        epc_version (str, optional): One of "none", "full", "newest" or "most_relevant".
-            "none" returns just installation data, "full" returns installation data with
-            each property's entire EPC history attached, "newest" selects the EPC
-            corresponding to the most recent inspection and "most_relevant" selects the
-            most recent EPC from before the HP installation if one exists or the earliest EPC
-            from after the HP installation otherwise. Defaults to "none".
-        refresh (bool, optional): If True, skips the S3 check and generates the processed
-            data from raw data. Defaults to False.
-    Returns:
-        DataFrame: installation (+ EPC) data.
-    """
-    if not refresh:
-        bucket = s3.Bucket(bucket_name)
-        folder = "outputs/MCS/"
-        file_list = [
-            ("/" + object.key) for object in bucket.objects.filter(Prefix=folder)
-        ]  # bit of a hack
-        file_prefix = keyword_to_path_dict[epc_version].split("{")[0]
-        matches = [
-            filename
-            for filename in file_list
-            if (re.split("[0-9]", filename)[0] == file_prefix)
-        ]
-        if len(matches) > 0:
-            latest_version = max(matches)
-            print("Loading", latest_version, "from S3")
-            mcs_installations = load_s3_data(
-                bucket_name, latest_version[1:]  # undoing the hack
-            )
-            return mcs_installations
-        else:
-            print("File not found on S3.")
-
-    return mcs_installations
 
 
 if __name__ == "__main__":
