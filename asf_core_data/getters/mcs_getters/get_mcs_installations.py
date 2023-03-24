@@ -111,3 +111,25 @@ def get_raw_historical_installations_data(
         ),
         dtype=base_config.raw_historical_installations_dtypes,
     )
+
+
+def get_processed_installations_data(
+    processed_installations_file_name: str,
+) -> pd.DataFrame:
+    """
+    Get a specified version of the processed MCS installation data (both domestic and non-domestic)
+    from S3 (either just MCS or MCS merged with EPC).
+
+    Args:
+        processed_installations_file_name: name of processed file
+    Returns:
+        Processed installations data (either merged or not merged with EPC)
+    """
+
+    return load_s3_data(
+        base_config.BUCKET_NAME,
+        os.path.join(
+            base_config.MCS_PROCESSED_FILES_PATH,
+            processed_installations_file_name,
+        ),
+    )
