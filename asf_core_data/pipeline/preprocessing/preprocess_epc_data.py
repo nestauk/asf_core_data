@@ -13,6 +13,7 @@ from asf_core_data.pipeline.preprocessing import data_cleaning, feature_engineer
 from asf_core_data.getters.epc import epc_data, data_batches
 from asf_core_data.config import base_config
 from asf_core_data import Path
+from argparse import ArgumentParser
 
 # ----------------------------------------------------------------------------------
 
@@ -94,7 +95,6 @@ def preprocess_data(
     processing_steps.append(("After adding features", df.shape[0], df.shape[1]))
 
     if save_data is not None:
-
         file_path = data_batches.get_batch_path(
             data_path / base_config.PREPROC_EPC_DATA_PATH,
             data_path=data_path,
@@ -120,7 +120,6 @@ def preprocess_data(
     # --------------------------------
 
     if remove_duplicates:
-
         df = epc_data.filter_by_year(
             df, None, building_identifier="UPRN", selection="latest entry"
         )
@@ -128,7 +127,6 @@ def preprocess_data(
         processing_steps.append(("After removing duplicates", df.shape[0], df.shape[1]))
 
         if save_data is not None:
-
             file_path = data_batches.get_batch_path(
                 data_path / base_config.PREPROC_EPC_DATA_DEDUPL_PATH,
                 data_path=data_path,
@@ -154,7 +152,6 @@ def preprocess_data(
     # --------------------------------
 
     if verbose:
-
         for step in processing_steps:
             print("{}:\t{} samples, {} features".format(step[0], step[1], step[2]))
 
@@ -211,14 +208,12 @@ def load_and_preprocess_epc_data(
         raw_epc_exists = (Path(data_path) / raw_data_path).is_file()
 
     if n_samples is not None:
-
         save_data = None
         logging.warning(
             "You're not loading all samples so the processed data will not be saved!"
         )
 
     if save_data is not None and not os.path.isabs(save_data):
-
         save_data = data_path / save_data
 
         if subset != "GB":
@@ -249,7 +244,6 @@ def load_and_preprocess_epc_data(
 
     # Option a): Load raw EPC data (concatenated but not actually processed yet)
     if (raw_epc_exists and not reload_raw) or str(data_path) == "S3":
-
         # Load raw EPC from outputs folder for given batch (England/Wales/Scotland combined in EPC_GB_raw.csv)
         epc_df = epc_data.load_preprocessed_epc_data(
             data_path=data_path,
@@ -293,14 +287,28 @@ def load_and_preprocess_epc_data(
 
 
 # ---------------------------------------------------------------------------------
+def create_argparser() -> ArgumentParser:
+    """
+    Creates an argument parser that can receive the following arguments:
+    - path_to_data: either local path to where data is stored or "S3"
+    """
+    parser = ArgumentParser()
+
+    parser.add_argument(
+        "--path_to_data",
+        help="Path to data",
+        default="S3",
+        type=str,
+    )
+
+    return parser
 
 
-def main():
-    """Main function: Loads and preprocessed EPC data with default settings.
-    Don't forget to set the local data directory."""
+if __name__ == "__main__":
+    parser = create_argparser()
+    args = parser.parse_args()
 
-    # Update local data directory
-    LOCAL_DATA_DIR = "path/to/local_data_dir/"
+    LOCAL_DATA_DIR = args.path_to_data
 
     start_time = time.time()
 
@@ -311,8 +319,3 @@ def main():
     runtime = round((end_time - start_time) / 60)
 
     print("\nLoading and preprocessing the EPC data took {} minutes.".format(runtime))
-
-
-if __name__ == "__main__":
-    # Execute only if run as a script
-    main()
