@@ -57,6 +57,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     from_list_to_dictionary,
     map_position_of_subset_items,
     position_to_value,
+    drop_instances_test_accounts,
 )
 
 
@@ -73,6 +74,8 @@ def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFr
         raw_historical_installations.columns
     )
 
+    raw_historical_installations.drop_duplicates(inplace=True)
+
     raw_historical_installations[
         ["certification_body", "installation_company_mcs_number"]
     ] = raw_historical_installations["installation_company_mcs_number"].str.split(
@@ -82,23 +85,6 @@ def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFr
     raw_historical_installations[
         "installation_company_mcs_number"
     ] = raw_historical_installations["installation_company_mcs_number"].astype(int)
-
-
-def drop_instances_test_accounts(
-    data: pd.DataFrame, company_name_var: str
-) -> pd.DataFrame:
-    """
-    Drops instances from accounts used for testing by MCS and returns updated data.
-
-    Args:
-        data: installations/installers data
-        company_name_var: name of the variable in data containing the company name
-    Returns:
-        Updated installations/installers data
-    """
-    test_accounts = ["Sharma Solar Thermal Limited 1"]
-    data = data[~data[company_name_var].isin(test_accounts)]
-    return data
 
 
 def join_installation_and_design_vars(data: pd.DataFrame):
