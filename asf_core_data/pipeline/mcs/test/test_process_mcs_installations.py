@@ -11,6 +11,11 @@ from asf_core_data.pipeline.mcs.process.process_mcs_installations import (
 from asf_core_data.getters.mcs_getters.get_mcs_installations import (
     get_most_recent_raw_historical_installations_data,
 )
+from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
+    drop_instances_test_accounts,
+)
+
+from asf_core_data.config import base_config
 
 processed_installations = get_processed_installations_data()
 raw_installations = get_most_recent_raw_historical_installations_data()
@@ -21,42 +26,20 @@ def test_raw_columns_exist():
     Checks if raw columns are as expected.
     """
 
-    expected_cols = {
-        "Version Number",
-        "Commissioning Date",
-        "Address Line 1",
-        "Address Line 2",
-        "Address Line 3",
-        "County",
-        "Postcode",
-        "Local Authority",
-        "Total Installed Capacity",
-        "Green Deal Installation?",
-        "Installation Company Name",
-        "Products",
-        "Technology Type",
-        "Renewable System Design",
-        "Annual Space Heating Demand",
-        "Annual Water Heating Demand",
-        "Annual Space Heating Supplied",
-        "Annual Water Heating Supplied",
-        "Installation Requires Metering?",
-        "RHI Metering Status",
-        "RHI Metering Not Ready Reason",
-        "Number of MCS Certificates",
-        "Heating System Type",
-        "Fuel Type",
-        "Overall Cost",
-        "Installation Type",
-        "Installation Company MCS Number",
-    }
+    expected_cols = base_config.historical_installations_rename_cols_dict.keys()
+
     existing_cols = raw_installations.columns
 
-    assert len(expected_cols.intersection(existing_cols)) == len(expected_cols)
+    for col in expected_cols:
+        if col in ["Installation Type", " Installation Type"]:
+            assert ("Installation Type" in existing_cols) or (
+                " Installation Type" in existing_cols
+            )
+        else:
+            assert col in existing_cols
 
-    assert len([col for col in existing_cols if col not in expected_cols]) == 0
-
-    assert len([col for col in expected_cols if col not in existing_cols]) == 0
+    for col in existing_cols:
+        assert col in expected_cols
 
 
 def test_company_unique_id_is_added():
@@ -104,16 +87,21 @@ def test_regex_extraction_works():
 
 def test_same_lines_before_after():
     """
-    Checks if raw and processed datasets have the same number of lines.
+    Checks if raw and processed datasets have the same number of lines
+    (discounting the lines corresponding to test accounts and duplicate lines).
     """
-    assert len(raw_installations) == len(processed_installations)
+
+    assert len(
+        drop_instances_test_accounts(
+            raw_installations, "Installation Company Name"
+        ).drop_duplicates()
+    ) == len(processed_installations)
 
 
 def test_no_duplicate_lines():
     """
-    Checks that there are no duplicate lines in either raw or processed datasets
+    Checks that there are no duplicate lines in the processed dataset.
     """
-    assert len(raw_installations.drop_duplicates()) == len(raw_installations)
     assert len(processed_installations.drop_duplicates()) == len(
         processed_installations
     )
