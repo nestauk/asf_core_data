@@ -51,7 +51,6 @@ def get_imd_data(
     country_name = country[0].upper() + country[1:] if country != "gb" else "GB"
 
     if country == "gb":
-
         england_imd = get_imd_data(
             "England",
             data_path=data_path,
@@ -107,7 +106,7 @@ def merge_imd_with_other_set(imd_df, other_df, postcode_label="Postcode"):
     imd_df["Postcode"] = imd_df["Postcode"].str.replace(r" ", "")
     other_df["Postcode"] = other_df["Postcode"].str.replace(r" ", "")
 
-    merged_df = pd.merge(other_df, imd_df, on=["Postcode"])
+    merged_df = pd.merge(other_df, imd_df, on=["Postcode"], how="left")
 
     merged_df = merged_df.rename(columns={"Postcode": postcode_label})
 

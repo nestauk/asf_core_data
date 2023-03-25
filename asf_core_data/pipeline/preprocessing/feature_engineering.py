@@ -122,7 +122,6 @@ def get_new_epc_rating_features(df):
     df["ENERGY_RATING_CAT"] = df.CURRENT_ENERGY_RATING.map(EPC_cat_dict)
 
     if "POTENTIAL_ENERGY_RATING" in df.columns:
-
         # Numerical difference between current and potential energy rating (A-G)
         df["DIFF_POT_ENERGY_RATING"] = (
             df.POTENTIAL_ENERGY_RATING.map(rating_dict) - df["CURR_ENERGY_RATING_NUM"]
@@ -215,7 +214,6 @@ def get_heating_features(df, fine_grained_HP_types=False):
 
     # Get specific and general heating category for each entry
     for heating in heating_types:
-
         # Set default value
         system_type = "unknown"
         source_type = "unknown"
@@ -224,7 +222,6 @@ def get_heating_features(df, fine_grained_HP_types=False):
 
         # If heating value exists
         if not (pd.isnull(heating) and isinstance(heating, float)):
-
             # Lowercase
             heating = heating.lower()
 
@@ -288,7 +285,6 @@ def get_heating_features(df, fine_grained_HP_types=False):
             # --------------------------
 
             elif any(other_heating_system):
-
                 # Set heating system dict
                 heating_system_dict = {
                     "boiler and radiator": "boiler and radiator",
@@ -379,7 +375,7 @@ def get_postcode_coordinates(df, postcode_field_name="POSTCODE"):
     df = data_cleaning.reformat_postcode(df, white_space="remove")
 
     # Merge with location data
-    df = pd.merge(df, postcode_coordinates_df, on=postcode_field_name, how="outer")
+    df = pd.merge(df, postcode_coordinates_df, on=postcode_field_name, how="left")
 
     return df
 
