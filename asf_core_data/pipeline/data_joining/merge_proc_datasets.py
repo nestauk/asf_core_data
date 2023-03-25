@@ -21,7 +21,8 @@ from asf_core_data.getters.epc import data_batches
 from asf_core_data.pipeline.data_joining import install_date_computation
 from asf_core_data import load_preprocessed_epc_data
 from asf_core_data.pipeline.preprocessing import data_cleaning
-
+from argparse import ArgumentParser
+from datetime import date
 import pandas as pd
 import numpy as np
 
@@ -32,7 +33,7 @@ def add_mcs_installations_data(
     epc_df,
     usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
     bucket_name=base_config.BUCKET_NAME,
-    verbose=False,
+    verbose=True,
 ):
     """Add MCS installations data to EPC data.
 
@@ -155,7 +156,7 @@ def add_mcs_installer_data(df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION)
 
     newest_hist_inst_batch = data_batches.get_latest_hist_installers()
 
-    # # Load MCS
+    # Load MCS
     mcs_instllr_data = data_getters.load_s3_data(
         base_config.BUCKET_NAME, newest_hist_inst_batch, usecols=usecols
     )
@@ -176,9 +177,8 @@ def merging_pipeline(
     epc_usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
     mcs_installations_usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
     mcs_installers_usecols=base_config.MCS_INSTALLER_FEAT_SELECTION,
-    save=True,
+    path_to_data="S3",
 ):
-
     """Merge EPC and MCS installation and installer data to create a complete MCS/EPC dataset.
 
     The output is a complete dataframe with all EPC records (dedupl) and MCS installations and installers.
@@ -191,17 +191,21 @@ def merging_pipeline(
     - Reformat postcode
     - Save output to S3
 
-    epc_usecols (list, optional): Which EPC features to include. Defaults to base_config.EPC_PREPROC_FEAT_SELECTION.
-    mcs_installations_usecols (list, optional): Which MCS installation features to include.
-        Defaults to base_config.MCS_INSTALLATIONS_FEAT_SELECTION.
-    mcs_installers_usecols (list, optional): Which MCS installer features to include.
-        Defaults to base_config.MCS_INSTALLER_FEAT_SELECTION.
-    save (bool, optional): Where to save final output. Defaults to True.
+    Args:
+        epc_usecols (list, optional): Which EPC features to include. Defaults to base_config.EPC_PREPROC_FEAT_SELECTION.
+        mcs_installations_usecols (list, optional): Which MCS installation features to include.
+            Defaults to base_config.MCS_INSTALLATIONS_FEAT_SELECTION.
+        mcs_installers_usecols (list, optional): Which MCS installer features to include.
+            Defaults to base_config.MCS_INSTALLER_FEAT_SELECTION.
+        data_path: local data path (defaults to "S3" but can be the local folder where ASF data is stored)
     """
 
     # Load the processed EPC data (not deduplicated)
     prep_epc = load_preprocessed_epc_data(
-        data_path="S3", version="preprocessed", batch="newest", usecols=epc_usecols
+        data_path=path_to_data,
+        version="preprocessed",
+        batch="newest",
+        usecols=epc_usecols,
     )
 
     # Add more precise estimations for heat pump installation dates via MCS data
@@ -222,16 +226,36 @@ def merging_pipeline(
         epc_mcs_complete, postcode_var_name="POSTCODE", white_space="remove"
     )
 
-    if save:
-        # Save final merged dataset
-        data_getters.save_to_s3(
-            base_config.BUCKET_NAME,
-            epc_mcs_complete,
-            base_config.EPC_MCS_MERGED_OUT_PATH,
-        )
+    today = date.today().strftime("%y%m%d")
 
-    return epc_mcs_complete
+    # Save final merged dataset
+    data_getters.save_to_s3(
+        base_config.BUCKET_NAME,
+        epc_mcs_complete,
+        base_config.EPC_MCS_MERGED_OUT_PATH.format(today),
+    )
+
+
+def create_argparser() -> ArgumentParser:
+    """
+    Creates an argument parser that can receive the following arguments:
+    - path_to_data: either local path to where data is stored or "S3"
+    """
+    parser = ArgumentParser()
+
+    parser.add_argument(
+        "--path_to_data",
+        help="Path to data",
+        default="S3",
+        type=str,
+    )
+
+    return parser
 
 
 if __name__ == "__main__":
-    merging_pipeline()
+    parser = create_argparser()
+    args = parser.parse_args()
+
+    path_to_data = args.path_to_data
+    merging_pipeline(path_to_data=path_to_data)
