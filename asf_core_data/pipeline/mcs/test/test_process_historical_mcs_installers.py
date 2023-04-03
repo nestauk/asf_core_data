@@ -2,7 +2,6 @@
 Script to test the data processing pipeline for raw historical MCS installers data.
 """
 
-import pytest
 import pandas as pd
 from datetime import datetime
 import os
