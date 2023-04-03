@@ -228,29 +228,21 @@ def load_s3_data(
     """
 
     if fnmatch(file_name, "*.xlsx"):
-        excel_file = pd.ExcelFile(os.path.join("s3://" + bucket_name, file_name))
-        sheet_names = excel_file.sheet_names
-
-        # if excel file has data in multiple sheets
-        if len(sheet_names) > 1:
-            data = pd.DataFrame()
-            for sheet in sheet_names:
-                aux = pd.read_excel(
-                    os.path.join("s3://" + bucket_name, file_name),
-                    sheet_name=sheet,
-                    dtype=dtype,
-                )
-                data = pd.concat([data, aux])
-                del aux
-            data.reset_index(drop=True, inplace=True)
-        else:  # only one sheet
-            data = pd.read_excel(
-                os.path.join("s3://" + bucket_name, file_name),
-                sheet_name=None,
-                dtype=dtype,
-            )
+        data = pd.read_excel(
+            os.path.join("s3://" + bucket_name, file_name),
+            sheet_name=None,
+            dtype=dtype,
+        )
         if len(data) > 1:
-            return data
+            # if excel has multiple sheets it will be loaded as a dictionary
+            # where keys are the sheet names
+            if isinstance(data, dict) and (len(data.keys()) > 1):
+                return pd.concat(
+                    data,
+                    ignore_index=True,
+                )
+            else:
+                return data
         else:
             return data[list(data.keys())[0]]
     elif fnmatch(file_name, "*.csv"):
