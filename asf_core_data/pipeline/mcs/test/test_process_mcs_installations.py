@@ -27,16 +27,10 @@ def test_raw_columns_exist():
     """
 
     expected_cols = base_config.historical_installations_rename_cols_dict.keys()
-
-    existing_cols = raw_installations.columns
+    existing_cols = [col.strip() for col in raw_installations.columns]
 
     for col in expected_cols:
-        if col in ["Installation Type", " Installation Type"]:
-            assert ("Installation Type" in existing_cols) or (
-                " Installation Type" in existing_cols
-            )
-        else:
-            assert col in existing_cols
+        assert col in existing_cols
 
     for col in existing_cols:
         assert col in expected_cols
