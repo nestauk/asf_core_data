@@ -33,7 +33,7 @@ def add_mcs_installations_data(
     epc_df,
     usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
     bucket_name=base_config.BUCKET_NAME,
-    verbose=True,
+    verbose=False,
 ):
     """Add MCS installations data to EPC data.
 
@@ -46,7 +46,7 @@ def add_mcs_installations_data(
         epc_df (pd.DataFrame): Processed EPC dataframe.
         usecols (list, optional): MCS features to use. Defaults to base_config.BASIC_MCS_FIELDS.
         bucket_name (str, optional): Bucket name (from where to load from). Defaults to base_config.BUCKET_NAME.
-        verbose (bool, optional): Print shape of dataframes as they are merged.
+        verbose (bool, optional): Print shape of dataframes as they are merged (defaults to False).
 
     Returns:
         pd.DataFrame: Merged EPC and MCS installations dataframe.
@@ -178,6 +178,7 @@ def merging_pipeline(
     mcs_installations_usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
     mcs_installers_usecols=base_config.MCS_INSTALLER_FEAT_SELECTION,
     path_to_data="S3",
+    verbose=False,
 ):
     """Merge EPC and MCS installation and installer data to create a complete MCS/EPC dataset.
 
@@ -198,6 +199,7 @@ def merging_pipeline(
         mcs_installers_usecols (list, optional): Which MCS installer features to include.
             Defaults to base_config.MCS_INSTALLER_FEAT_SELECTION.
         data_path: local data path (defaults to "S3" but can be the local folder where ASF data is stored)
+        verbose (bool, optional): Print shape of dataframes as they are merged (defaults to False).
     """
 
     # Load the processed EPC data (not deduplicated)
@@ -213,7 +215,7 @@ def merging_pipeline(
 
     # Merge EPC with MCS installations
     epc_mcs_insts = add_mcs_installations_data(
-        epc_with_MCS_dates, usecols=mcs_installations_usecols
+        epc_with_MCS_dates, usecols=mcs_installations_usecols, verbose=verbose
     )
 
     # Merge EPC/MCS with MCS installers
@@ -250,6 +252,13 @@ def create_argparser() -> ArgumentParser:
         type=str,
     )
 
+    parser.add_argument(
+        "--verbose",
+        help="Verbose",
+        default=False,
+        type=bool,
+    )
+
     return parser
 
 
@@ -257,4 +266,4 @@ if __name__ == "__main__":
     parser = create_argparser()
     args = parser.parse_args()
 
-    merging_pipeline(path_to_data=args.path_to_data)
+    merging_pipeline(path_to_data=args.path_to_data, verbose=args.verbose)
