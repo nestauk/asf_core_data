@@ -257,5 +257,4 @@ if __name__ == "__main__":
     parser = create_argparser()
     args = parser.parse_args()
 
-    path_to_data = args.path_to_data
-    merging_pipeline(path_to_data=path_to_data)
+    merging_pipeline(path_to_data=args.path_to_data)
