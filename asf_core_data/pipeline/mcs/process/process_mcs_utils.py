@@ -235,8 +235,8 @@ def drop_instances_test_accounts(
     Returns:
         Updated installations/installers data
     """
-    test_accounts = ["Sharma Solar Thermal Limited 1"]
-    data = data[~data[company_name_var].isin(test_accounts)]
+    data = data[data[company_name_var] != "Sharma Solar Thermal Limited 1"]
+    data.reset_index(inplace=True, drop=True)
     return data
 
 
