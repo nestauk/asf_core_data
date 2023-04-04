@@ -21,9 +21,11 @@ from asf_core_data.getters.epc import data_batches
 from asf_core_data.pipeline.data_joining import install_date_computation
 from asf_core_data import load_preprocessed_epc_data
 from asf_core_data.pipeline.preprocessing import data_cleaning
-
+from argparse import ArgumentParser
+from datetime import date
 import pandas as pd
 import numpy as np
+from asf_core_data.pipeline.preprocessing import feature_engineering
 
 # ---------------------------------------------------------------------------------
 
@@ -45,12 +47,14 @@ def add_mcs_installations_data(
         epc_df (pd.DataFrame): Processed EPC dataframe.
         usecols (list, optional): MCS features to use. Defaults to base_config.BASIC_MCS_FIELDS.
         bucket_name (str, optional): Bucket name (from where to load from). Defaults to base_config.BUCKET_NAME.
-        verbose (bool, optional): Print shape of dataframes as they are merged.
+        verbose (bool, optional): Print shape of dataframes as they are merged (defaults to False).
 
     Returns:
         pd.DataFrame: Merged EPC and MCS installations dataframe.
     """
 
+    # We get the latest MCS-EPC joined dataset because we need the UPRN from EPC
+    # but the only remaining columns we get are MCS columns
     newest_joined_batch = data_batches.get_latest_mcs_epc_joined_batch()
 
     # # Load MCS
@@ -155,7 +159,7 @@ def add_mcs_installer_data(df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION)
 
     newest_hist_inst_batch = data_batches.get_latest_hist_installers()
 
-    # # Load MCS
+    # Load MCS
     mcs_instllr_data = data_getters.load_s3_data(
         base_config.BUCKET_NAME, newest_hist_inst_batch, usecols=usecols
     )
@@ -176,9 +180,9 @@ def merging_pipeline(
     epc_usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
     mcs_installations_usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
     mcs_installers_usecols=base_config.MCS_INSTALLER_FEAT_SELECTION,
-    save=True,
+    path_to_data="S3",
+    verbose=False,
 ):
-
     """Merge EPC and MCS installation and installer data to create a complete MCS/EPC dataset.
 
     The output is a complete dataframe with all EPC records (dedupl) and MCS installations and installers.
@@ -191,25 +195,38 @@ def merging_pipeline(
     - Reformat postcode
     - Save output to S3
 
-    epc_usecols (list, optional): Which EPC features to include. Defaults to base_config.EPC_PREPROC_FEAT_SELECTION.
-    mcs_installations_usecols (list, optional): Which MCS installation features to include.
-        Defaults to base_config.MCS_INSTALLATIONS_FEAT_SELECTION.
-    mcs_installers_usecols (list, optional): Which MCS installer features to include.
-        Defaults to base_config.MCS_INSTALLER_FEAT_SELECTION.
-    save (bool, optional): Where to save final output. Defaults to True.
+    Args:
+        epc_usecols (list, optional): Which EPC features to include. Defaults to base_config.EPC_PREPROC_FEAT_SELECTION.
+        mcs_installations_usecols (list, optional): Which MCS installation features to include.
+            Defaults to base_config.MCS_INSTALLATIONS_FEAT_SELECTION.
+        mcs_installers_usecols (list, optional): Which MCS installer features to include.
+            Defaults to base_config.MCS_INSTALLER_FEAT_SELECTION.
+        data_path: local data path (defaults to "S3" but can be the local folder where ASF data is stored)
+        verbose (bool, optional): Print shape of dataframes as they are merged (defaults to False).
     """
 
     # Load the processed EPC data (not deduplicated)
     prep_epc = load_preprocessed_epc_data(
-        data_path="S3", version="preprocessed", batch="newest", usecols=epc_usecols
+        data_path=path_to_data,
+        version="preprocessed",
+        batch="newest",
+        usecols=epc_usecols,
+        verbose=verbose,
+    )
+
+    # Add coordinates for EPC data
+    prep_epc = feature_engineering.get_postcode_coordinates(
+        prep_epc, postcode_field_name="POSTCODE"
     )
 
     # Add more precise estimations for heat pump installation dates via MCS data
-    epc_with_MCS_dates = install_date_computation.compute_hp_install_date(prep_epc)
+    epc_with_MCS_dates = install_date_computation.compute_hp_install_date(
+        prep_epc, verbose=verbose
+    )
 
     # Merge EPC with MCS installations
     epc_mcs_insts = add_mcs_installations_data(
-        epc_with_MCS_dates, usecols=mcs_installations_usecols
+        epc_with_MCS_dates, usecols=mcs_installations_usecols, verbose=verbose
     )
 
     # Merge EPC/MCS with MCS installers
@@ -217,21 +234,43 @@ def merging_pipeline(
         epc_mcs_insts, usecols=mcs_installers_usecols
     )
 
-    # Reformat postcode field to include no space
-    epc_mcs_complete = data_cleaning.reformat_postcode(
-        epc_mcs_complete, postcode_var_name="POSTCODE", white_space="remove"
+    today = date.today().strftime("%y%m%d")
+
+    # Save final merged dataset
+    data_getters.save_to_s3(
+        base_config.BUCKET_NAME,
+        epc_mcs_complete,
+        base_config.EPC_MCS_MERGED_OUT_PATH.format(today),
     )
 
-    if save:
-        # Save final merged dataset
-        data_getters.save_to_s3(
-            base_config.BUCKET_NAME,
-            epc_mcs_complete,
-            base_config.EPC_MCS_MERGED_OUT_PATH,
-        )
 
-    return epc_mcs_complete
+def create_argparser() -> ArgumentParser:
+    """
+    Creates an argument parser that can receive the following arguments:
+    - path_to_data: either local path to where data is stored or "S3"
+    - verbose: prints information while the pipeline is running if True
+    """
+    parser = ArgumentParser()
+
+    parser.add_argument(
+        "--path_to_data",
+        help="Path to data",
+        default="S3",
+        type=str,
+    )
+
+    parser.add_argument(
+        "--verbose",
+        help="Verbose",
+        default=False,
+        type=bool,
+    )
+
+    return parser
 
 
 if __name__ == "__main__":
-    merging_pipeline()
+    parser = create_argparser()
+    args = parser.parse_args()
+
+    merging_pipeline(path_to_data=args.path_to_data, verbose=args.verbose)

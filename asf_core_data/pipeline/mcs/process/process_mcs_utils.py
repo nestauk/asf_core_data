@@ -223,6 +223,23 @@ def geocode_postcode(data: pd.DataFrame, geodata: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
+def drop_instances_test_accounts(
+    data: pd.DataFrame, company_name_var: str
+) -> pd.DataFrame:
+    """
+    Drops instances from accounts used for testing by MCS and returns updated data.
+
+    Args:
+        data: installations/installers data
+        company_name_var: name of the variable in data containing the company name
+    Returns:
+        Updated installations/installers data
+    """
+    data = data[data[company_name_var] != "Sharma Solar Thermal Limited 1"]
+    data.reset_index(inplace=True, drop=True)
+    return data
+
+
 def remove_punctuation(address):
     """
     Remove all unwanted punctuation from an address.

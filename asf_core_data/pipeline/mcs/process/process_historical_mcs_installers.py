@@ -2,6 +2,7 @@
 Script for pre-processing historical MCS heat pump installer company data.
 - Dropping duplicate instances (if they exist);
 - Renaming columns;
+- Removing instances from test account(s);
 - Joining installation and design variables;
 - Adding certification body information.
 - Adding instances for installers with installations but with info missing from installers table;
@@ -56,6 +57,7 @@ from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
     from_list_to_dictionary,
     map_position_of_subset_items,
     position_to_value,
+    drop_instances_test_accounts,
 )
 
 
@@ -71,6 +73,8 @@ def basic_preprocessing_of_installations(raw_historical_installations: pd.DataFr
     raw_historical_installations.columns = rename_columns(
         raw_historical_installations.columns
     )
+
+    raw_historical_installations.drop_duplicates(inplace=True)
 
     raw_historical_installations[
         ["certification_body", "installation_company_mcs_number"]
@@ -549,6 +553,7 @@ def preprocess_historical_installers(
     Pre-processes raw historical installers data by:
     - Dropping duplicate instances (if they exist);
     - Renaming columns;
+    - Removing instances from test account(s);
     - Joining installation and design variables;
     - Adding certification body information;
     - Adding instances for installers with installations but with info missing from installers table;
@@ -574,6 +579,14 @@ def preprocess_historical_installers(
     # Renaming columns
     raw_historical_installers.columns = rename_columns(
         raw_historical_installers.columns
+    )
+
+    # Drop instances from test accounts
+    raw_historical_installations = drop_instances_test_accounts(
+        raw_historical_installations, "installation_company_name"
+    )
+    raw_historical_installers = drop_instances_test_accounts(
+        raw_historical_installers, "company_name"
     )
 
     # Joining installation and design variables

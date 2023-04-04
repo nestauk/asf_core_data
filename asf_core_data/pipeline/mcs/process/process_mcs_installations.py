@@ -12,6 +12,9 @@ from asf_core_data.getters.mcs_getters.get_mcs_installers import (
     get_most_recent_processed_historical_installers_data,
 )
 from asf_core_data.config import base_config
+from asf_core_data.pipeline.mcs.process.process_mcs_utils import (
+    drop_instances_test_accounts,
+)
 
 # --- Legacy imports
 # from asf_core_data.getters.mcs_getters.get_mcs_installations import get_raw_installations_data
@@ -150,6 +153,12 @@ def get_processed_installations_data():
     installations_data = installations_data.rename(
         columns=base_config.historical_installations_rename_cols_dict
     )
+
+    installations_data = drop_instances_test_accounts(
+        installations_data, "installer_name"
+    )
+
+    installations_data.drop_duplicates(inplace=True)
 
     installations_data = add_hp_features(installations_data)
     installations_data = mask_outliers(installations_data)

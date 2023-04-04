@@ -159,7 +159,6 @@ def load_data(
             n_samples=n_samples,
         )
     else:
-
         full_path = Path(data_path) / file_path
 
         loaded_data = pd.read_csv(
@@ -235,7 +234,15 @@ def load_s3_data(
             dtype=dtype,
         )
         if len(data) > 1:
-            return data
+            # if excel has multiple sheets it will be loaded as a dictionary
+            # where keys are the sheet names
+            if isinstance(data, dict) and (len(data.keys()) > 1):
+                return pd.concat(
+                    data,
+                    ignore_index=True,
+                )
+            else:
+                return data
         else:
             return data[list(data.keys())[0]]
     elif fnmatch(file_name, "*.csv"):

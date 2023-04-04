@@ -123,7 +123,7 @@ EPC_FEAT_SELECTION = [
     "GLAZED_AREA",
     "GLAZED_TYPE",
     "PHOTO_SUPPLY",
-    "NUMBER_HABITABLE_ROOMS",
+    "NUMBER_HEATED_ROOMS",
     "SOLAR_WATER_HEATING_FLAG",
     "LMK_KEY",
     "WINDOWS_DESCRIPTION",
@@ -572,6 +572,7 @@ MCS_EPC_CHARACTERISTIC_FIELDS = [
     "PROPERTY_TYPE",
     "BUILT_FORM",
     "NUMBER_HABITABLE_ROOMS",
+    "NUMBER_HEATED_ROOMS",
     "CONSTRUCTION_AGE_BAND",
     "TOTAL_FLOOR_AREA",
     "LIGHTING_ENERGY_EFF",
@@ -604,7 +605,7 @@ INSTALLATIONS_RAW_S3_PATH = "inputs/MCS/mcs_installations.csv"
 INSTALLATIONS_RAW_LOCAL_PATH = "/inputs/data/mcs/installations"
 RAW_DATA_S3_FOLDER = "inputs/MCS/latest_raw_data"
 
-EPC_MCS_MERGED_OUT_PATH = "/outputs/MCS/merged_epc_mcs_installations_installers.csv"
+EPC_MCS_MERGED_OUT_PATH = "/outputs/gold/merged_epc_mcs_installations_installers_{}.csv"
 
 MCS_INSTALLATIONS_FEAT_SELECTION = [
     "UPRN",
@@ -889,3 +890,5 @@ preprocessed_historical_installers_date_cols = [
     "solar_assisted_hp_start_date",
     "solar_assisted_hp_end_date",
 ]
+
+MCS_PROCESSED_FILES_PATH = "/outputs/MCS/"
