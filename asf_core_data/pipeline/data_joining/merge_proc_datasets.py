@@ -25,6 +25,7 @@ from argparse import ArgumentParser
 from datetime import date
 import pandas as pd
 import numpy as np
+from asf_core_data.pipeline.preprocessing import feature_engineering
 
 # ---------------------------------------------------------------------------------
 
@@ -52,6 +53,8 @@ def add_mcs_installations_data(
         pd.DataFrame: Merged EPC and MCS installations dataframe.
     """
 
+    # We get the latest MCS-EPC joined dataset because we need the UPRN from EPC
+    # but the only remaining columns we get are MCS columns
     newest_joined_batch = data_batches.get_latest_mcs_epc_joined_batch()
 
     # # Load MCS
@@ -208,10 +211,18 @@ def merging_pipeline(
         version="preprocessed",
         batch="newest",
         usecols=epc_usecols,
+        verbose=verbose,
+    )
+
+    # Add coordinates for EPC data
+    prep_epc = feature_engineering.get_postcode_coordinates(
+        prep_epc, postcode_field_name="POSTCODE"
     )
 
     # Add more precise estimations for heat pump installation dates via MCS data
-    epc_with_MCS_dates = install_date_computation.compute_hp_install_date(prep_epc)
+    epc_with_MCS_dates = install_date_computation.compute_hp_install_date(
+        prep_epc, verbose=verbose
+    )
 
     # Merge EPC with MCS installations
     epc_mcs_insts = add_mcs_installations_data(
@@ -221,11 +232,6 @@ def merging_pipeline(
     # Merge EPC/MCS with MCS installers
     epc_mcs_complete = add_mcs_installer_data(
         epc_mcs_insts, usecols=mcs_installers_usecols
-    )
-
-    # Reformat postcode field to include no space
-    epc_mcs_complete = data_cleaning.reformat_postcode(
-        epc_mcs_complete, postcode_var_name="POSTCODE", white_space="remove"
     )
 
     today = date.today().strftime("%y%m%d")
@@ -242,6 +248,7 @@ def create_argparser() -> ArgumentParser:
     """
     Creates an argument parser that can receive the following arguments:
     - path_to_data: either local path to where data is stored or "S3"
+    - verbose: prints information while the pipeline is running if True
     """
     parser = ArgumentParser()
 
