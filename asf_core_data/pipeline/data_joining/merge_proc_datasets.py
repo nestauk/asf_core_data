@@ -236,7 +236,7 @@ def merging_pipeline(
     """
 
     # Load the processed EPC data (not deduplicated)
-    prep_epc = load_preprocessed_epc_data(
+    merged_data = load_preprocessed_epc_data(
         data_path=path_to_data,
         version="preprocessed",
         batch="newest",
@@ -245,40 +245,38 @@ def merging_pipeline(
     )
 
     # Add more precise estimations for heat pump installation dates via MCS data
-    epc_with_MCS_dates = install_date_computation.compute_hp_install_date(
-        prep_epc, verbose=verbose
+    merged_data = install_date_computation.compute_hp_install_date(
+        merged_data, verbose=verbose
     )
 
     # Merge EPC with MCS installations
-    epc_mcs_insts = add_mcs_installations_data(
-        epc_with_MCS_dates, usecols=mcs_installations_usecols, verbose=verbose
+    merged_data = add_mcs_installations_data(
+        merged_data, usecols=mcs_installations_usecols, verbose=verbose
     )
 
     # Merge EPC/MCS with MCS installers
-    epc_mcs_complete = add_mcs_installer_data(
-        epc_mcs_insts, usecols=mcs_installers_usecols
-    )
+    merged_data = add_mcs_installer_data(merged_data, usecols=mcs_installers_usecols)
 
     # Add coordinates for EPC data
-    epc_mcs_complete = feature_engineering.get_postcode_coordinates(
-        epc_mcs_complete, postcode_field_name="POSTCODE"
+    merged_data = feature_engineering.get_postcode_coordinates(
+        merged_data, postcode_field_name="POSTCODE"
     )
 
     today = date.today().strftime("%y%m%d")
 
     # Replacing all types of missing with NaN
-    epc_mcs_complete.replace("Unknown", np.nan, inplace=True)
-    epc_mcs_complete.replace("unknown", np.nan, inplace=True)
-    epc_mcs_complete.replace("Undefined", np.nan, inplace=True)
-    epc_mcs_complete.replace("Unspecified", np.nan, inplace=True)
-    epc_mcs_complete.replace("", np.nan, inplace=True)
+    merged_data.replace("Unknown", np.nan, inplace=True)
+    merged_data.replace("unknown", np.nan, inplace=True)
+    merged_data.replace("Undefined", np.nan, inplace=True)
+    merged_data.replace("Unspecified", np.nan, inplace=True)
+    merged_data.replace("", np.nan, inplace=True)
 
-    epc_mcs_complete.reset_index(drop=True, inplace=True)
+    merged_data.reset_index(drop=True, inplace=True)
 
     # Save final merged dataset
     data_getters.save_to_s3(
         base_config.BUCKET_NAME,
-        epc_mcs_complete,
+        merged_data,
         base_config.EPC_MCS_MERGED_OUT_PATH.format(today),
     )
 
