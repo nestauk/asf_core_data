@@ -326,7 +326,9 @@ def get_most_recent_batch_name(
     Returns:
         The most recent batch.
     """
-    batches = [key for key in get_s3_dir_files(path_to_dir=s3_folder_path)]
+    batches = [
+        key for key in get_s3_dir_files(bucket_name=bucket, path_to_dir=s3_folder_path)
+    ]
 
     final_set = []
     if filter_keep_keywords is None and filter_remove_keywords is None:
