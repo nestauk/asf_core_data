@@ -24,6 +24,7 @@ from argparse import ArgumentParser
 from datetime import date
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from asf_core_data.pipeline.preprocessing import feature_engineering
 from asf_core_data.getters import data_getters
 
@@ -178,7 +179,7 @@ def add_mcs_installer_data(
     newest_hist_inst_batch = data_batches.get_latest_hist_installers()
     # extracts "20230207" from "mcs_historical_installers_20230207.csv"
     date = newest_hist_inst_batch.split("_")[-1].split(".csv")[0]
-    date = date[:4] + "-" + date[4:6] + "-" + date[6:]
+    date = str(datetime.strptime(date, "%Y%m%d").date())
 
     # Load MCS
     mcs_instllr_data = data_getters.load_s3_data(
@@ -265,11 +266,9 @@ def merging_pipeline(
     today = date.today().strftime("%y%m%d")
 
     # Replacing all types of missing with NaN
-    merged_data.replace("Unknown", np.nan, inplace=True)
-    merged_data.replace("unknown", np.nan, inplace=True)
-    merged_data.replace("Undefined", np.nan, inplace=True)
-    merged_data.replace("Unspecified", np.nan, inplace=True)
-    merged_data.replace("", np.nan, inplace=True)
+    missing_values = ["Unknown", "unknown", "Undefined", "Unspecified", ""]
+    for value in missing_values:
+        merged_data.replace(value, np.nan, inplace=True)
 
     merged_data.reset_index(drop=True, inplace=True)
 
