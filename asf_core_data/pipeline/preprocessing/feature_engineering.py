@@ -234,23 +234,19 @@ def get_heating_features(df, fine_grained_HP_types=False):
                 ("heater" in heating),  # not specified heater
             ]
 
-            # Warm air
-            # --------------------------
-
-            if "warm air" in heating:
-                system_type = "warm air"
-                source_type = "electric"
-                has_hp = False
-
             # Different heat pump types
             # --------------------------
 
-            elif "ground source heat pump" in heating:
+            if ("ground source heat pump" in heating) or (
+                "ground sourceheat pump" in heating
+            ):
                 system_type = "ground source heat pump"
                 source_type = "electric"
                 has_hp = True
 
-            elif "air source heat pump" in heating:
+            elif ("air source heat pump" in heating) or (
+                "air sourceheat pump" in heating
+            ):
                 system_type = "air source heat pump"
                 source_type = "electric"
                 has_hp = True
@@ -269,6 +265,14 @@ def get_heating_features(df, fine_grained_HP_types=False):
                 system_type = "heat pump"
                 source_type = "electric"
                 has_hp = True
+
+            # Warm air
+            # --------------------------
+
+            elif "warm air" in heating:
+                system_type = "warm air"
+                source_type = "electric"
+                has_hp = False
 
             # Electric heaters
             # --------------------------
@@ -338,12 +342,30 @@ def get_heating_features(df, fine_grained_HP_types=False):
         (df["HP_INSTALLED"])
         | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("heat pump"))
         | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pumpa teas"))
+        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("pumpa teas"))
         | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pwmp gwres"))
+        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("pwmp gwres"))
         | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("bwmp gwres"))
+        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("bwmp gwres"))
         | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pympiau gwres"))
-        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("bympiau gwres")),
+        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("pympiau gwres"))
+        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("bympiau gwres"))
+        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("bympiau gwres")),
         True,
         False,
+    )
+
+    # Update HP_TYPE, HEATING_SYSTEM and HEATING_FUEL after the changes to HP_INSTALLED
+    df["HEATING_SYSTEM"] = np.where(
+        df["HP_INSTALLED"] & (df["HP_TYPE"] == "No HP"),
+        "heat pump",
+        df["HEATING_SYSTEM"],
+    )
+    df["HEATING_FUEL"] = np.where(
+        df["HP_INSTALLED"] & (df["HP_TYPE"] == "No HP"), "electric", df["HEATING_FUEL"]
+    )
+    df["HP_TYPE"] = np.where(
+        df["HP_INSTALLED"] & (df["HP_TYPE"] == "No HP"), "heat pump", df["HP_TYPE"]
     )
 
     return df

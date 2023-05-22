@@ -20,19 +20,20 @@ from asf_core_data.config import base_config
 from asf_core_data.getters.epc import data_batches
 from asf_core_data.pipeline.data_joining import install_date_computation
 from asf_core_data import load_preprocessed_epc_data
-from asf_core_data.pipeline.preprocessing import data_cleaning
 from argparse import ArgumentParser
 from datetime import date
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from asf_core_data.pipeline.preprocessing import feature_engineering
+from asf_core_data.getters import data_getters
 
 # ---------------------------------------------------------------------------------
 
 
 def add_mcs_installations_data(
     epc_df,
-    usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
+    usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION_MERGED_DATASET,
     bucket_name=base_config.BUCKET_NAME,
     verbose=False,
 ):
@@ -82,11 +83,14 @@ def add_mcs_installations_data(
         print("MCS (EPC matched)", mcs_matched_df.shape)
         print("MCS (EPC unmatched)", mcs_non_matched_df.shape)
 
+    # we already have the postcode from EPC for matched records
+    mcs_matched_df.drop(columns="POSTCODE", inplace=True)
+
     epc_mcs_df = pd.merge(
         epc_df,
         mcs_matched_df,
         on=["UPRN", "EPC_AVAILABLE", "MCS_AVAILABLE"],
-        how="outer",
+        how="outer",  # same as a left merge in this case
     )
 
     epc_mcs_df = pd.concat([epc_mcs_df, mcs_non_matched_df], axis=0)
@@ -100,13 +104,25 @@ def add_mcs_installations_data(
         epc_mcs_df["commission_date"],
         epc_mcs_df["HP_INSTALL_DATE"],
     )
+    epc_mcs_df.drop(columns="commission_date", inplace=True)
 
     # Update installation tag (will only affect MCS-only records)
     epc_mcs_df["HP_INSTALLED"] = np.where(
         epc_mcs_df["MCS_AVAILABLE"], True, epc_mcs_df["HP_INSTALLED"]
     )
 
+    # Update TECH_TYPE and standardise HP types (will only affect MCS-only records)
     epc_mcs_df = standardise_hp_type(epc_mcs_df)
+
+    # Update HEATING_SYSTEM (will only affect MCS-only records)
+    epc_mcs_df["HEATING_SYSTEM"] = np.where(
+        epc_mcs_df["MCS_AVAILABLE"], "heat pump", epc_mcs_df["HEATING_SYSTEM"]
+    )
+
+    # Update HEATING_FUEL (will only affect MCS-only records)
+    epc_mcs_df["HEATING_FUEL"] = np.where(
+        epc_mcs_df["MCS_AVAILABLE"], "electric", epc_mcs_df["HEATING_FUEL"]
+    )
 
     return epc_mcs_df
 
@@ -137,13 +153,16 @@ def standardise_hp_type(epc_mcs_df):
     epc_mcs_df["HP_TYPE"] = np.where(
         epc_mcs_df["MCS_AVAILABLE"], epc_mcs_df["tech_type"], epc_mcs_df["HP_TYPE"]
     )
+    epc_mcs_df.drop(columns="tech_type", inplace=True)
 
     epc_mcs_df["HP_TYPE"] = epc_mcs_df["HP_TYPE"].map(type_dict)
 
     return epc_mcs_df
 
 
-def add_mcs_installer_data(df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION):
+def add_mcs_installer_data(
+    df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION_MERGED_DATASET
+):
     """Add MCS installer data to given dataframe based on installer ID.
     The dataframe can be EPC and MCS installations data combined, or simply MCS installations data.
 
@@ -158,6 +177,9 @@ def add_mcs_installer_data(df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION)
         usecols = list(set(usecols + ["company_unique_id", "company_name"]))
 
     newest_hist_inst_batch = data_batches.get_latest_hist_installers()
+    # extracts "20230207" from "mcs_historical_installers_20230207.csv"
+    date = newest_hist_inst_batch.split("_")[-1].split(".csv")[0]
+    date = str(datetime.strptime(date, "%Y%m%d").date())
 
     # Load MCS
     mcs_instllr_data = data_getters.load_s3_data(
@@ -165,6 +187,15 @@ def add_mcs_installer_data(df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION)
     )
 
     mcs_instllr_data.rename(columns={"postcode": "POSTCODE"}, inplace=True)
+
+    # when effective_from is non missing and effective_to is missing, it means the certification hasn't ended
+    # so we fill it with the data when the data was received
+    mcs_instllr_data["effective_to"] = np.where(
+        mcs_instllr_data["effective_to"].isna()
+        & ~mcs_instllr_data["effective_from"].isna(),
+        date,
+        mcs_instllr_data["effective_to"],
+    )
 
     merged_df = df.merge(
         right=mcs_instllr_data,
@@ -177,9 +208,9 @@ def add_mcs_installer_data(df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION)
 
 
 def merging_pipeline(
-    epc_usecols=base_config.EPC_PREPROC_FEAT_SELECTION,
-    mcs_installations_usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION,
-    mcs_installers_usecols=base_config.MCS_INSTALLER_FEAT_SELECTION,
+    epc_usecols=base_config.EPC_FEAT_SELECTION_MERGED_DATASET,
+    mcs_installations_usecols=base_config.MCS_INSTALLATIONS_FEAT_SELECTION_MERGED_DATASET,
+    mcs_installers_usecols=base_config.MCS_INSTALLER_FEAT_SELECTION_MERGED_DATASET,
     path_to_data="S3",
     verbose=False,
 ):
@@ -206,7 +237,7 @@ def merging_pipeline(
     """
 
     # Load the processed EPC data (not deduplicated)
-    prep_epc = load_preprocessed_epc_data(
+    merged_data = load_preprocessed_epc_data(
         data_path=path_to_data,
         version="preprocessed",
         batch="newest",
@@ -214,32 +245,37 @@ def merging_pipeline(
         verbose=verbose,
     )
 
-    # Add coordinates for EPC data
-    prep_epc = feature_engineering.get_postcode_coordinates(
-        prep_epc, postcode_field_name="POSTCODE"
-    )
-
     # Add more precise estimations for heat pump installation dates via MCS data
-    epc_with_MCS_dates = install_date_computation.compute_hp_install_date(
-        prep_epc, verbose=verbose
+    merged_data = install_date_computation.compute_hp_install_date(
+        merged_data, verbose=verbose
     )
 
     # Merge EPC with MCS installations
-    epc_mcs_insts = add_mcs_installations_data(
-        epc_with_MCS_dates, usecols=mcs_installations_usecols, verbose=verbose
+    merged_data = add_mcs_installations_data(
+        merged_data, usecols=mcs_installations_usecols, verbose=verbose
     )
 
     # Merge EPC/MCS with MCS installers
-    epc_mcs_complete = add_mcs_installer_data(
-        epc_mcs_insts, usecols=mcs_installers_usecols
+    merged_data = add_mcs_installer_data(merged_data, usecols=mcs_installers_usecols)
+
+    # Add coordinates for EPC data
+    merged_data = feature_engineering.get_postcode_coordinates(
+        merged_data, postcode_field_name="POSTCODE"
     )
 
     today = date.today().strftime("%y%m%d")
 
+    # Replacing all types of missing with NaN
+    missing_values = ["Unknown", "unknown", "Undefined", "Unspecified", ""]
+    for value in missing_values:
+        merged_data.replace(value, np.nan, inplace=True)
+
+    merged_data.reset_index(drop=True, inplace=True)
+
     # Save final merged dataset
     data_getters.save_to_s3(
         base_config.BUCKET_NAME,
-        epc_mcs_complete,
+        merged_data,
         base_config.EPC_MCS_MERGED_OUT_PATH.format(today),
     )
 
