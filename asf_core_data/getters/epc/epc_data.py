@@ -39,9 +39,7 @@ def get_cert_rec_files(data_path, dir_name, scotland_data=False):
     """
 
     if str(data_path) == "S3":
-
         if scotland_data:
-
             directories = [
                 Path(f).name
                 for f in data_getters.get_s3_dir_files(path_to_dir=str(dir_name))
@@ -127,9 +125,7 @@ def load_scotland_data(
         data_download.extract_data(data_path / RAW_SCOTLAND_DATA_ZIP)
 
     if scot_usecols is not None:
-
         if v2_batch:
-
             for i, col in enumerate(scot_usecols):
                 if col in base_config.scotland_field_fix_dict.keys():
                     scot_usecols[i] = base_config.scotland_field_fix_dict[col]
@@ -166,7 +162,6 @@ def load_scotland_data(
                 scot_usecols.remove("ENERGY_TARIFF")
 
             if "UPRN" in scot_usecols:
-
                 scot_usecols.remove("UPRN")
                 scot_usecols.append("Property_UPRN")
 
@@ -203,7 +198,6 @@ def load_scotland_data(
         epc_certs["COUNTRY"] = "Scotland"
 
     if v2_batch:
-
         # clean_dict = {"mÂ²": "m2", "Â£": "£", "ï»¿": ""}
         # for col in epc_certs.columns:
         #     for enc_issue in clean_dict.keys():
@@ -270,7 +264,6 @@ def load_england_wales_data(
         add_country_f = True
 
     if subset in [None, "GB", "all"]:
-
         additional_samples = 0
 
         # Splitting samples across nations
@@ -428,7 +421,6 @@ def load_raw_epc_data(
 
     # Get Scotland data
     if subset in ["Scotland", "GB"]:
-
         # data_check = True if subset == "Scotland" else False
 
         epc_scotland_df = load_scotland_data(
@@ -461,9 +453,7 @@ def load_raw_epc_data(
 
     # Merge the two datasets for GB
     elif subset == "GB":
-
         for country in ["Wales", "England"]:
-
             epc_df = load_england_wales_data(
                 data_path=data_path,
                 rel_data_path=wales_england_path,
@@ -675,7 +665,6 @@ def filter_by_year(
 
     # If year is given for filtering
     if year != "all" and year is not None:
-
         if up_to:
             epc_df = epc_df.loc[epc_df["INSPECTION_DATE"].dt.year <= year]
         else:
@@ -685,14 +674,23 @@ def filter_by_year(
     selection_dict = {"first entry": "first", "latest entry": "last"}
 
     if selection in ["first entry", "latest entry"]:
+        epc_df = epc_df.sort_values("INSPECTION_DATE", ascending=True)
 
-        epc_df = (
-            epc_df.sort_values("INSPECTION_DATE", ascending=True)
-            .drop_duplicates(
-                subset=[building_identifier], keep=selection_dict[selection]
-            )
-            .sort_index()
-        )
+        # Dealing with EPC entries with missing UPRN
+        uprn_missing = epc_df[pd.isnull(epc_df["UPRN"])]
+        uprn_missing = uprn_missing.drop_duplicates(
+            subset=["ADDRESS1", "ADDRESS2", "POSTCODE"], keep=selection_dict[selection]
+        ).sort_index()
+
+        # Dealing with EPC entries with known UPRN
+        epc_df = epc_df[~pd.isnull(epc_df["UPRN"])]
+        epc_df = epc_df.drop_duplicates(
+            subset=[building_identifier], keep=selection_dict[selection]
+        ).sort_index()
+
+        # Concatenating datasets together and sorting by inspection_date again
+        epc_df = pd.concat([epc_df, uprn_missing])
+        epc_df = epc_df.sort_values("INSPECTION_DATE", ascending=True)
 
     elif selection is None:
         epc_df = epc_df
