@@ -177,9 +177,6 @@ def add_mcs_installer_data(
         usecols = list(set(usecols + ["company_unique_id", "company_name"]))
 
     newest_hist_inst_batch = data_batches.get_latest_hist_installers()
-    # extracts "20230207" from "mcs_historical_installers_20230207.csv"
-    date = newest_hist_inst_batch.split("_")[-1].split(".csv")[0]
-    date = str(datetime.strptime(date, "%Y%m%d").date())
 
     # Load MCS
     mcs_instllr_data = data_getters.load_s3_data(
@@ -187,15 +184,6 @@ def add_mcs_installer_data(
     )
 
     mcs_instllr_data.rename(columns={"postcode": "POSTCODE"}, inplace=True)
-
-    # when effective_from is non missing and effective_to is missing, it means the certification hasn't ended
-    # so we fill it with the data when the data was received
-    mcs_instllr_data["effective_to"] = np.where(
-        mcs_instllr_data["effective_to"].isna()
-        & ~mcs_instllr_data["effective_from"].isna(),
-        date,
-        mcs_instllr_data["effective_to"],
-    )
 
     merged_df = df.merge(
         right=mcs_instllr_data,
