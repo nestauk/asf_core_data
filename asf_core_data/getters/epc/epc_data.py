@@ -677,24 +677,26 @@ def filter_by_year(
         epc_df = epc_df.sort_values("INSPECTION_DATE", ascending=True)
 
         # Dealing with EPC entries with missing UPRN
-        uprn_missing = epc_df[pd.isnull(epc_df["UPRN"])]
+        uprn_missing = epc_df[pd.isnull(epc_df[building_identifier])]
         uprn_missing = uprn_missing.drop_duplicates(
             subset=["ADDRESS1", "ADDRESS2", "POSTCODE"], keep=selection_dict[selection]
-        ).sort_index()
+        )
 
         # Dealing with EPC entries with known UPRN
-        epc_df = epc_df[~pd.isnull(epc_df["UPRN"])]
+        epc_df = epc_df[~pd.isnull(epc_df[building_identifier])]
         epc_df = epc_df.drop_duplicates(
             subset=[building_identifier], keep=selection_dict[selection]
-        ).sort_index()
+        )
 
         # Concatenating datasets together and sorting by inspection_date again
         epc_df = pd.concat([epc_df, uprn_missing])
         epc_df = epc_df.sort_values("INSPECTION_DATE", ascending=True)
 
-    elif selection is None:
-        epc_df = epc_df
+        epc_df.reset_index(drop=True, inplace=True)
 
+    elif selection is None:
+        epc_df = epc_df.sort_values("INSPECTION_DATE", ascending=True)
+        epc_df.reset_index(drop=True, inplace=True)
     else:
         raise IOError("{} not implemented.".format(selection))
 

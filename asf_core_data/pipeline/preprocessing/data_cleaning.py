@@ -519,10 +519,7 @@ def clean_epc_data(df):
 
     df["CONSTRUCTION_AGE_BAND"] = df.apply(
         lambda x: enhance_construction_age_band(
-            x["CONSTRUCTION_AGE_BAND"],
-            x["TRANSACTION_TYPE"],
-            x["INSPECTION_DATE"],
-            x["COUNTRY"],
+            x["CONSTRUCTION_AGE_BAND"], x["TRANSACTION_TYPE"]
         ),
         axis=1,
     )

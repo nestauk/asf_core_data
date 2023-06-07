@@ -25,6 +25,24 @@ from datetime import datetime
 
 # ----------------------------------------------------------------------------------
 
+other_heating_system = [
+    "boiler and radiator",
+    "boiler and underfloor",
+    "community scheme",
+    "heater",  # not specified heater
+]
+
+other_hp_expressions = [
+    "heat pump",
+    "pumpa teas",
+    "pwmp gwres",  # starts with p
+    "bwmp gwres",  # different from above, starts with b
+    "pympiau gwres",  # starts with p
+    "bympiau gwres",  # different from above, starts with b
+]
+
+# ----------------------------------------------------------------------------------
+
 
 def short_hash(text):
     """Generate a unique short hash for given string.
@@ -198,26 +216,8 @@ def get_heating_system(mainheat_description: str) -> str:
     if pd.isnull(mainheat_description):
         return "unknown"
     else:
-        system_type = "unknown"
-
         heating = mainheat_description.lower()
         heating = heating.replace(" & ", " and ")
-
-        other_heating_system = [
-            "boiler and radiator",
-            "boiler and underfloor",
-            "community scheme",
-            "heater",  # not specified heater
-        ]
-
-        other_hp_expressions = [
-            "heat pump",
-            "pumpa teas",
-            "pwmp gwres",
-            "bwmp gwres",
-            "pympiau gwres",
-            "bympiau gwres",
-        ]
 
         if ("ground source heat pump" in heating) or (
             "ground sourceheat pump" in heating
@@ -256,7 +256,7 @@ def get_heating_system(mainheat_description: str) -> str:
                 if word in heating:
                     return word
 
-        return system_type
+        return "unknown"
 
 
 def get_heating_fuel(mainheat_description: str) -> str:
@@ -271,26 +271,8 @@ def get_heating_fuel(mainheat_description: str) -> str:
     if pd.isnull(mainheat_description):
         return "unknown"
     else:
-        source_type = "unknown"
-
         heating = mainheat_description.lower()
         heating = heating.replace(" & ", " and ")
-
-        other_heating_system = [
-            "boiler and radiator",
-            "boiler and underfloor",
-            "community scheme",
-            "heater",  # not specified heater
-        ]
-
-        other_hp_expressions = [
-            "heat pump",
-            "pumpa teas",
-            "pwmp gwres",
-            "bwmp gwres",
-            "pympiau gwres",
-            "bympiau gwres",
-        ]
 
         if ("ground source heat pump" in heating) or (
             "ground sourceheat pump" in heating
@@ -332,7 +314,7 @@ def get_heating_fuel(mainheat_description: str) -> str:
                 if word in heating:
                     return source
 
-    return source_type
+    return "unknown"
 
 
 def get_heating_features(df, fine_grained_HP_types=False):
@@ -462,53 +444,20 @@ def get_building_entry_feature(df, feature):
 def enhance_construction_age_band(
     construction_age_band: str,
     transaction_type: str,
-    inspection_date: str,
-    country: str,
 ) -> str:
     """
-    Enhances construction age band by replacing unknown when transaction type is new dwelling and
-    inspection date is known.
+    Enhances construction age band by replacing unknown when transaction type is new dwelling
+    (EPC inspections only began in 2008, so if it's a new dwelling then the age band will be "2007 onwards").
 
     Args:
         construction_age_band: property's construction age band
         transaction_type: transaction type (e.g. new dwelling)
-        inspection_date: inspection date as a string
-        country: country (Scotland, England or Wales)
-
     Retruns:
         Updated construction age band
     """
     if construction_age_band == "unknown":
         if transaction_type == "new dwelling":
-            if ~pd.isnull(inspection_date) and (inspection_date is not None):
-                # inspection_year = datetime.strptime(inspection_date, "%Y-%m-%d").year
-                inspection_year = inspection_date.year
-                if inspection_year >= 2007:
-                    return "2007 onwards"
-                elif inspection_year >= 2003:
-                    return "2003-2007"
-                elif inspection_year >= 1996:
-                    return "1996-2002"
-                elif inspection_year >= 1991:
-                    return "1991-1998"
-                elif inspection_year >= 1983:
-                    return "1983-1991"
-                elif inspection_year >= 1976:
-                    return "1976-1983"
-                elif inspection_year >= 1965:
-                    return "1965-1975"
-                elif inspection_year >= 1950:
-                    return "1950-1966"
-                elif inspection_year >= 1930:
-                    return "1930-1949"
-                elif inspection_year >= 1919:
-                    return "1900-1929"
-                elif (inspection_year >= 1900) and (country != "Scotland"):
-                    return "1900-1929"
-                elif (inspection_year < 1900) and (country != "Scotland"):
-                    return "England and Wales: before 1900"
-                elif (inspection_year <= 1919) and (country == "Scotland"):
-                    return "Scotland: before 1919"
+            return "2007 onwards"
     return construction_age_band
 
 
