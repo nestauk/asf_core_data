@@ -21,6 +21,25 @@ from hashlib import md5
 
 from asf_core_data.getters.supplementary_data.geospatial import coordinates
 from asf_core_data.pipeline.preprocessing import data_cleaning
+from datetime import datetime
+
+# ----------------------------------------------------------------------------------
+
+other_heating_system = [
+    "boiler and radiator",
+    "boiler and underfloor",
+    "community scheme",
+    "heater",  # not specified heater
+]
+
+other_hp_expressions = [
+    "heat pump",
+    "pumpa teas",
+    "pwmp gwres",  # starts with p
+    "bwmp gwres",  # different from above, starts with b
+    "pympiau gwres",  # starts with p
+    "bympiau gwres",  # different from above, starts with b
+]
 
 # ----------------------------------------------------------------------------------
 
@@ -185,17 +204,131 @@ def map_rating_to_cat(rating):
         return "A-B"
 
 
-def get_heating_features(df, fine_grained_HP_types=False):
-    """Get heating type category based on HEATING_TYPE category.
-    heating_system: heat pump, boiler, community scheme etc.
-    heating_source: oil, gas, LPC, electric.
+def get_heating_system(mainheat_description: str) -> str:
+    """
+    Extracts heating system from MAINHEAT_DESCRIPTION.
 
     Args:
-        df (pandas.DataFrame): Dataframe that is updated with heating features.
-        fine_grained_HP_types (bool, optional):
-            If True, get different heat pump types (air sourced, ground sourced etc.).
-            If False, return "heat pump" as heating type category. Defaults to False.
+        mainheat_description: EPC's MAINHEAT_DESCRIPTION value
+    Returns:
+        Property's heating system information.
+    """
+    if pd.isnull(mainheat_description):
+        return "unknown"
+    else:
+        heating = mainheat_description.lower()
+        heating = heating.replace(" & ", " and ")
 
+        if ("ground source heat pump" in heating) or (
+            "ground sourceheat pump" in heating
+        ):
+            return "ground source heat pump"
+
+        elif ("air source heat pump" in heating) or ("air sourceheat pump" in heating):
+            return "air source heat pump"
+
+        elif "water source heat pump" in heating:
+            return "water source heat pump"
+
+        elif "community heat pump" in heating:
+            return "community heat pump"
+
+        elif any(hp_expression in heating for hp_expression in other_hp_expressions):
+            return "heat pump"
+
+        elif "warm air" in heating:
+            return "warm air"
+
+        elif "electric storage heaters" in heating:
+            return "storage heater"
+
+        elif "electric underfloor heating" in heating:
+            return "underfloor heating"
+
+        elif ("boiler and radiator" in heating) and (
+            "boiler and underfloor" in heating
+        ):
+            return "boiler, radiator and underfloor"
+
+        elif any(exp in heating for exp in other_heating_system):
+            # If heating system word is found, save respective system type
+            for word in other_heating_system:
+                if word in heating:
+                    return word
+
+        return "unknown"
+
+
+def get_heating_fuel(mainheat_description: str) -> str:
+    """
+    Extracts heating fuel from MAINHEAT_DESCRIPTION.
+
+    Args:
+        mainheat_description: EPC's MAINHEAT_DESCRIPTION value
+    Returns:
+        Property's heating fuel information.
+    """
+    if pd.isnull(mainheat_description):
+        return "unknown"
+    else:
+        heating = mainheat_description.lower()
+        heating = heating.replace(" & ", " and ")
+
+        if ("ground source heat pump" in heating) or (
+            "ground sourceheat pump" in heating
+        ):
+            return "electric"
+
+        elif ("air source heat pump" in heating) or ("air sourceheat pump" in heating):
+            return "electric"
+
+        elif "water source heat pump" in heating:
+            return "electric"
+
+        elif "community heat pump" in heating:
+            return "electric"
+
+        elif any(hp_expression in heating for hp_expression in other_hp_expressions):
+            return "electric"
+
+        elif "warm air" in heating:
+            return "electric"
+
+        elif "electric storage heaters" in heating:
+            return "electric"
+
+        elif "electric underfloor heating" in heating:
+            return "electric"
+
+        elif any(exp in heating for exp in other_heating_system):
+            # Set heating source dict
+            heating_source_dict = {
+                "gas": "gas",
+                ", oil": "oil",  # with preceeding comma (!= "boiler")
+                "lpg": "LPG",
+                "electric": "electric",
+            }
+
+            # If heating source word is found, save respective source type
+            for word, source in heating_source_dict.items():
+                if word in heating:
+                    return source
+
+    return "unknown"
+
+
+def get_heating_features(df, fine_grained_HP_types=False):
+    """Updates EPC df with heating features:
+    HEATING_SYSTEM: heat pump, boiler, community scheme, etc.
+    HP_INSTALLED: True if heat pump as heating system, False if not;
+    HEATING_FUEL: oil, gas, LPC, electric, etc.
+    HP_TYPE: heat pump type when applicable ("air source heat pump", etc. and "No HP" if no heat pump as heating system),
+
+    Args:
+        df (pandas.DataFrame): EPC dataframe that is updated with heating features.
+        fine_grained_HP_types (bool, optional):
+            If True, HEATING_SYSTEM will contain detailed heat pump types (air sourced, ground sourced etc.).
+            If False, return "heat pump" as heating type category. Defaults to False.
     Returns:
         pandas.DataFrame: Updated dataframe with heating system and source.
     """
@@ -203,154 +336,29 @@ def get_heating_features(df, fine_grained_HP_types=False):
     if "MAINHEAT_DESCRIPTION" not in df.columns:
         return df
 
-    # Collections
-    heating_system_types = []
-    heating_source_types = []
-    has_hp_tags = []
-    hp_types = []
+    df["HEATING_SYSTEM"] = df["MAINHEAT_DESCRIPTION"].apply(get_heating_system)
+    df["HP_INSTALLED"] = np.where(
+        df["HEATING_SYSTEM"].str.contains("heat pump"), True, False
+    )
+    df["HEATING_FUEL"] = df["MAINHEAT_DESCRIPTION"].apply(get_heating_fuel)
+    df["HP_TYPE"] = np.where(df["HP_INSTALLED"], df["HEATING_SYSTEM"], "No HP")
 
-    # Get heating types
-    heating_types = df["MAINHEAT_DESCRIPTION"]
+    if not fine_grained_HP_types:
+        df["HEATING_SYSTEM"] = np.where(
+            df["HEATING_SYSTEM"].str.contains("heat pump", case=False),
+            "heat pump",
+            df["HEATING_SYSTEM"],
+        )
 
-    # Get specific and general heating category for each entry
-    for heating in heating_types:
-        # Set default value
-        system_type = "unknown"
-        source_type = "unknown"
-        has_hp = False
-        hp_type = "No HP"
-
-        # If heating value exists
-        if not (pd.isnull(heating) and isinstance(heating, float)):
-            # Lowercase
-            heating = heating.lower()
-
-            other_heating_system = [
-                ("boiler and radiator" in heating),
-                ("boiler & radiator" in heating),
-                ("boiler and underfloor" in heating),
-                ("boiler & underfloor" in heating),
-                ("community scheme" in heating),
-                ("heater" in heating),  # not specified heater
-            ]
-
-            # Different heat pump types
-            # --------------------------
-
-            if ("ground source heat pump" in heating) or (
-                "ground sourceheat pump" in heating
-            ):
-                system_type = "ground source heat pump"
-                source_type = "electric"
-                has_hp = True
-
-            elif ("air source heat pump" in heating) or (
-                "air sourceheat pump" in heating
-            ):
-                system_type = "air source heat pump"
-                source_type = "electric"
-                has_hp = True
-
-            elif "water source heat pump" in heating:
-                system_type = "water source heat pump"
-                source_type = "electric"
-                has_hp = True
-
-            elif "community heat pump" in heating:
-                system_type = "community heat pump"
-                source_type = "electric"
-                has_hp = True
-
-            elif "heat pump" in heating:
-                system_type = "heat pump"
-                source_type = "electric"
-                has_hp = True
-
-            # Warm air
-            # --------------------------
-
-            elif "warm air" in heating:
-                system_type = "warm air"
-                source_type = "electric"
-                has_hp = False
-
-            # Electric heaters
-            # --------------------------
-
-            elif "electric storage heaters" in heating:
-                system_type = "storage heater"
-                source_type = "electric"
-
-            elif "electric underfloor heating" in heating:
-                system_type = "underfloor heating"
-                source_type = "electric"
-
-            # Boiler and radiator / Boiler and underfloor / Community scheme / Heater (unspecified)
-            # --------------------------
-
-            elif any(other_heating_system):
-                # Set heating system dict
-                heating_system_dict = {
-                    "boiler and radiator": "boiler and radiator",
-                    "boiler & radiator": "boiler and radiator",
-                    "boiler and underfloor": "boiler and underfloor",
-                    "boiler & underfloor": "boiler and underfloor",
-                    "community scheme": "community scheme",
-                    "heater": "heater",  # not specified heater (otherwise handeld above)
-                }
-
-                # Set heating source dict
-                heating_source_dict = {
-                    "gas": "gas",
-                    ", oil": "oil",  # with preceeding comma (!= "boiler")
-                    "lpg": "LPG",
-                    "electric": "electric",
-                }
-
-                # If heating system word is found, save respective system type
-                for word, system in heating_system_dict.items():
-                    if word in heating:
-                        system_type = system
-
-                # If heating source word is found, save respective source type
-                for word, source in heating_source_dict.items():
-                    if word in heating:
-                        source_type = source
-
-        # Set HP type
-        if has_hp:
-            hp_type = system_type
-
-            # Don't differentiate between heat pump types
-            if not fine_grained_HP_types:
-                system_type = "heat pump"
-
-        # Save heating system type and source type
-        heating_system_types.append(system_type)
-        heating_source_types.append(source_type)
-        has_hp_tags.append(has_hp)
-        hp_types.append(hp_type)
-
-    # Add heating system and source to df
-    df["HEATING_SYSTEM"] = heating_system_types
-    df["HEATING_FUEL"] = heating_source_types
-    df["HP_INSTALLED"] = has_hp_tags
-    df["HP_TYPE"] = hp_types
-
-    # Also consider secondheat description and other languages
+    # Also consider SECONDHEAT_DESCRIPTION and other languages
     df["HP_INSTALLED"] = np.where(
         (df["HP_INSTALLED"])
-        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("heat pump"))
-        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pumpa teas"))
-        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("pumpa teas"))
-        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pwmp gwres"))
-        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("pwmp gwres"))
-        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("bwmp gwres"))
-        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("bwmp gwres"))
-        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("pympiau gwres"))
-        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("pympiau gwres"))
-        | (df["MAINHEAT_DESCRIPTION"].str.lower().str.contains("bympiau gwres"))
-        | (df["SECONDHEAT_DESCRIPTION"].str.lower().str.contains("bympiau gwres")),
+        | (df["SECONDHEAT_DESCRIPTION"].str.contains("heat pump", case=False))
+        | (df["SECONDHEAT_DESCRIPTION"].str.contains("pumpa teas", case=False))
+        | (df["SECONDHEAT_DESCRIPTION"].str.contains("pwmp gwres", case=False))
+        | (df["SECONDHEAT_DESCRIPTION"].str.contains("bwmp gwres", case=False))
+        | (df["SECONDHEAT_DESCRIPTION"].str.contains("pympiau gwres", case=False))
+        | (df["SECONDHEAT_DESCRIPTION"].str.contains("bympiau gwres", case=False)),
         True,
         False,
     )
@@ -431,6 +439,26 @@ def get_building_entry_feature(df, feature):
     df[new_feature_name] = df[feature].map(dict(df.groupby(feature).size()))
 
     return df
+
+
+def enhance_construction_age_band(
+    construction_age_band: str,
+    transaction_type: str,
+) -> str:
+    """
+    Enhances construction age band by replacing unknown when transaction type is new dwelling
+    (EPC inspections only began in 2008, so if it's a new dwelling then the age band will be "2007 onwards").
+
+    Args:
+        construction_age_band: property's construction age band
+        transaction_type: transaction type (e.g. new dwelling)
+    Retruns:
+        Updated construction age band
+    """
+    if construction_age_band == "unknown":
+        if transaction_type == "new dwelling":
+            return "2007 onwards"
+    return construction_age_band
 
 
 def get_additional_features(df):

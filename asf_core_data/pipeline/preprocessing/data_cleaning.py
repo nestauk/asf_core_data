@@ -76,6 +76,9 @@ import numpy as np
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 from asf_core_data.config import base_config
 from asf_core_data.pipeline.preprocessing import data_cleaning_utils
+from asf_core_data.pipeline.preprocessing.feature_engineering import (
+    enhance_construction_age_band,
+)
 
 # ---------------------------------------------------------------------------------
 
@@ -267,7 +270,6 @@ def create_efficiency_mapping(efficiency_set, only_first=base_config.ONLY_FIRST_
     efficiency_map = {}
 
     for eff in efficiency_set:
-
         # If efficiency is float (incl. NaN)
         if isinstance(eff, float):
             efficiency_map[eff] = np.nan
@@ -314,7 +316,6 @@ def clean_EFF_SCORES(df):
     for feat in df.columns:
         # If efficiency feature, get respective mapping
         if feat.endswith("_EFF"):
-
             df[feat] = df[feat].str.lower()
             map_dict = create_efficiency_mapping(list(df[feat].unique()))
 
@@ -373,7 +374,6 @@ def standardise_dates(
     ]
 
     for feature in date_features:
-
         # Fix years starting with 00 -> 20..
         df[feature] = (
             df[feature].astype(str).str.replace(r"00(\d\d)", r"20\1", regex=True)
@@ -401,11 +401,13 @@ def standardise_unknowns(df):
         pandas.DataFrame: Dataframe with cleaned up unknown values.
     """
     for feat in df.columns:
-
         if feat in data_cleaning_utils.numeric_features:
             df[feat] = df[feat].replace(data_cleaning_utils.invalid_values, np.nan)
         else:
-            df[feat] = df[feat].replace(data_cleaning_utils.invalid_values, "unknown")
+            if feat != "UPRN":
+                df[feat] = df[feat].replace(
+                    data_cleaning_utils.invalid_values, "unknown"
+                )
 
     return df
 
@@ -421,9 +423,7 @@ def standardise_features(df):
     """
 
     for feat in df.columns:
-
         if feat in data_cleaning_utils.features_to_standardise:
-
             df[feat] = df[feat].str.strip()
             feat_clean_dict = data_cleaning_utils.feature_cleaning_dict[feat]
 
@@ -486,7 +486,6 @@ def custom_clean_features(df, cap_features=False):
     # [Additional cleaning functions here]
 
     if cap_features:
-
         cap_value_dict = {
             "NUMBER_HABITABLE_ROOMS": 10,
             "NUMBER_HEATED_ROOMS": 10,
@@ -517,6 +516,13 @@ def clean_epc_data(df):
     df = standardise_features(df)
     df = standardise_dates(df)
     df = custom_clean_features(df)
+
+    df["CONSTRUCTION_AGE_BAND"] = df.apply(
+        lambda x: enhance_construction_age_band(
+            x["CONSTRUCTION_AGE_BAND"], x["TRANSACTION_TYPE"]
+        ),
+        axis=1,
+    )
 
     return df
 
