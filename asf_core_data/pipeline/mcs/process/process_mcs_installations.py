@@ -79,6 +79,25 @@ def mask_outliers(hps, max_cost=base_config.MCS_MAX_COST):
     return hps
 
 
+def process_installation_type(installations: pd.DataFrame) -> pd.DataFrame:
+    """
+    Joins together the info from installation_type and end_user_installation_type
+    as the two variables represent the same thing.
+
+    Args:
+        installations: MCS installations data
+    Return:
+        Installations data with updated installation type.
+    """
+    installations["installation_type"] = installations["installation_type"].fillna(
+        installations["end_user_installation_type"]
+    )
+
+    installations.drop("end_user_installation_type", inplace=True)
+
+    return installations
+
+
 def identify_clusters(hps, time_interval=base_config.MCS_CLUSTER_TIME_INTERVAL):
     """Label HP records with whether they form part of a 'cluster'
     of installations in the same postcode and around the same time.
@@ -162,6 +181,7 @@ def get_processed_installations_data():
 
     installations_data = add_hp_features(installations_data)
     installations_data = mask_outliers(installations_data)
+    installations_data = process_installation_type(installations_data)
     installations_data = identify_clusters(installations_data)
 
     # getting latest batch of processed historical installers data
