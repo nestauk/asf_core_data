@@ -478,21 +478,25 @@ def create_installer_unique_id(installer_data: pd.DataFrame):
     # Dropping processed_company_name as no longer needed
     installer_data.drop("processed_company_name", axis=1, inplace=True)
 
+    ## -------------------------------------------------------------------------------
+    ## We commented the code below since it was leading to false positives in unique id
+    ## but we'll keep it here in case ever needed again
+    ## -------------------------------------------------------------------------------
     # Companies have the same location but not currently identified as being the same
-    same_postcode_no_match = installer_data.groupby("postcode", as_index=False)[
-        ["company_unique_id"]
-    ].nunique()
-    same_postcode_no_match = same_postcode_no_match[
-        same_postcode_no_match["company_unique_id"] > 1
-    ]["postcode"].unique()
+    # same_postcode_no_match = installer_data.groupby("postcode", as_index=False)[
+    #    ["company_unique_id"]
+    # ].nunique()
+    # same_postcode_no_match = same_postcode_no_match[
+    #    same_postcode_no_match["company_unique_id"] > 1
+    # ]["postcode"].unique()
 
     # New unique ID matches based on companies with same location
-    new_matches = map_installers_same_location_different_id(
-        same_postcode_no_match, installer_data
-    )
-    installer_data["company_unique_id"] = installer_data["company_unique_id"].apply(
-        lambda x: new_matches[x] if x in new_matches.keys() else x
-    )
+    # new_matches = map_installers_same_location_different_id(
+    #    same_postcode_no_match, installer_data
+    # )
+    # installer_data["company_unique_id"] = installer_data["company_unique_id"].apply(
+    #    lambda x: new_matches[x] if x in new_matches.keys() else x
+    # )
 
 
 def add_certification_body_info(
