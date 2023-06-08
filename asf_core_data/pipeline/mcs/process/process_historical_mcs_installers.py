@@ -561,7 +561,7 @@ def get_max_date(date_1: datetime, date_2: datetime) -> datetime:
         return max(date_1, date_2)
 
 
-def update_effective_to_data(
+def update_effective_to_date(
     date_data_shared: str,
     installer_data: pd.DataFrame,
     installations_data: pd.DataFrame,
@@ -710,7 +710,7 @@ def preprocess_historical_installers(
     # Create installer unique ID
     create_installer_unique_id(raw_historical_installers)
 
-    raw_historical_installers = update_effective_to_data(
+    raw_historical_installers = update_effective_to_date(
         date_data_shared, raw_historical_installers, raw_historical_installations
     )
 
