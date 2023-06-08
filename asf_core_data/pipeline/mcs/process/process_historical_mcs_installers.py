@@ -42,6 +42,7 @@ from datetime import datetime
 from argparse import ArgumentParser
 from asf_core_data.config import base_config
 from asf_core_data.getters.data_getters import load_s3_data, save_to_s3
+from asf_core_data.getters.epc import data_batches
 from asf_core_data.getters.mcs_getters.get_mcs_installers import (
     get_raw_historical_installers_data,
 )
@@ -543,7 +544,78 @@ def add_certification_body_info(
     return installer_data
 
 
+def get_max_date(date_1: datetime, date_2: datetime) -> datetime:
+    """
+    Gets max date between two dates.
+    Args:
+        date1: date
+        date2: date
+    Returns:
+        Max date
+    """
+    if pd.isnull(date_2):
+        return date_1
+    elif pd.isnull(date_1):
+        return date_2
+    else:
+        return max(date_1, date_2)
+
+
+def update_effective_to_date(
+    date_data_shared: str,
+    installer_data: pd.DataFrame,
+    installations_data: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Updates effective_to date:
+    - when effective_from is non missing and effective_to is missing, it means the certification hasn't ended
+    so we fill it with the data when the data was received;
+    - then, if effective_to happens before the last commissioning date, we update effective_to with the last commisioning date
+
+    Args:
+        date_data_shared: str following the pattern "YYYYMMDD"
+        installer_data: installer data
+        installations_data: installations data
+    Returns:
+        Updated installer data.
+    """
+    date = datetime.strptime(date_data_shared, "%Y%m%d").date()
+
+    installer_data["effective_to"] = installer_data.apply(
+        lambda x: date
+        if pd.isnull(x["effective_to"]) and ~pd.isnull(["effective_from"])
+        else x["effective_to"],
+        axis=1,
+    )
+
+    installations_match_vars = [
+        "installation_company_name",
+        "installation_company_mcs_number",
+    ]
+    installers_match_vars = ["company_name", "mcs_certificate_number"]
+
+    last_commissioning_date = installations_data.groupby(
+        installations_match_vars, as_index=False
+    )[["commissioning_date"]].max()
+
+    installer_data = installer_data.merge(
+        right=last_commissioning_date,
+        how="left",
+        left_on=installers_match_vars,
+        right_on=installations_match_vars,
+    )
+
+    installer_data["effective_to"] = installer_data.apply(
+        lambda x: get_max_date(x["effective_to"], x["commissioning_date"]), axis=1
+    )
+
+    installer_data.drop(columns="commissioning_date", inplace=True)
+
+    return installer_data
+
+
 def preprocess_historical_installers(
+    date_data_shared: str,
     raw_historical_installers: pd.DataFrame,
     raw_historical_installations: pd.DataFrame,
     geographical_data: pd.DataFrame,
@@ -562,6 +634,7 @@ def preprocess_historical_installers(
     - Creating a variable that uniquely identifies installers.
 
     Args:
+        date_data_shared: date when raw historical installers data was shared
         raw_historical_installers: raw historical installers data
         raw_historical_installations: raw historical installations data
         geographical_data: geographical data with postcode, latitude and longitude information
@@ -637,6 +710,10 @@ def preprocess_historical_installers(
     # Create installer unique ID
     create_installer_unique_id(raw_historical_installers)
 
+    raw_historical_installers = update_effective_to_date(
+        date_data_shared, raw_historical_installers, raw_historical_installations
+    )
+
     return raw_historical_installers[
         base_config.processed_historical_installers_columns_order
     ]
@@ -692,8 +769,14 @@ if __name__ == "__main__":
         args.raw_historical_installations_filename
     )
 
+    # date when data was shared by MCS in MCS data dumps
+    date = args.raw_historical_installers_filename.split("installers_")[1].split(
+        ".xlsx"
+    )[0]
+
     # Process raw historical installers data
     processed_historical_installers = preprocess_historical_installers(
+        date_data_shared=date,
         raw_historical_installers=raw_historical_installers,
         raw_historical_installations=raw_historical_installations,
         geographical_data=uk_geo_data,
@@ -702,10 +785,6 @@ if __name__ == "__main__":
 
     # Saving processed data to S3
     processed_data_path = base_config.PREPROCESSED_MCS_HISTORICAL_INSTALLERS_FILE_PATH
-    # date when data was shared by MCS in MCS data dumps
-    date = args.raw_historical_installers_filename.split("installers_")[1].split(
-        ".xlsx"
-    )[0]
 
     save_to_s3(
         s3_bucket_name,

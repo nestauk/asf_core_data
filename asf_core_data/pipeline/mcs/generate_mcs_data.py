@@ -101,14 +101,6 @@ def generate_and_save_mcs(
     all_installations_data = get_most_recent_raw_historical_installations_data()
     all_installers_data = get_most_recent_raw_historical_installers_data()
 
-    # process historical installers (needs to happen before processing historical installations)
-    processed_historical_installers = preprocess_historical_installers(
-        raw_historical_installers=all_installers_data,
-        raw_historical_installations=all_installations_data,
-        geographical_data=uk_geo_data,
-        companies_house_api_key=companies_house_api_key,
-    )
-
     # save historical installers
     date_historical_installers_received = get_most_recent_batch_name(
         bucket=bucket_name,
@@ -118,6 +110,15 @@ def generate_and_save_mcs(
     date_historical_installers_received = date_historical_installers_received.split(
         "installers_"
     )[1].split(".xlsx")[0]
+
+    # process historical installers (needs to happen before processing historical installations)
+    processed_historical_installers = preprocess_historical_installers(
+        date_data_shared=date_historical_installers_received,
+        raw_historical_installers=all_installers_data,
+        raw_historical_installations=all_installations_data,
+        geographical_data=uk_geo_data,
+        companies_house_api_key=companies_house_api_key,
+    )
 
     installers_path = (
         base_config.PREPROCESSED_MCS_HISTORICAL_INSTALLERS_FILE_PATH.format(
