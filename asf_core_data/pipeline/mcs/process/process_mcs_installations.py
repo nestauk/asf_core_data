@@ -79,10 +79,9 @@ def mask_outliers(hps, max_cost=base_config.MCS_MAX_COST):
     return hps
 
 
-def process_installation_type(installations: pd.DataFrame) -> pd.DataFrame:
+def fill_missing_installation_type(installations: pd.DataFrame) -> pd.DataFrame:
     """
-    Joins together the info from installation_type and end_user_installation_type
-    as the two variables represent the same thing.
+    Fills missing installation_type with end_user_installation_type.
 
     Args:
         installations: MCS installations data
@@ -181,7 +180,7 @@ def get_processed_installations_data():
 
     installations_data = add_hp_features(installations_data)
     installations_data = mask_outliers(installations_data)
-    installations_data = process_installation_type(installations_data)
+    installations_data = fill_missing_installation_type(installations_data)
     installations_data = identify_clusters(installations_data)
 
     # getting latest batch of processed historical installers data
