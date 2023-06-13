@@ -489,14 +489,14 @@ england_wales_only_features = [
 ]
 
 scotland_field_fix_dict = {
-    "BUILDING_REFERENCE_NUMBER": "Property_UPRN",
+    "BUILDING_REFERENCE_NUMBER": "ï»¿Property_UPRN",
     "UPRN": "OSG_UPRN",
     "POSTCODE": "Postcode",
     "INSPECTION_DATE": "Date of Assessment",
     "LODGEMENT_DATE": "Date of Certificate",
-    "ENERGY_CONSUMPTION_CURRENT": "Primary Energy Indicator (kWh/m²/year)",
-    "TOTAL_FLOOR_AREA": "Total floor area (m²)",
-    "CO2_EMISS_CURR_PER_FLOOR_AREA": "CO2 Emissions Current Per Floor Area (kg.CO2/m²/yr)",
+    "ENERGY_CONSUMPTION_CURRENT": "Primary Energy Indicator (kWh/mÂ²/year)",
+    "TOTAL_FLOOR_AREA": "Total floor area (mÂ²)",
+    "CO2_EMISS_CURR_PER_FLOOR_AREA": "CO2 Emissions Current Per Floor Area (kg.CO2/mÂ²/yr)",
     "CURRENT_ENERGY_EFFICIENCY": "Current energy efficiency rating",
     "CURRENT_ENERGY_RATING": "Current energy efficiency rating band",
     "POTENTIAL_ENERGY_EFFICIENCY": "Potential Energy Efficiency Rating",
