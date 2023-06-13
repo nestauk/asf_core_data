@@ -68,7 +68,7 @@ def add_mcs_installations_data(
     )
 
     # Removing commercial installations
-    mcs_df = mcs_df[mcs_df["installation_type"] != "Commercial"]
+    mcs_df = mcs_df[~mcs_df["installation_type"].str.contains("commercial", case=False)]
 
     mcs_df = install_date_computation.reformat_mcs_date(mcs_df, "commission_date")
     mcs_df.rename(columns={"postcode": "POSTCODE"}, inplace=True)
