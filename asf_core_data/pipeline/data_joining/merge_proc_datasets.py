@@ -42,6 +42,7 @@ def add_mcs_installations_data(
     - Load MCS installations data (most relevant fields)
     - Mark matches in data (MCS_AVAILABLE, EPC_AVAILABLE)
     - Join based on UPRN, otherwise concatenate
+    - Remove commercial installations
     - Standardise fields such as HP_INSTALLED or HP_TYPE
 
     Args:
@@ -65,6 +66,11 @@ def add_mcs_installations_data(
         usecols=usecols,
         dtype={"UPRN": "str", "commission_date": "str"},
     )
+
+    # Removing commercial installations
+    print("bf remv com inst:", len(mcs_df))
+    mcs_df = mcs_df[mcs_df["installation_type"] != "Commercial"]
+    print("af remv com inst:", len(mcs_df))
 
     mcs_df = install_date_computation.reformat_mcs_date(mcs_df, "commission_date")
     mcs_df.rename(columns={"postcode": "POSTCODE"}, inplace=True)
