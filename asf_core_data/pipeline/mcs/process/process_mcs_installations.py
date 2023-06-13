@@ -91,8 +91,7 @@ def fill_missing_installation_type(installations: pd.DataFrame) -> pd.DataFrame:
     installations["installation_type"] = installations["installation_type"].fillna(
         installations["end_user_installation_type"]
     )
-
-    installations.drop("end_user_installation_type", inplace=True)
+    installations.drop(columns="end_user_installation_type", inplace=True)
 
     return installations
 
