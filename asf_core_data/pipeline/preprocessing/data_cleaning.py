@@ -76,9 +76,6 @@ import numpy as np
 from asf_core_data import PROJECT_DIR, get_yaml_config, Path
 from asf_core_data.config import base_config
 from asf_core_data.pipeline.preprocessing import data_cleaning_utils
-from asf_core_data.pipeline.preprocessing.feature_engineering import (
-    enhance_construction_age_band,
-)
 
 # ---------------------------------------------------------------------------------
 
@@ -497,6 +494,26 @@ def custom_clean_features(df, cap_features=False):
                 df = cap_feature_values(df, feat, cap_value=cap_value_dict[feat])
 
     return df
+
+
+def enhance_construction_age_band(
+    construction_age_band: str,
+    transaction_type: str,
+) -> str:
+    """
+    Enhances construction age band by replacing unknown when transaction type is new dwelling
+    (EPC inspections only began in 2008, so if it's a new dwelling then the age band will be "2007 onwards").
+
+    Args:
+        construction_age_band: property's construction age band
+        transaction_type: transaction type (e.g. new dwelling)
+    Retruns:
+        Updated construction age band
+    """
+    if construction_age_band == "unknown":
+        if transaction_type == "new dwelling":
+            return "2007 onwards"
+    return construction_age_band
 
 
 def clean_epc_data(df):
