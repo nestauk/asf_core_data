@@ -20,8 +20,7 @@ import numpy as np
 from hashlib import md5
 
 from asf_core_data.getters.supplementary_data.geospatial import coordinates
-from asf_core_data.pipeline.preprocessing import data_cleaning
-from datetime import datetime
+from asf_core_data.pipeline.preprocessing.data_cleaning import reformat_postcode
 
 # ----------------------------------------------------------------------------------
 
@@ -397,12 +396,12 @@ def get_postcode_coordinates(df, postcode_field_name="POSTCODE"):
     )
 
     # Reformat POSTCODE
-    postcode_coordinates_df = data_cleaning.reformat_postcode(
+    postcode_coordinates_df = reformat_postcode(
         postcode_coordinates_df,
         postcode_var_name=postcode_field_name,
         white_space="remove",
     )
-    df = data_cleaning.reformat_postcode(df, white_space="remove")
+    df = reformat_postcode(df, white_space="remove")
 
     # Merge with location data
     df = pd.merge(df, postcode_coordinates_df, on=postcode_field_name, how="left")
