@@ -24,9 +24,9 @@ from argparse import ArgumentParser
 from datetime import date
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from asf_core_data.pipeline.preprocessing import feature_engineering
-from asf_core_data.getters import data_getters
+from asf_core_data.pipeline.preprocessing.feature_engineering import (
+    get_postcode_coordinates,
+)
 
 # ---------------------------------------------------------------------------------
 
@@ -68,7 +68,9 @@ def add_mcs_installations_data(
     )
 
     # Removing commercial installations
-    mcs_df = mcs_df[~mcs_df["installation_type"].str.contains("commercial", case=False)]
+    mcs_df = mcs_df[
+        ~mcs_df["installation_type"].str.contains("commercial", case=False, na=False)
+    ]
 
     mcs_df = install_date_computation.reformat_mcs_date(mcs_df, "commission_date")
     mcs_df.rename(columns={"postcode": "POSTCODE"}, inplace=True)
@@ -251,9 +253,7 @@ def merging_pipeline(
     merged_data = add_mcs_installer_data(merged_data, usecols=mcs_installers_usecols)
 
     # Add coordinates for EPC data
-    merged_data = feature_engineering.get_postcode_coordinates(
-        merged_data, postcode_field_name="POSTCODE"
-    )
+    merged_data = get_postcode_coordinates(merged_data, postcode_field_name="POSTCODE")
 
     today = date.today().strftime("%y%m%d")
 
