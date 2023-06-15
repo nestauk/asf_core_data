@@ -675,6 +675,7 @@ MCS_INSTALLATIONS_FEAT_SELECTION_MERGED_DATASET = [
     "estimated_annual_generation",
     "flow_temp",
     "tech_type",
+    "installation_type",
     "scop",
     "design",
     "product_name",

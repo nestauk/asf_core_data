@@ -20,8 +20,7 @@ import numpy as np
 from hashlib import md5
 
 from asf_core_data.getters.supplementary_data.geospatial import coordinates
-from asf_core_data.pipeline.preprocessing import data_cleaning
-from datetime import datetime
+from asf_core_data.pipeline.preprocessing.data_cleaning import reformat_postcode
 
 # ----------------------------------------------------------------------------------
 
@@ -397,12 +396,12 @@ def get_postcode_coordinates(df, postcode_field_name="POSTCODE"):
     )
 
     # Reformat POSTCODE
-    postcode_coordinates_df = data_cleaning.reformat_postcode(
+    postcode_coordinates_df = reformat_postcode(
         postcode_coordinates_df,
         postcode_var_name=postcode_field_name,
         white_space="remove",
     )
-    df = data_cleaning.reformat_postcode(df, white_space="remove")
+    df = reformat_postcode(df, white_space="remove")
 
     # Merge with location data
     df = pd.merge(df, postcode_coordinates_df, on=postcode_field_name, how="left")
@@ -439,26 +438,6 @@ def get_building_entry_feature(df, feature):
     df[new_feature_name] = df[feature].map(dict(df.groupby(feature).size()))
 
     return df
-
-
-def enhance_construction_age_band(
-    construction_age_band: str,
-    transaction_type: str,
-) -> str:
-    """
-    Enhances construction age band by replacing unknown when transaction type is new dwelling
-    (EPC inspections only began in 2008, so if it's a new dwelling then the age band will be "2007 onwards").
-
-    Args:
-        construction_age_band: property's construction age band
-        transaction_type: transaction type (e.g. new dwelling)
-    Retruns:
-        Updated construction age band
-    """
-    if construction_age_band == "unknown":
-        if transaction_type == "new dwelling":
-            return "2007 onwards"
-    return construction_age_band
 
 
 def get_additional_features(df):
