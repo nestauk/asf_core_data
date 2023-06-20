@@ -1,6 +1,6 @@
 # ASF Core Data <a name="core_data_overview"></a>
 
-Last updated: July 12 2022 by Chris Williamson
+Last updated: June 20 2023 by Sofia Pinto
 
 ## Overview <a name="overview"></a>
 
@@ -48,12 +48,12 @@ This repository is the foundation for many projects in our work on sustainabilit
 
 Generally, both the EPC and MCS data will be updated every three months. Release dates can vary as we are not responsible for the release of the raw data.
 
-| Dataset                     | Content       | Last updated        |
-| --------------------------- | ------------- | ------------------- |
-| EPC England/Wales           | up to Q4 2021 | March 14th, 2022    |
-| EPC Scotland                | up to Q2 2021 | March 14th, 2022    |
-| MCS Heat Pump Installations | up to Q4 2021 | February 25th, 2022 |
-| MCS HP Installer Data       | up to Q4 2021 | March 15th, 2022    |
+| Dataset                     | Content       | Last updated    | Includes data up to |
+| --------------------------- | ------------- | --------------- | ------------------- |
+| EPC England/Wales           | up to Q1 2023 | 25 May 2023     | 30 April 2023       |
+| EPC Scotland                | up to Q1 2023 | 13 June 2023    | 30 April 2023       |
+| MCS Heat Pump Installations | up to Q1 2023 | 19 April 2023   | 31 March 2023       |
+| MCS HP Installer Data       | up to Q1 2023 | 7 February 2023 | January 2023        |
 
 <a href="#top">[back to top]</a>
 
@@ -101,7 +101,7 @@ The EPC Register provides data on building characteristics and energy efficiency
 
 You can retrieve the data either by downloading it or pulling it from the S3 bucket with `make inputs-pull`. If you choose to download the data, please follow the steps [here](#epc_update).
 
-In `inputs/data/EPC/raw_data` you can find the raw EPC data. The current version holds up to 2021.
+In `inputs/data/EPC/raw_data` you can find the raw EPC data. The current version holds up to Q1 of 2023.
 
 The data for England and Wales can be found in `inputs/data/EPC/raw_data/england_wales` in a zipped file named _all-domestic-certificates.zip_.
 
@@ -173,7 +173,7 @@ The original data for England and Wales is freely available [here](https://epc.o
 
 Note that the data is updated every quarter so in order to work with the most recent data, the EPC data needs to be downloaded and preprocessed. [Here](#recent_data) you can check when the data was updated last time. If you need to download or update the EPC data, follow the steps below.
 
-<mark>Current version: Q4_2021</mark>
+<mark>Current version: Q1_2023</mark>
 
 Below we describe the necessary steps to download and update the data. Don't worry! It's less complicated than it looks.
 
@@ -195,7 +195,7 @@ Below we describe the necessary steps to download and update the data. Don't wor
 
 - Run the preprocessing script`python -m asf_core_data.pipeline.preprocessing.preprocess_epc_data` which generates the preprocessed data in folder `outputs/EPC_data/preprocessed_data/Q[quarter]_[year]`
 
-  Note: The data preprocessing is optimised for the data collected in 2021 (Q4_2021). More recent EPC data may include values not yet covered by the current preprocessing algorithm (for example new construction age bands), possibly causing errors when excuting the script.
+  Note: The data preprocessing is optimised for the data collected in 2023 (Q1_2023). More recent EPC data may include values not yet covered by the current preprocessing algorithm (for example new construction age bands), possibly causing errors when excuting the script.
   These can usually be fixed easily so feel free to open an issue or submit a pull request.
 
 - If you update the `/inputs` data on the S3 bucket, please let everyone know by creating an issue. For those without access to the S3 bucket, open an issue and we'll take care of it for you.
