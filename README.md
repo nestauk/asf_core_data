@@ -1,6 +1,6 @@
 # ASF Core Data <a name="core_data_overview"></a>
 
-Last updated: June 20 2023 by Sofia Pinto
+Last updated: August 2023 by Sofia Pinto
 
 ## Overview <a name="overview"></a>
 
@@ -53,7 +53,7 @@ Generally, both the EPC and MCS data will be updated every three months. Release
 | EPC England/Wales           | up to Q1 2023 | 25 May 2023     | 30 April 2023       |
 | EPC Scotland                | up to Q1 2023 | 13 June 2023    | 30 April 2023       |
 | MCS Heat Pump Installations | up to Q1 2023 | 19 April 2023   | 31 March 2023       |
-| MCS HP Installer Data       | up to Q1 2023 | 7 February 2023 | January 2023        |
+| MCS HP Installer Data       | up to Q4 2022 | 7 February 2023 | January 2023        |
 
 <a href="#top">[back to top]</a>
 
@@ -137,23 +137,23 @@ ROW_NUM, LMK_KEY, ADDRESS1, ADDRESS2, ADDRESS3, POSTCODE, BUILDING_REFERENCE_NUM
 
 <a href="#epc">[back to top of EPC]</a>
 
-### Preprocessed EPC Dataset (<a name="preprocessed_epc"></a>)
+### Preprocessed EPC Dataset <a name="preprocessed_epc"></a>
 
-In `inputs/data/EPC/preprocessed_data/Q4_2021` you can find three different versions of preprocessed EPC data.
+In `inputs/data/EPC/preprocessed_data/Q[quarter]_[YEAR]` you can find three different versions of preprocessed EPC data for quarter `quarter` and year `YEAR`.
 
 **Since the preprocessing depends on data cleaning and feature engineering algorithms that may change over time, the data in this folder should be considered a snapshot of the current status in September 2021. Ideally, you should always work with the output of the most recent preprocessing version.**
 
 If you have no access to the S3 bucket and/or you would like to work with the most recent data, you can generate the preprocessed datasets from the raw data by executing the script in _preprocess_epc_data.py_ in `asf_core_data/pipeline/preprocessing`.
 
-Run `python -m asf_core_data/pipeline/preprocessing/preprocess_epc_data.py`
+Run `python -m asf_core_data/pipeline/preprocessing/preprocess_epc_data.py`. This will get raw data from the S3 bucket and process it. Alternatively, you can run `python asf_core_data/pipeline/preprocessing/preprocess_epc_data.py --path_to_data "/LOCAL/PATH/TO/DATA/"` if you want to read raw data from a local path.
 
 It will generate three versions of the data in `outputs/EPC_data/preprocessed_data/Q[quarter]_[YEAR]`. They will be written out as regular CSV-files.
 
-| Filename                                 | Version                                         | Samples    |
-| ---------------------------------------- | ----------------------------------------------- | ---------- |
-| EPC_GB_raw.csv                           | Original raw data                               | 22 840 162 |
-| EPC_GB_preprocessed.csv                  | Cleaned and added features, includes duplicates | 22 839 568 |
-| EPC_GB_preprocessed_and_deduplicated.csv | Cleaneda and added features, without duplicates | 18 179 719 |
+| Filename                                 | Version                                         | Samples (Q4_2021) |
+| ---------------------------------------- | ----------------------------------------------- | ----------------- |
+| EPC_GB_raw.csv                           | Original raw data                               | 22 840 162        |
+| EPC_GB_preprocessed.csv                  | Cleaned and added features, includes duplicates | 22 839 568        |
+| EPC_GB_preprocessed_and_deduplicated.csv | Cleaneda and added features, without duplicates | 18 179 719        |
 
 _EPC_GB_raw.csv_ merges the data for England, Wales and Scotland in one file, yet leaves the data unaltered.
 
@@ -163,7 +163,7 @@ We also identified duplicates, i.e. samples referring to the same property yet o
 
 Since duplicates can be interesting for some research questions, we also save the version with duplicates included as _EPC_GB_preprocessed.csv_.
 
-**Note**: In order make up- and downloading more efficient, we zipped the files in `inputs/EPC_data/preprocessed_data` - so the filenames all end in _.zip_. The data loading script in `asf_core_data/pipeline/getters/epc_data.py` will handle the unzipping if necessary.
+**Note**: In order make up- and downloading more efficient, we zipped the files in `outputs/EPC_data/preprocessed_data` - so the filenames all end in _.zip_.
 
 <a href="#epc">[back to top of EPC]</a>
 
@@ -181,22 +181,22 @@ Below we describe the necessary steps to download and update the data. Don't wor
 
 - Download most recent Scotland data from [here](https://statistics.gov.scot/resource?uri=http%3A%2F%2Fstatistics.gov.scot%2Fdata%2Fdomestic-energy-performance-certificates). The filename is is of the format `D_EPC_data_2012-[year]Q[quarter]_extract_[month][year].zip`, for example `D_EPC_data_2012-2021Q4_extract_0721.zip`.
 
-- Clear the folders `inputs/data/EPC/raw_data/England_Wales` and `inputs/data/EPC/raw_data/Scotland`. If there is raw EPC data from previous quarters/years, delete it or move it to a subfolder. Note that the most recently downlaoded data will include all the data from previous downloads so there should be no data loss when overwriting previous data.
+- Create a folder for the specific quarter data inside `inputs/data/EPC/raw_data/`, following the structure `inputs/data/EPC/raw_data/YYYY_Qm_complete/` e.g.`inputs/data/EPC/raw_data/2022_Q4_complete/`
 
-- Move the downloaded zip files to the corresponding folders `England_Wales` or `Scotland`.
+- Inside your quarter folder, create a subfolder called `England_Wales` and move the downloaded zip England and Wales file to the folder. Create a subfolder called `Scotland` and move the Scotland zip file to the subfolder.
 
 - Shorten the Scotland filename to `D_EPC_data.zip`.
 
 - Note: The zipped Scotland data may not be processable by the Python package _ZipFile_ because of an unsupported compression method. This problem can be solved easily solved by unzipping and zipping the data manually, e.g. with the command `unzip`. Make sure the filename remains `D_EPC_data.zip`.
 
-- Create a new folder in `outpus/EPC_data/preprocessed_data/` with the name pattern `Q[quarter]_[year]`, indicating when the data was updated last. This information will be displayed when downloading the data and is reflected in the original filename for Scotland. For example, _Q2_2021_ includes the data up to June 2021.
+- Upload raw data to S3 `asf-core-data/inputs/EPC/raw_data/`
 
-- Open the config file `config/base.yaml` and update all paths including `outputs/EPC_data/preprocessed_data/Q[quarter]_[year]` to match the folder created in the last step.
-
-- Run the preprocessing script`python -m asf_core_data.pipeline.preprocessing.preprocess_epc_data` which generates the preprocessed data in folder `outputs/EPC_data/preprocessed_data/Q[quarter]_[year]`
+- Run the preprocessing script`python -m asf_core_data.pipeline.preprocessing.preprocess_epc_data` which generates the preprocessed data in folder `outputs/EPC/preprocessed_data/[YEAR]_Q[quarter]_complete`, e.g. `outputs/EPC/preprocessed_data/2023_Q1_complete`
 
   Note: The data preprocessing is optimised for the data collected in 2023 (Q1_2023). More recent EPC data may include values not yet covered by the current preprocessing algorithm (for example new construction age bands), possibly causing errors when excuting the script.
   These can usually be fixed easily so feel free to open an issue or submit a pull request.
+
+- Zip the output files and upload them, as well as the .csv files to S3, - Upload raw data to S3 `asf-core-data/outputs/EPC/preprocessed_data/`
 
 - If you update the `/inputs` data on the S3 bucket, please let everyone know by creating an issue. For those without access to the S3 bucket, open an issue and we'll take care of it for you.
 
@@ -228,21 +228,17 @@ Replace the `...` above with
 - "full" to get every MCS installation record joined to the property's full EPC history (one row for each installation-EPC pair) - installations without a matching EPC are kept, but with missing data in the EPC fields
 - "most_relevant" to get every MCS installation joined to its "most relevant" EPC record (this being the latest EPC before the installation if one exists; otherwise, the earliest EPC after the installation) - installations without a matching EPC are kept, but with missing data in the EPC fields
 
-To update the data on the `asf-core-data` S3 bucket, run:
+To update installations and installer data on the `asf-core-data` S3 bucket, run:
 
     export COMPANIES_HOUSE_API_KEY="ADD_YOUR_API_KEY_HERE"
 
-    from asf_core_data import generate_and_save_mcs
-
-    generate_and_save_mcs()
+    python asf_core_data/pipeline/mcs/generate_mcs_data.py
 
 which requires the user to have a Companies House API key:
 
-- Create a developer account for Companies House API[here](https://developer.company-information.service.gov.uk/get-started);
+- Create a developer account for Companies House API [here](https://developer.company-information.service.gov.uk/get-started);
 - Create a new application [here](https://developer.company-information.service.gov.uk/manage-applications/add). Give it any name and description you want and choose the Live environment.
   Copy your API key credentials.
-
-This requires processed EPC data to be saved locally as set out by the requirements in the section above.
 
 To run checks on raw installations data:
 
