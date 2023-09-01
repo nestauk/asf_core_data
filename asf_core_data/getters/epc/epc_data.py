@@ -185,8 +185,8 @@ def load_scotland_data(
             dtype=dtype,
             low_memory=low_memory,
             usecols=scot_usecols,
-            skiprows=skiprows,  # don't load first row (more ellaborate feature names),
-            encoding="latin-1",
+            skiprows=1,  # don't load first row (more ellaborate feature names),
+            # encoding="latin-1",
         )
         for file in files
     ]
