@@ -115,11 +115,6 @@ def enhance_uprn(df: pd.DataFrame) -> pd.DataFrame:
     epc_with_uprn = df[~pd.isnull(df["UPRN"])][["UPRN", "new_property_identifier"]]
     epc_with_uprn.drop_duplicates(["UPRN", "new_property_identifier"], inplace=True)
 
-    mapping = epc_with_uprn.groupby(
-        ["UPRN", "new_property_identifier"], as_index=False
-    ).count()
-    mapping = mapping[["UPRN", "new_property_identifier"]]
-
     # If a specific new identifier has 2 or more corresponding UPRNs we filter it out from the mapping
     mapping = mapping[~mapping["new_property_identifier"].duplicated(keep=False)]
     mapping.set_index("new_property_identifier", inplace=True)
