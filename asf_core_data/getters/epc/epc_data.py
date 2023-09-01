@@ -357,9 +357,6 @@ def load_england_wales_data(
     if add_country_f:
         epc_certs["COUNTRY"] = subset
 
-    if "UPRN" in epc_certs.columns and "BUILDING_REFERENCE_NUMBER" in epc_certs.columns:
-        epc_certs["UPRN"].fillna(epc_certs.BUILDING_REFERENCE_NUMBER, inplace=True)
-
     if batch in base_config.v0_batches and (
         usecols is None or "BUILDING_REFERENCE_NUMBER" in usecols
     ):
