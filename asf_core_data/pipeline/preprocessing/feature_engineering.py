@@ -113,7 +113,7 @@ def enhance_uprn(df: pd.DataFrame) -> pd.DataFrame:
 
     # Creating a mapping between new identifier and existing UPRNs
     epc_with_uprn = df[~pd.isnull(df["UPRN"])][["UPRN", "new_property_identifier"]]
-    epc_with_uprn.drop_duplicates(["UPRN", "new_property_identifier"], inplace=True)
+    mapping = epc_with_uprn.drop_duplicates(["UPRN", "new_property_identifier"])
 
     # If a specific new identifier has 2 or more corresponding UPRNs we filter it out from the mapping
     mapping = mapping[~mapping["new_property_identifier"].duplicated(keep=False)]
