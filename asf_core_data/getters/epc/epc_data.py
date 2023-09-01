@@ -185,8 +185,8 @@ def load_scotland_data(
             dtype=dtype,
             low_memory=low_memory,
             usecols=scot_usecols,
-            skiprows=skiprows,  # don't load first row (more ellaborate feature names),
-            encoding="latin-1",
+            skiprows=1,  # don't load first row (more ellaborate feature names),
+            # encoding="latin-1",
         )
         for file in files
     ]
@@ -356,9 +356,6 @@ def load_england_wales_data(
     epc_certs = pd.concat(epc_certs, axis=0)
     if add_country_f:
         epc_certs["COUNTRY"] = subset
-
-    if "UPRN" in epc_certs.columns and "BUILDING_REFERENCE_NUMBER" in epc_certs.columns:
-        epc_certs["UPRN"].fillna(epc_certs.BUILDING_REFERENCE_NUMBER, inplace=True)
 
     if batch in base_config.v0_batches and (
         usecols is None or "BUILDING_REFERENCE_NUMBER" in usecols

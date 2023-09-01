@@ -21,6 +21,7 @@ from hashlib import md5
 
 from asf_core_data.getters.supplementary_data.geospatial import coordinates
 from asf_core_data.pipeline.preprocessing.data_cleaning import reformat_postcode
+from asf_core_data.pipeline.mcs.process.process_mcs_utils import remove_punctuation
 
 # ----------------------------------------------------------------------------------
 
@@ -41,6 +42,101 @@ other_hp_expressions = [
 ]
 
 # ----------------------------------------------------------------------------------
+
+
+def prepare_address_data(address_1: str, address_2: str, postcode: str) -> str:
+    """
+    Prepares address and postcode information by removing removing punctuation,
+    removing leading and trailing whitespace and standardising postcodes.
+
+    Args:
+        address_1: first line of address (e.g. "Flat 1")
+        address_2: second line of address (e.g. "ABC road")
+        postcode: full postcode (e.g. "AB2 Y8X")
+
+
+    Returns:
+        A string with processed address_1, address_2 and postcode information,
+        e.g. "flat 1 abc road_AB2Y8X"
+    """
+    address_1 = remove_punctuation(address_1).lower().strip()
+    address_2 = remove_punctuation(address_2).lower().strip()
+    postcode = postcode.upper().replace(" ", "")
+
+    address_info = (address_1 + " " + address_2).strip()
+
+    return "_".join([address_info, postcode])
+
+
+def concatenate_building_with_address_info(
+    building_reference: str, address_info: str
+) -> str:
+    """
+    Concatenates building reference number with address information.
+
+    Args:
+        building_reference: building reference number, e.g. 1234
+        address_info: address information, e.g. "flat 1 abc road_AB2Y8X"
+
+    Returns:
+        A string with concatenated building reference and address info (e.g. "1234_flat 1 abc road_AB2Y8X")
+    """
+    return str(building_reference) + "_" + address_info
+
+
+def enhance_uprn(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Enhances UPRN by filling missing information with known UPRN (if available)
+    or a new property identifier built from the BUILDING_REFERENCE_NUMBER and
+    full adress information.
+
+    Args:
+        df: EPC dataframe
+
+    Returns:
+        EPC dataframe with enhanced UPRN.
+    """
+
+    # Concatenate ADDRESS1, ADDRESS2 and POSTCODE into one variable
+    df["address_info"] = df.apply(
+        lambda x: prepare_address_data(x["ADDRESS1"], x["ADDRESS2"], x["POSTCODE"]),
+        axis=1,
+    )
+
+    # Building a new identifier using the building reference number and address info (including postcode)
+    df["new_property_identifier"] = df.apply(
+        lambda x: concatenate_building_with_address_info(
+            x["BUILDING_REFERENCE_NUMBER"], x["address_info"]
+        ),
+        axis=1,
+    )
+
+    # Creating a mapping between new identifier and existing UPRNs
+    epc_with_uprn = df[~pd.isnull(df["UPRN"])][["UPRN", "new_property_identifier"]]
+    mapping = epc_with_uprn.drop_duplicates(["UPRN", "new_property_identifier"])
+
+    # If a specific new identifier has 2 or more corresponding UPRNs we filter it out from the mapping
+    mapping = mapping[~mapping["new_property_identifier"].duplicated(keep=False)]
+    mapping.set_index("new_property_identifier", inplace=True)
+    mapping = mapping.to_dict()["UPRN"]
+
+    # Create an enhanced UPRN variable from the mapping above
+    df["UPRN_enhanced"] = df["new_property_identifier"].map(mapping)
+
+    # Filling any missing values with existing UPRN values, i.e. for cases when
+    # the new identifier was mapping to multiple different UPRNs
+    df["UPRN_enhanced"].fillna(df["UPRN"], inplace=True)
+
+    # For properties not accounted above, use the new property identifier
+    df["UPRN_enhanced"].fillna(df["new_property_identifier"], inplace=True)
+
+    # Dropping unecessary variables
+    df.drop(columns=["UPRN", "new_property_identifier"], inplace=True)
+
+    # Renaming new UPRN variable
+    df.rename(columns={"UPRN_enhanced": "UPRN"}, inplace=True)
+
+    return df
 
 
 def short_hash(text):
@@ -452,6 +548,7 @@ def get_additional_features(df):
         pandas.DataFrame: Updated dataframe with new features.
     """
 
+    df = enhance_uprn(df)
     df = get_unique_building_id(df)
     df = get_building_entry_feature(df, "UPRN")
 
