@@ -28,7 +28,97 @@ from asf_core_data.pipeline.preprocessing.feature_engineering import (
     get_postcode_coordinates,
 )
 
+
 # ---------------------------------------------------------------------------------
+def remove_non_domestic_installations(
+    epc_mcs_df: pd.DataFrame, uprns_likely_multiple_houses: list
+) -> pd.DataFrame:
+    """
+    Removes installations of type "Commercial" and "Non-domestic".
+    Additionally, it also remove installations where installation_type is "Unspecified",
+    and EPC is not available (or UPRN is not in uprns_likely_multiple_houses).
+
+    Args:
+        epc_mcs_df: dataframe with EPC and MCS data.
+    Returns:
+        Updated epc_mcs_df
+    """
+    # Removing commercial/non-domestic installations
+    for inst_type in ["commercial", "non-domestic"]:
+        epc_mcs_df = epc_mcs_df[
+            ~epc_mcs_df["installation_type"].str.contains(
+                inst_type, case=False, na=False
+            )
+        ]
+
+    # Removing installations of type Unspecified if no match with EPC
+    # as we're not sure if non-EPC "Unspecified"-type installations are domestic
+    epc_mcs_df = epc_mcs_df[
+        ~(
+            (epc_mcs_df["installation_type"] == "Unspecified")
+            & (
+                (epc_mcs_df["EPC_AVAILABLE"])
+                | epc_mcs_df["UPRN"].isin(uprns_likely_multiple_houses)
+            )
+        )
+    ]
+
+    return epc_mcs_df
+
+
+def fix_hp_related_variables(epc_mcs_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fixes heat pump related variables:
+        - HP_INSTALL_DATE
+        - HP_INSTALLED
+        - HP_TYPE
+        - HEATING_SYSTEM
+        - HEATING_FUEL
+
+    Args:
+        epc_mcs_df: dataframe with EPC and MCS data.
+    Returns:
+        Updated epc_mcs_df
+    """
+
+    # Update installation date
+    epc_mcs_df["HP_INSTALL_DATE"] = np.where(
+        epc_mcs_df["MCS_AVAILABLE"],
+        epc_mcs_df["commission_date"],
+        epc_mcs_df["HP_INSTALL_DATE"],
+    )
+
+    # Update installation tag
+    epc_mcs_df["HP_INSTALLED"] = np.where(
+        epc_mcs_df["MCS_AVAILABLE"], True, epc_mcs_df["HP_INSTALLED"]
+    )
+
+    # Update HP_TYPE with tech_type coming from MCS (except when HP found in EPC but not in MCS)
+    epc_mcs_df["HP_TYPE"] = np.where(
+        epc_mcs_df["MCS_AVAILABLE"],  # & ~pd.isnull(epc_mcs_df["tech_type"]),
+        epc_mcs_df["tech_type"],
+        epc_mcs_df["HP_TYPE"],
+    )
+
+    # Update HP_TYPE
+    # epc_mcs_df["HP_TYPE"] = np.where(
+    #    epc_mcs_df["HP_INSTALLED"]
+    #    & (pd.isnull(epc_mcs_df["HP_TYPE"]) | (epc_mcs_df["HP_TYPE"] == "No HP")),
+    #    epc_mcs_df["HEATING_SYSTEM"],
+    #    epc_mcs_df["HP_TYPE"],
+    # )
+
+    # Update HEATING_SYSTEM
+    epc_mcs_df["HEATING_SYSTEM"] = np.where(
+        epc_mcs_df["MCS_AVAILABLE"], "heat pump", epc_mcs_df["HEATING_SYSTEM"]
+    )
+
+    # Update HEATING_FUEL
+    epc_mcs_df["HEATING_FUEL"] = np.where(
+        epc_mcs_df["MCS_AVAILABLE"], "electric", epc_mcs_df["HEATING_FUEL"]
+    )
+
+    return epc_mcs_df
 
 
 def add_mcs_installations_data(
@@ -42,7 +132,7 @@ def add_mcs_installations_data(
     - Load MCS installations data (most relevant fields)
     - Mark matches in data (MCS_AVAILABLE, EPC_AVAILABLE)
     - Join based on UPRN, otherwise concatenate
-    - Remove commercial installations
+    - Remove commercial/non domestic installations
     - Standardise fields such as HP_INSTALLED or HP_TYPE
 
     Args:
@@ -67,10 +157,16 @@ def add_mcs_installations_data(
         dtype={"UPRN": "str", "commission_date": "str"},
     )
 
-    # Removing commercial installations
-    mcs_df = mcs_df[
-        ~mcs_df["installation_type"].str.contains("commercial", case=False, na=False)
-    ]
+    # List of UPRNs that appear to be mapped to multiple installations,
+    # so likely multiple homes instead of one
+    uprns_likely_multiple_houses = list(
+        mcs_df["UPRN"].value_counts()[mcs_df["UPRN"].value_counts() > 1].index
+    )
+
+    # We replace those UPRNs by None
+    mcs_df["UPRN"] = np.where(
+        mcs_df["UPRN"].isin(uprns_likely_multiple_houses), None, mcs_df["UPRN"]
+    )
 
     mcs_df = install_date_computation.reformat_mcs_date(mcs_df, "commission_date")
     mcs_df.rename(columns={"postcode": "POSTCODE"}, inplace=True)
@@ -104,31 +200,15 @@ def add_mcs_installations_data(
     if verbose:
         print("EPC and MCS merged", epc_mcs_df.shape)
 
-    # Update installation date (will only affect MCS-only records)
-    epc_mcs_df["HP_INSTALL_DATE"] = np.where(
-        epc_mcs_df["MCS_AVAILABLE"],
-        epc_mcs_df["commission_date"],
-        epc_mcs_df["HP_INSTALL_DATE"],
-    )
-    epc_mcs_df.drop(columns="commission_date", inplace=True)
-
-    # Update installation tag (will only affect MCS-only records)
-    epc_mcs_df["HP_INSTALLED"] = np.where(
-        epc_mcs_df["MCS_AVAILABLE"], True, epc_mcs_df["HP_INSTALLED"]
+    epc_mcs_df = remove_non_domestic_installations(
+        epc_mcs_df, uprns_likely_multiple_houses
     )
 
-    # Update TECH_TYPE and standardise HP types (will only affect MCS-only records)
+    epc_mcs_df = fix_hp_related_variables(epc_mcs_df)
+
     epc_mcs_df = standardise_hp_type(epc_mcs_df)
 
-    # Update HEATING_SYSTEM (will only affect MCS-only records)
-    epc_mcs_df["HEATING_SYSTEM"] = np.where(
-        epc_mcs_df["MCS_AVAILABLE"], "heat pump", epc_mcs_df["HEATING_SYSTEM"]
-    )
-
-    # Update HEATING_FUEL (will only affect MCS-only records)
-    epc_mcs_df["HEATING_FUEL"] = np.where(
-        epc_mcs_df["MCS_AVAILABLE"], "electric", epc_mcs_df["HEATING_FUEL"]
-    )
+    epc_mcs_df.drop(columns="commission_date", inplace=True)
 
     return epc_mcs_df
 
@@ -166,6 +246,57 @@ def standardise_hp_type(epc_mcs_df):
     return epc_mcs_df
 
 
+def deduplicate_installer_date(installer_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Deduplicates installer data by:
+        - Getting the min effective_from and max effective_to
+        - The most up to date information for all other fields
+
+    Args:
+        installer_data: dataframe with installer/companies data
+    Returns:
+        Deduplicated installer data
+    """
+
+    # Identifying duplicates based on pairs ("company_unique_id", "mcs_certificate_number")
+    duplicated_data = installer_data[
+        installer_data.duplicated(
+            ["company_unique_id", "mcs_certificate_number"], keep=False
+        )
+    ]
+
+    # Sort data from highest to lowest "effective_to"
+    duplicated_data = duplicated_data.sort_values("effective_to", ascending=False)
+
+    # Remove all data with duplicates from table of installers
+    installer_data = installer_data[
+        ~installer_data.duplicated(
+            ["company_unique_id", "mcs_certificate_number"], keep=False
+        )
+    ]
+
+    # Get minimum "effective_from" for each pair ("company_unique_id", "mcs_certificate_number")
+    min_effective_from = duplicated_data.groupby(
+        ["company_unique_id", "mcs_certificate_number"], as_index=False
+    )[["effective_from"]].agg("min")
+
+    # Now we keep drop the duplicates and keep only one record
+    duplicated_data.drop_duplicates(
+        ["company_unique_id", "mcs_certificate_number"], keep="first", inplace=True
+    )
+
+    # Adding minimum "effective_from"
+    duplicated_data.drop(columns="effective_from", inplace=True)
+    duplicated_data = duplicated_data.merge(
+        min_effective_from, on=["company_unique_id", "mcs_certificate_number"]
+    )
+
+    # All installer data info
+    installer_data = pd.concat([installer_data, duplicated_data])
+
+    return installer_data
+
+
 def add_mcs_installer_data(
     df, usecols=base_config.MCS_INSTALLER_FEAT_SELECTION_MERGED_DATASET
 ):
@@ -178,24 +309,35 @@ def add_mcs_installer_data(
         df (pd.DataFrame): EPC and MCS installations data.
     """
 
-    # Add fields required for merging
-    if usecols is not None:
-        usecols = list(set(usecols + ["company_unique_id", "company_name"]))
-
     newest_hist_inst_batch = data_batches.get_latest_hist_installers()
 
-    # Load MCS
+    # Load MCS installer data
     mcs_instllr_data = data_getters.load_s3_data(
         base_config.BUCKET_NAME, newest_hist_inst_batch, usecols=usecols
     )
 
-    mcs_instllr_data.rename(columns={"postcode": "POSTCODE"}, inplace=True)
+    mcs_instllr_data.rename(columns={"postcode": "installer_postcode"}, inplace=True)
+
+    mcs_instllr_data["mcs_certificate_number"] = mcs_instllr_data[
+        "mcs_certificate_number"
+    ].astype(str)
+
+    mcs_instllr_data = deduplicate_installer_date(mcs_instllr_data)
+
+    df["installation_company_mcs_number"] = df["installation_company_mcs_number"].apply(
+        lambda x: x.split(" ")[1] if not pd.isnull(x) else x
+    )
 
     merged_df = df.merge(
         right=mcs_instllr_data,
         how="outer",
-        left_on=["company_unique_id", "installer_name"],
-        right_on=["company_unique_id", "company_name"],
+        left_on=["company_unique_id", "installation_company_mcs_number"],
+        right_on=["company_unique_id", "mcs_certificate_number"],
+    )
+
+    merged_df.drop(
+        columns=["installation_company_mcs_number", "mcs_certificate_number"],
+        inplace=True,
     )
 
     return merged_df
