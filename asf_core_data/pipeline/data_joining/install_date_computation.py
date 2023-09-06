@@ -74,9 +74,18 @@ def get_mcs_install_date_mapping():
     # Get the MCS install dates
     mcs_data = reformat_mcs_date(mcs_data, "HP_INSTALL_DATE")
 
-    mcs_data = mcs_data.sort_values("HP_INSTALL_DATE", ascending=True).drop_duplicates(
-        subset=["UPRN"], keep="first"
+    # List of UPRNs that appear to be mapped to multiple installations,
+    # so likely multiple homes instead of one
+    uprns_likely_multiple_houses = list(
+        mcs_data["UPRN"].value_counts()[mcs_data["UPRN"].value_counts() > 1].index
     )
+
+    # We remove the mappings above as we can't be sure wether these are multiple installations in
+    # the same home (unlikely) or wrong UPRN mappings
+    mcs_data = mcs_data[~mcs_data["UPRN"].isin(uprns_likely_multiple_houses)]
+
+    # Removing all MCS instances not matched to EPC
+    mcs_data = mcs_data[~pd.isnull(mcs_data["UPRN"])]
 
     # Create a date dict from MCS data and apply to EPC data
     # If no install date is found for address, it assigns NaN
@@ -116,8 +125,6 @@ def compute_hp_install_date(
     # Get the MCS install dates for EPC properties
     mcs_hp_date_dict = get_mcs_install_date_mapping()
     df["HP_INSTALL_DATE"] = df["UPRN"].map(mcs_hp_date_dict)
-
-    df = df[df["INSPECTION_DATE"].notna()]
 
     # Get the first heat pump mention for each property
     first_hp_mention = (
@@ -194,10 +201,26 @@ def compute_hp_install_date(
 
     # --- End of handling edge cases ---
 
+    # Identifying records with no inspection date
+    records_no_inspection_date = df[pd.isnull(df["INSPECTION_DATE"])]
     # Deduplicate and only keep latest record
+    records_no_inspection_date = records_no_inspection_date.drop_duplicates(
+        subset=[identifier]
+    )
+
+    # For records where inspection date is known we keep the most up to date
+    df = df[df["INSPECTION_DATE"].notna()]
     df = df.sort_values("INSPECTION_DATE", ascending=True).drop_duplicates(
         subset=[identifier], keep="last"
     )
+
+    # Removing any records from homes appearing in df (because they also have records with inspection date)
+    records_no_inspection_date = records_no_inspection_date[
+        ~records_no_inspection_date[identifier].isin(df[identifier])
+    ]
+
+    # Joining back records with and without inspection date
+    df = pd.concat([df, records_no_inspection_date])
 
     return df
 

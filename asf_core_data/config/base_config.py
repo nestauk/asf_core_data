@@ -644,7 +644,7 @@ EPC_FEAT_SELECTION_MERGED_DATASET = [
     # "LOCAL_AUTHORITY_LABEL",
     "GLAZED_AREA",
     "GLAZED_TYPE",
-    # "PHOTO_SUPPLY",
+    "PHOTO_SUPPLY",
     "NUMBER_HEATED_ROOMS",
     "SOLAR_WATER_HEATING_FLAG",
     # "LMK_KEY",
@@ -684,12 +684,13 @@ MCS_INSTALLATIONS_FEAT_SELECTION_MERGED_DATASET = [
     "company_unique_id",
     "installer_name",
     "postcode",
+    "installation_company_mcs_number",
 ]
 
 MCS_INSTALLER_FEAT_SELECTION_MERGED_DATASET = [
     "company_unique_id",
     "company_name",
-    # "mcs_certificate_number",
+    "mcs_certificate_number",
     # "certification_body",
     # postcode,
     "latitude",
