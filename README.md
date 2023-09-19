@@ -295,7 +295,9 @@ Below we describe the necessary steps to download and update the data:
 
 ## MCS data (and merges to EPC)
 
-To update installations and installer data on the `asf-core-data` S3 bucket, run:
+Note that EPC processing pipeline should always ran first, so that the merged datasets between EPC and MCS contain the most up-to-date EPC data.
+
+To update installations and installer data on the `asf-core-data` S3 bucket, as well as create merge EPC to MCS, run:
 
     export COMPANIES_HOUSE_API_KEY="ADD_YOUR_API_KEY_HERE"
 
