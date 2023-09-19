@@ -223,12 +223,12 @@ Replace the `...` above with
 
 ## Processing new data <a name="processing_new_data"></a>
 
-### EPC data
+### EPC data (preprocessing without downloading new data)
 
 To preprocess EPC data, run:
 `python -m asf_core_data/pipeline/preprocessing/preprocess_epc_data.py`. This will get raw data from the S3 bucket and process it.
 
-Alternatively, you can run `python asf_core_data/pipeline/preprocessing/preprocess_epc_data.py --path_to_data "/LOCAL/PATH/TO/DATA/"` if you want to read raw data from a local path.
+Alternatively (and preferred!), you can run `python asf_core_data/pipeline/preprocessing/preprocess_epc_data.py --path_to_data "/LOCAL/PATH/TO/DATA/"` if you want to read raw data from a local path.
 
 Thi will generate three versions of the data in `outputs/EPC_data/preprocessed_data/Q[quarter]_[YEAR]`. They will be written out as regular CSV-files.
 
@@ -293,7 +293,7 @@ Below we describe the necessary steps to download and update the data:
 
 <a href="#top">[back to top]</a>
 
-## MCS data (and merges to EPC)
+### MCS data (and merges to EPC)
 
 Note that EPC processing pipeline should always ran first, so that the merged datasets between EPC and MCS contain the most up-to-date EPC data.
 
