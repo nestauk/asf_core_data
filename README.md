@@ -155,6 +155,8 @@ The MCS **installers** dataset contains one record for each MCS-certified instal
 
 ### Procesing MCS and merging with EPC <a name="mcs_epc_merging"></a>
 
+Note that EPC processing pipeline should always ran first, so that the merged datasets between EPC and MCS contain the most up-to-date EPC data.
+
 **asf_core_data/pipeline/mcs** contains functions for processing the raw MCS data and joining it with EPC data. In particular, running **generate_mcs_data.py** will process and save four different datasets to S3 (to `/outputs/MCS/`):
 
 1. Cleaned MCS installation data, with one row for each **installation**, e.g. `mcs_installations_220713.csv`
