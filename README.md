@@ -127,6 +127,8 @@ Inside each quarter folder, you will find different versions of the data (both a
 - `EPC_preprocessed`: contains preprocessed/enhanced data (new columns, changes to values, masked values, etc);
 - `EPC_preprocessed_and_deduplicated`: contains preprocessed data with only the most up-to-date record for each house; hence, this is not a true "deduplication" as multiple EPC records for the same house, will be different (at least the date of inspection will be different).
 
+Metadata information for the processed data can be found [here](https://docs.google.com/spreadsheets/d/1UE8mMPeIeDIE_Rm7UmR9gWkGGJEUhCyjnSH2e22pfMg/edit#gid=472586144) (only accessible by Nesta employees)
+
 ## MCS Data <a name="mcs"></a>
 
 The MCS datasets contain information on MCS-certified heat pump **installations** and **installation companies** (or **installers**). These datasets are proprietary and cannot be shared outside of Nesta. Both datasets are provided quarterly by MCS and are stored in Nesta's **asf-core-data** bucket on S3. Information about the fields in the raw dataset can be found [here](https://docs.google.com/spreadsheets/d/1XaGDblbCIBTkStH3_RE7d6qzzKAWghRf/edit#gid=1260528248).
@@ -161,6 +163,8 @@ The MCS **installers** dataset contains one record for each MCS-certified instal
 4. Preprocessed MCS installation companies/installers data, e.g. `installers/mcs_historical_installers_20230207.csv`
 
 Further details about the processing and joining of the data are provided within `asf_core_data/pipeline`.
+
+Metadata information for the processed data can be found [here](https://docs.google.com/spreadsheets/d/1UE8mMPeIeDIE_Rm7UmR9gWkGGJEUhCyjnSH2e22pfMg/edit#gid=472586144) (only accessible by Nesta employees)
 
 <a href="#top">[back to top]</a>
 
