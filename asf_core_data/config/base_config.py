@@ -956,4 +956,4 @@ preprocessed_historical_installers_date_cols = [
     "solar_assisted_hp_end_date",
 ]
 
-MCS_PROCESSED_FILES_PATH = "/outputs/MCS/"
+MCS_PROCESSED_FILES_PATH = "outputs/MCS/"
