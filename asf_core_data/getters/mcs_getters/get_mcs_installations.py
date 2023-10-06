@@ -184,15 +184,15 @@ def find_most_recent_mcs_installations_batch(epc_version: str = "none"):
 
 
 def get_processed_installations_data_by_batch(
-    processed_installations_batch: str = "newest", epc_version: str = "none"
+    batch_date: str = "newest", epc_version: str = "none"
 ) -> pd.DataFrame:
     """
     Get a specified version of the processed MCS installation (+ EPC) data (both domestic and non-domestic)
     from S3 (either just MCS or MCS merged with EPC) using batch date.
 
     Args:
-        processed_installations_batch: Date of desired batch in YYMMDD format. Defaults to "newest" which searches
-        S3 for latest batch.
+        batch_date: Date of desired batch of processed MCS installation data in YYMMDD format. Defaults to "newest"
+        which searches S3 for latest batch.
         epc_version: One of "none", "full", or "most_relevant".
             - "none" returns just installation data
             - "full" returns installation data with each property's entire EPC history attached
@@ -201,17 +201,15 @@ def get_processed_installations_data_by_batch(
     Returns:
         DataFrame: Processed MCS installations data (either merged or not merged with EPC)
     """
-    if processed_installations_batch == "newest":
-        processed_installations_file_name = find_most_recent_mcs_installations_batch(
+    if batch_date == "newest":
+        processed_installations_file_path = find_most_recent_mcs_installations_batch(
             epc_version=epc_version
         )
     else:
         file_prefix = keyword_to_path_dict[epc_version]
-        processed_installations_file_name = file_prefix.format(
-            processed_installations_batch
-        )[1:]
-    print(f"Loading <{processed_installations_file_name}> from S3")
+        processed_installations_file_path = file_prefix.format(batch_date)[1:]
+    print(f"Loading <{processed_installations_file_path}> from S3")
 
     return load_s3_data(
-        bucket_name=base_config.BUCKET_NAME, file_name=processed_installations_file_name
+        bucket_name=base_config.BUCKET_NAME, file_name=processed_installations_file_path
     )
