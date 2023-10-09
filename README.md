@@ -1,6 +1,6 @@
 # ASF Core Data <a name="core_data_overview"></a>
 
-Last updated: September 2023 by Sofia Pinto
+Last updated: October 2023 by Sofia Pinto
 
 ## Overview <a name="overview"></a>
 
@@ -40,12 +40,12 @@ This repository is the foundation for many projects in our work on sustainabilit
 
 Generally, both the EPC and MCS data will be updated every three months. Release dates can vary, as we are not responsible for the release of the raw data.
 
-| Dataset                     | Content       | Last updated    | Includes data up to |
-| --------------------------- | ------------- | --------------- | ------------------- |
-| EPC England/Wales           | up to Q1 2023 | 25 May 2023     | 30 April 2023       |
-| EPC Scotland                | up to Q1 2023 | 13 June 2023    | 30 April 2023       |
-| MCS Heat Pump Installations | up to Q1 2023 | 19 April 2023   | 31 March 2023       |
-| MCS HP Installer Data       | up to Q4 2022 | 7 February 2023 | January 2023        |
+| Dataset                     | Content       | Last updated | Includes data up to |
+| --------------------------- | ------------- | ------------ | ------------------- |
+| EPC England/Wales           | up to Q2 2023 | 0ctober 2023 | 31 July 2023        |
+| EPC Scotland                | up to Q2 2023 | October 2023 | 30 June 2023        |
+| MCS Heat Pump Installations | up to Q2 2023 | October 2023 | 30 June 2023        |
+| MCS HP Installer Data       | up to Q2 2023 | October 2023 | 30 June 2023        |
 
 <a href="#top">[back to top]</a>
 
