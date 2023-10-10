@@ -152,7 +152,7 @@ def get_processed_installations_data(
     )
 
 
-def find_most_recent_mcs_installations_batch(epc_version: str = "none"):
+def find_most_recent_mcs_installations_batch(epc_version: str = "none") -> str:
     """
     Finds most recent batch of MCS installations data, joined with EPC data in specified format if specified.
     Args:
@@ -206,7 +206,8 @@ def get_processed_installations_data_by_batch(
         )
     else:
         file_prefix = keyword_to_path_dict[epc_version]
-        processed_installations_file_path = file_prefix.format(batch_date)[1:]
+       # note that [1:] removes the first "/" in the file path
+        processed_installations_file_path = file_prefix.format(batch_date)[1:] 
     print(f"Loading <{processed_installations_file_path}> from S3")
 
     return load_s3_data(
