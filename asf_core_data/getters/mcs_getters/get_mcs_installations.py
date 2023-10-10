@@ -52,7 +52,7 @@ def get_raw_installations_data(
 
     if refresh or not os.path.exists(local_path):
         hps = load_s3_data(
-            base_config.BUCKET_NAME, base_config.INSTALLATIONS_RAW_S3_PATH, usecols=None
+            bucket_name, base_config.INSTALLATIONS_RAW_S3_PATH, usecols=None
         )
     else:
         hps = pd.read_excel(local_path)
@@ -94,15 +94,13 @@ def get_most_recent_raw_historical_installations_data() -> pd.DataFrame:
     Returns:
         The most recent version of the raw historical installations data from MCS.
     """
-
-    bucket = base_config.BUCKET_NAME
     path = base_config.MCS_HISTORICAL_DATA_INPUTS_PATH
     most_recent_file_name = get_most_recent_batch_name(
-        bucket=bucket, s3_folder_path=path, filter_keep_keywords=["installation"]
+        bucket=bucket_name, s3_folder_path=path, filter_keep_keywords=["installation"]
     )
 
     return load_s3_data(
-        base_config.BUCKET_NAME,
+        bucket_name,
         most_recent_file_name,
         dtype=base_config.raw_historical_installations_dtypes,
     )
@@ -123,7 +121,7 @@ def get_raw_historical_installations_data(
     """
 
     return load_s3_data(
-        base_config.BUCKET_NAME,
+        bucket_name,
         os.path.join(
             base_config.MCS_HISTORICAL_DATA_INPUTS_PATH,
             raw_historical_installations_file_name,
@@ -146,7 +144,7 @@ def get_processed_installations_data(
     """
 
     return load_s3_data(
-        base_config.BUCKET_NAME,
+        bucket_name,
         os.path.join(
             base_config.MCS_PROCESSED_FILES_PATH,
             processed_installations_file_name,
@@ -167,8 +165,9 @@ def find_most_recent_mcs_installations_batch(epc_version: str = "none"):
         str: Filename of most recent MCS installations (+ EPC) data.
     """
     bucket = s3.Bucket(bucket_name)
-    folder = mcs_processed_dir
-    file_list = [object.key for object in bucket.objects.filter(Prefix=folder)]
+    file_list = [
+        object.key for object in bucket.objects.filter(Prefix=mcs_processed_dir)
+    ]
     file_prefix = keyword_to_path_dict[epc_version].split("{")[0]
     matches = [
         filename
@@ -211,5 +210,5 @@ def get_processed_installations_data_by_batch(
     print(f"Loading <{processed_installations_file_path}> from S3")
 
     return load_s3_data(
-        bucket_name=base_config.BUCKET_NAME, file_name=processed_installations_file_path
+        bucket_name=bucket_name, file_name=processed_installations_file_path
     )
