@@ -206,8 +206,8 @@ def get_processed_installations_data_by_batch(
         )
     else:
         file_prefix = keyword_to_path_dict[epc_version]
-       # note that [1:] removes the first "/" in the file path
-        processed_installations_file_path = file_prefix.format(batch_date)[1:] 
+        # note that [1:] removes the first "/" in the file path
+        processed_installations_file_path = file_prefix.format(batch_date)[1:]
     print(f"Loading <{processed_installations_file_path}> from S3")
 
     return load_s3_data(
