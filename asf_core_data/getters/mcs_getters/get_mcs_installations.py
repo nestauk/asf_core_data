@@ -10,6 +10,7 @@ from asf_core_data.getters.data_getters import (
     s3,
     load_s3_data,
     get_most_recent_batch_name,
+    logger,
 )
 
 from asf_core_data.config import base_config
@@ -176,10 +177,12 @@ def find_most_recent_mcs_installations_batch(epc_version: str = "none") -> str:
     ]
     try:
         latest_version = max(matches)
-        print(f"Latest version available on S3: <{latest_version}>")
+        logger.info(f"Latest version available on S3: <{latest_version}>")
         return latest_version
     except ValueError:
-        print(f"No files found in {bucket} bucket for epc_version='{epc_version}'")
+        logger.error(
+            f"ValueError: No files found in {bucket} bucket for epc_version='{epc_version}'"
+        )
 
 
 def get_processed_installations_data_by_batch(
@@ -208,7 +211,7 @@ def get_processed_installations_data_by_batch(
         file_prefix = keyword_to_path_dict[epc_version]
         # note that [1:] removes the first "/" in the file path
         processed_installations_file_path = file_prefix.format(batch_date)[1:]
-    print(f"Loading <{processed_installations_file_path}> from S3")
+    logger.info(f"Loading <{processed_installations_file_path}> from S3")
 
     return load_s3_data(
         bucket_name=bucket_name, file_name=processed_installations_file_path
