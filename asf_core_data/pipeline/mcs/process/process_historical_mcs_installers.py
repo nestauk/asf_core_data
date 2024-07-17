@@ -264,8 +264,7 @@ def get_missing_installers_info(
 
     # dropping unecessary variables
     missing_installers.drop(
-        columns=["date_of_creation"],
-        inplace=True,
+        columns=["date_of_creation"], inplace=True,
     )
 
     return missing_installers
@@ -607,6 +606,11 @@ def update_effective_to_date(
         how="left",
         left_on=installers_match_vars,
         right_on=installations_match_vars,
+    )
+
+    installer_data["effective_to"] = pd.to_datetime(installer_data["effective_to"])
+    installer_data["commissioning_date"] = pd.to_datetime(
+        installer_data["commissioning_date"]
     )
 
     installer_data["effective_to"] = installer_data.apply(
