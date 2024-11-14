@@ -260,32 +260,23 @@ Below we describe the necessary steps to download and update the data:
 
 - Create a local folder in your computer for ASF core data (if you don't have one already), e.g. `/Documents/ASF data/`. Inside create the following path `/inputs/EPC/raw_data/`
 
-- Download most recent England/Wales data from [here](https://epc.opendatacommunities.org/https://epc.opendatacommunities.org/). The filename is _all-domestic-certificates.zip_.
+- Download most recent England/Wales data from [here](https://epc.opendatacommunities.org/https://epc.opendatacommunities.org/).
 
-- Download most recent Scotland data from [here](https://statistics.gov.scot/resource?uri=http%3A%2F%2Fstatistics.gov.scot%2Fdata%2Fdomestic-energy-performance-certificates). The filename is is of the format `D_EPC_data_2012-[year]Q[quarter]_extract_[month][year].zip`, for example `D_EPC_data_2012-2021Q4_extract_0721.zip`.
+- Download most recent Scotland data from [here](https://statistics.gov.scot/resource?uri=http%3A%2F%2Fstatistics.gov.scot%2Fdata%2Fdomestic-energy-performance-certificates).
 
-- Create a folder for the specific quarter data inside `inputs/data/EPC/raw_data/`, following the structure `inputs/data/EPC/raw_data/YYYY_Qm_complete/` e.g.`inputs/data/EPC/raw_data/2022_Q4_complete/`
+- Create a folder for the specific quarter data inside `inputs/data/EPC/raw_data/`, following the structure `inputs/data/EPC/raw_data/YYYY_QX_complete/` e.g.`inputs/data/EPC/raw_data/2022_Q4_complete/`
 
-- Inside your quarter folder, create a subfolder called `England_Wales` and move the downloaded zip England and Wales file to the folder. Create a subfolder called `Scotland` and move the Scotland zip file to the subfolder.
-
-- Shorten the Scotland filename to `D_EPC_data.zip`.
-
-- Note: The zipped Scotland data may not be processable by the Python package _ZipFile_ because of an unsupported compression method. This problem can be solved easily solved by unzipping and zipping the data manually, e.g. with the command `unzip`. Make sure the filename remains `D_EPC_data.zip`.
+- Move the downloaded zip England and Wales file to the folder and rename it to `England_Wales`. Move the Scotland zip file to the folder and rename it `Scotland`. Unzip both files and delete the original zip files.
 
 - Upload raw data to S3 `asf-core-data/inputs/EPC/raw_data/` (as well as a zipped file). You can do that by:
 
-  - `aws s3 cp SOURCE_DIR s3://asf-core-data/inputs/EPC/raw_data/ --recursive`, where `SOURCE_DIR` is the your local path to the raw EPC batch data
-  - Alternatively, you can log-in to S3 in your browser, and do the upload directly there.
+  - `aws s3 cp PATH/TO/DATA/inputs/data/EPC/raw_data/YYYY_QX_complete s3://asf-core-data/inputs/EPC/raw_data/YYYY_QX_complete --recursive`, where `YYYY` is the year and `X` is the quarter
+  - `aws s3 cp PATH/TO/DATA/inputs/data/EPC/raw_data/YYYY_QX_complete.zip s3://asf-core-data/inputs/EPC/raw_data/YYYY_QX_complete.zip`, where `YYYY` is the year and `X` is the quarter
 
-- Run `python asf_core_data/pipeline/preprocessing/preprocess_epc_data.py --path_to_data "/LOCAL/PATH/TO/DATA/"` which generates the preprocessed data in folder `outputs/EPC/preprocessed_data/[YEAR]_Q[quarter]_complete`, e.g. `outputs/EPC/preprocessed_data/2023_Q1_complete`
+- Run `python asf_core_data/pipeline/preprocessing/preprocess_epc_data.py --path_to_data "/LOCAL/PATH/TO/DATA/"` which generates the preprocessed data in folder `outputs/EPC/preprocessed_data/YYYY_QX_complete`, e.g. `outputs/EPC/preprocessed_data/2023_Q1_complete`
 
-  Note: The data preprocessing is optimised for the data collected in 2023 (Q1_2023). More recent EPC data may include values not yet covered by the current preprocessing algorithm (for example new construction age bands), possibly causing errors when excuting the script.
-  These can usually be fixed easily so feel free to open an issue or submit a pull request.
-
-- Zip the output files and upload them, as well as the .csv files to S3:
-
-  - using the `aws s3 cp` command again as above;
-  - Alternatively, you can log-in to S3 in your browser, and do the upload directly there.
+- Zip each of the output files and upload them, as well as the .csv files to S3. You can use the `aws s3 cp` command again:
+  - `aws s3 cp YOUR/LOCAL/PATH/outputs/EPC/preprocessed_data/YYYY_QX_complete s3://asf-core-data/ouputs/EPC/preprocessed_data/YYYY_QX_complete --recursive`
 
 - If you update the `/inputs` data on the S3 bucket, please let everyone in the ASF data science team know and update this `README.md` file.
 
